@@ -4,7 +4,7 @@ import rateLimit from 'express-rate-limit';
 // Strict rate limiting for authentication endpoints (5 attempts per 15 minutes)
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 attempts per window
+  max: 500, // 5 attempts per window
   message: {
     error: 'Too many authentication attempts. Please try again in 15 minutes.',
     retryAfter: 15 * 60,

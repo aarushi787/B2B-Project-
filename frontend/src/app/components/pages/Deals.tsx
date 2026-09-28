@@ -38,8 +38,8 @@ export function Deals() {
 
   const fetchDeals = async () => {
     try {
-      const data = await apiClient.get<DealItem[]>('/deals');
-      setDeals(data || []);
+      const res: any = await apiClient.get<DealItem[]>('/deals');
+      setDeals(res?.data || res || []);
     } catch (error) {
       toast.error("Failed to load projects/deals");
     } finally {
@@ -58,8 +58,8 @@ export function Deals() {
         notes: formData.description,
         totalAmount: parseFloat(formData.amount),
         status: 'COMPLETED',
-        buyerId: "dummy-buyer",
-        sellerId: "dummy-seller"
+        buyerId: "d850de54-4f77-4251-953f-e3662013175d",
+        sellerId: "d850de54-4f77-4251-953f-e3662013175d"
       });
       toast.success("Project added successfully!");
       setDeals([newDeal, ...deals]);
@@ -96,7 +96,7 @@ export function Deals() {
       {/* Portfolio Grid */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))", gap: 24 }}>
         {filtered.map((p) => (
-          <Card key={p.id} style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <Card key={p.id} className="deal-card" style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
             {/* Image placeholder */}
             <div style={{ height: 160, background: "#f8fafc", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <span style={{ fontSize: 13, color: "#94a3b8", fontWeight: 500 }}>No Image</span>
