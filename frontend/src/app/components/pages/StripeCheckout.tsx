@@ -35,13 +35,29 @@ const CheckoutForm = ({ dealId, amount, onSuccess }: { dealId: string, amount: n
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <PaymentElement />
       <button
         disabled={!stripe || loading}
-        className="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold shadow-lg shadow-purple-500/20 hover:shadow-purple-500/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+        style={{
+          width: "100%",
+          padding: "14px",
+          background: "linear-gradient(to right, #4f46e5, #9333ea)",
+          color: "white",
+          borderRadius: 12,
+          fontWeight: 700,
+          boxShadow: "0 10px 15px -3px rgba(147,51,234,0.2), 0 4px 6px -4px rgba(147,51,234,0.2)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8,
+          border: "none",
+          cursor: (!stripe || loading) ? "not-allowed" : "pointer",
+          opacity: (!stripe || loading) ? 0.5 : 1,
+          transition: "all 0.2s"
+        }}
       >
-        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Lock className="w-5 h-5" />}
+        {loading ? <Loader2 size={20} /> : <Lock size={20} />}
         {loading ? 'Processing...' : `Fund Escrow ($${amount.toLocaleString()})`}
       </button>
     </form>
@@ -75,9 +91,9 @@ export default function StripeCheckout({ dealId, amount, onComplete }: { dealId:
 
   if (!clientSecret) {
     return (
-      <div className="flex flex-col items-center justify-center p-12">
-        <Loader2 className="w-8 h-8 text-purple-500 animate-spin mb-4" />
-        <p className="text-slate-500 font-medium">Initializing secure payment gateway...</p>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48 }}>
+        <Loader2 size={32} style={{ color: "#a855f7", marginBottom: 16 }} />
+        <p style={{ color: "#64748b", fontWeight: 500, margin: 0 }}>Initializing secure payment gateway...</p>
       </div>
     );
   }
@@ -85,21 +101,21 @@ export default function StripeCheckout({ dealId, amount, onComplete }: { dealId:
   // If using a mock secret (no real stripe keys configured in backend)
   if (clientSecret === 'mock_secret') {
     return (
-      <div className="p-6 bg-white rounded-2xl border border-slate-200">
-         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
-            <CreditCard className="w-5 h-5 text-blue-600" />
+      <div style={{ padding: 24, backgroundColor: "#ffffff", borderRadius: 16, border: "1px solid #e2e8f0" }}>
+         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+          <div style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <CreditCard size={20} style={{ color: "#2563eb" }} />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-slate-900">Secure Escrow Payment</h3>
-            <p className="text-sm text-slate-500">Stripe Test Mode</p>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: "#0f172a", margin: 0 }}>Secure Escrow Payment</h3>
+            <p style={{ fontSize: 14, color: "#64748b", margin: 0 }}>Stripe Test Mode</p>
           </div>
         </div>
-        <p className="text-sm text-slate-600 mb-6">Since real Stripe API keys are not provided, click below to simulate a successful escrow deposit.</p>
+        <p style={{ fontSize: 14, color: "#475569", marginBottom: 24, lineHeight: 1.5 }}>Since real Stripe API keys are not provided, click below to simulate a successful escrow deposit.</p>
         <button onClick={() => {
            toast.success('Mock funds successfully secured in Escrow!');
            onComplete();
-        }} className="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold">
+        }} style={{ width: "100%", padding: "14px", background: "linear-gradient(to right, #4f46e5, #9333ea)", color: "white", borderRadius: 12, fontWeight: 700, border: "none", cursor: "pointer" }}>
            Simulate Escrow Deposit ($${amount.toLocaleString()})
         </button>
       </div>
@@ -107,37 +123,37 @@ export default function StripeCheckout({ dealId, amount, onComplete }: { dealId:
   }
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl p-8 max-w-md mx-auto">
+    <div style={{ backgroundColor: "#ffffff", borderRadius: 24, border: "1px solid #e2e8f0", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", padding: 32, maxWidth: 448, margin: "0 auto", fontFamily: "Inter, sans-serif" }}>
       {/* Header section with Trust Indicators */}
-      <div className="flex items-center gap-4 mb-8 pb-6 border-b border-slate-100">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-50 to-indigo-50 flex items-center justify-center shadow-inner border border-blue-100/50">
-          <Shield className="w-7 h-7 text-blue-600" />
+      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 32, paddingBottom: 24, borderBottom: "1px solid #f1f5f9" }}>
+        <div style={{ width: 56, height: 56, borderRadius: 16, background: "linear-gradient(to top right, #eff6ff, #e0e7ff)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(219,234,254,0.5)" }}>
+          <Shield size={28} style={{ color: "#2563eb" }} />
         </div>
         <div>
-          <h3 className="text-xl font-black text-slate-900 tracking-tight">Secure Escrow</h3>
-          <p className="text-sm font-medium text-slate-500 mt-0.5 flex items-center gap-1.5">
-            <Lock className="w-3.5 h-3.5" /> 256-bit Encrypted
+          <h3 style={{ fontSize: 20, fontWeight: 900, color: "#0f172a", margin: 0, letterSpacing: "-0.025em" }}>Secure Escrow</h3>
+          <p style={{ fontSize: 14, fontWeight: 500, color: "#64748b", margin: "2px 0 0", display: "flex", alignItems: "center", gap: 6 }}>
+            <Lock size={14} /> 256-bit Encrypted
           </p>
         </div>
       </div>
       
       {/* Stripe Elements Form */}
-      <div className="mb-6">
+      <div style={{ marginBottom: 24 }}>
         <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#4f46e5', borderRadius: '12px' } } }}>
           <CheckoutForm dealId={dealId} amount={amount} onSuccess={onComplete} />
         </Elements>
       </div>
       
       {/* Footer Trust copy */}
-      <div className="mt-8 pt-6 border-t border-slate-100 bg-slate-50/50 -mx-8 -mb-8 p-6 rounded-b-3xl">
-        <p className="text-xs text-slate-500 text-center font-medium leading-relaxed max-w-[280px] mx-auto">
+      <div style={{ marginTop: 32, paddingTop: 24, borderTop: "1px solid #f1f5f9", backgroundColor: "rgba(248,250,252,0.5)", margin: "0 -32px -32px", padding: 24, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}>
+        <p style={{ fontSize: 12, color: "#64748b", textAlign: "center", fontWeight: 500, lineHeight: 1.6, maxWidth: 280, margin: "0 auto" }}>
           Your funds are held securely by Stripe. They will only be released to the provider upon your explicit approval of completed milestones.
         </p>
-        <div className="flex justify-center gap-3 mt-4 opacity-40 grayscale">
+        <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 16, opacity: 0.4, filter: "grayscale(100%)" }}>
           {/* Mock trusted logos */}
-          <div className="h-4 w-12 bg-slate-400 rounded-sm"></div>
-          <div className="h-4 w-12 bg-slate-400 rounded-sm"></div>
-          <div className="h-4 w-12 bg-slate-400 rounded-sm"></div>
+          <div style={{ height: 16, width: 48, backgroundColor: "#94a3b8", borderRadius: 2 }}></div>
+          <div style={{ height: 16, width: 48, backgroundColor: "#94a3b8", borderRadius: 2 }}></div>
+          <div style={{ height: 16, width: 48, backgroundColor: "#94a3b8", borderRadius: 2 }}></div>
         </div>
       </div>
     </div>

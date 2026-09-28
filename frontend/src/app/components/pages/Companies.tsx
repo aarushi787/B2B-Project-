@@ -92,24 +92,24 @@ export function Companies() {
         <Modal isOpen={isEditModalOpen} onClose={() => setEditModalOpen(false)} title="Create Company Profile">
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div>
-              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 6 }}>Company Name</label>
               <Input 
+                label="Company Name"
                 value={formData.name || ""} 
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="e.g. Acme Corp" 
               />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 6 }}>Industry</label>
               <Input 
+                label="Industry"
                 value={formData.industry || ""} 
                 onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
                 placeholder="e.g. Technology" 
               />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 6 }}>Email</label>
               <Input 
+                label="Email"
                 value={formData.email || ""} 
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="hello@acmecorp.com" 
