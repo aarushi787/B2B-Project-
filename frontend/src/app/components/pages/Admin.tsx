@@ -786,7 +786,6 @@ export function Admin() {
             ))}
           </div>
         </div>
-        </div>
 
         {/* Page body */}
         <div className="flex-1 overflow-y-auto p-5">
@@ -1589,5 +1588,6 @@ export function Admin() {
           </AnimatePresence>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
