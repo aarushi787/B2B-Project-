@@ -129,23 +129,26 @@ export function Auth() {
   const pwStrength = getPasswordStrength(mode === "login" ? loginData.password : registerData.password);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div style={{ minHeight: "100vh", background: "linear-gradient(to bottom right, #f8fafc, #ffffff, #f1f5f9)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", fontFamily: "Inter, sans-serif" }}>
+      <div style={{ width: "100%", maxWidth: 448 }}>
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center mb-2 w-full">
-            <img src="/logo.png" alt="B2BForCorporates Logo" className="h-16 w-auto object-contain" />
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 8, width: "100%" }}>
+            <img src="/logo.png" alt="B2BForCorporates Logo" style={{ height: 64, width: "auto", objectFit: "contain" }} />
           </div>
-          <p className="text-slate-500 text-sm">Enterprise Collaboration Platform</p>
+          <p style={{ color: "#64748b", fontSize: 14 }}>Enterprise Collaboration Platform</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-8">
+        <div style={{ backgroundColor: "#ffffff", borderRadius: 16, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)", border: "1px solid #f1f5f9", padding: 32 }}>
           {/* Tabs */}
           {(mode === "login" || mode === "register") && (
-            <div className="flex rounded-xl bg-slate-100 p-1 mb-6">
+            <div style={{ display: "flex", borderRadius: 12, backgroundColor: "#f1f5f9", padding: 4, marginBottom: 24 }}>
               {(["login", "register"] as AuthMode[]).map((m) => (
                 <button key={m} onClick={() => { setMode(m); setError(""); setSuccessMsg(""); }}
-                  className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${mode === m ? "bg-white shadow text-slate-900" : "text-slate-500 hover:text-slate-700"}`}>
+                  style={{ flex: 1, padding: "8px 0", fontSize: 14, fontWeight: 500, borderRadius: 8, border: "none", cursor: "pointer", transition: "all 0.2s", 
+                    backgroundColor: mode === m ? "#ffffff" : "transparent", 
+                    color: mode === m ? "#0f172a" : "#64748b",
+                    boxShadow: mode === m ? "0 1px 3px rgba(0,0,0,0.1)" : "none" }}>
                   {m === "login" ? "Sign In" : "Create Account"}
                 </button>
               ))}
@@ -154,100 +157,100 @@ export function Auth() {
 
           {/* Error */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700 text-sm">
+            <div style={{ marginBottom: 16, padding: 12, backgroundColor: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, display: "flex", alignItems: "center", gap: 8, color: "#b91c1c", fontSize: 14 }}>
               <XCircle size={16} /> {error}
             </div>
           )}
 
           {successMsg && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 text-green-700 text-sm">
+            <div style={{ marginBottom: 16, padding: 12, backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, display: "flex", alignItems: "center", gap: 8, color: "#15803d", fontSize: 14 }}>
               <CheckCircle size={16} /> {successMsg}
             </div>
           )}
 
           {mode === "login" ? (
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-                <div className="relative">
-                  <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <label style={{ display: "block", fontSize: 14, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Email</label>
+                <div style={{ position: "relative" }}>
+                  <Mail size={16} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
                   <input type="email" required value={loginData.email} onChange={e => setLoginData(d => ({...d, email: e.target.value}))}
-                    className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-transparent"
+                    style={{ width: "100%", padding: "10px 16px 10px 36px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 14, outline: "none", boxSizing: "border-box" }}
                     placeholder="you@company.com" />
                 </div>
               </div>
               <div>
-                <div className="flex justify-between items-center mb-1">
-                  <label className="block text-sm font-medium text-slate-700">Password</label>
-                  <button type="button" onClick={() => { setMode("forgot-password"); setError(""); setSuccessMsg(""); }} className="text-xs text-blue-600 hover:underline">Forgot password?</button>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                  <label style={{ display: "block", fontSize: 14, fontWeight: 500, color: "#334155" }}>Password</label>
+                  <button type="button" onClick={() => { setMode("forgot-password"); setError(""); setSuccessMsg(""); }} style={{ fontSize: 12, color: "#2563EB", background: "none", border: "none", cursor: "pointer" }}>Forgot password?</button>
                 </div>
-                <div className="relative">
-                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <div style={{ position: "relative" }}>
+                  <Lock size={16} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
                   <input type={showPassword ? "text" : "password"} required value={loginData.password}
                     onChange={e => setLoginData(d => ({...d, password: e.target.value}))}
-                    className="w-full pl-9 pr-10 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-300"
+                    style={{ width: "100%", padding: "10px 40px 10px 36px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 14, outline: "none", boxSizing: "border-box" }}
                     placeholder="••••••••" />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8", background: "none", border: "none", cursor: "pointer" }}>
                     {showPassword ? <EyeOff size={16}/> : <Eye size={16}/>}
                   </button>
                 </div>
               </div>
 
-              <div className="pt-2">
-                <p className="text-xs text-slate-500 font-semibold mb-2 uppercase tracking-wide">Quick Demo Login</p>
-                <div className="flex flex-col gap-2">
+              <div style={{ paddingTop: 8 }}>
+                <p style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Quick Demo Login</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   <button type="button" onClick={() => setLoginData({ email: "admin@example.com", password: "password123" })}
-                    className="w-full text-left p-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded text-xs text-slate-800 font-medium transition-colors">
+                    style={{ width: "100%", textAlign: "left", padding: 8, backgroundColor: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: 4, fontSize: 12, color: "#1e293b", fontWeight: 500, cursor: "pointer" }}>
                     <b>Admin Console</b> (admin@example.com)
                   </button>
                   <button type="button" onClick={() => setLoginData({ email: "rahul@example.com", password: "password123" })}
-                    className="w-full text-left p-2 bg-blue-50 hover:bg-blue-100 border border-blue-100 rounded text-xs text-blue-800 font-medium transition-colors">
+                    style={{ width: "100%", textAlign: "left", padding: 8, backgroundColor: "#eff6ff", border: "1px solid #dbeafe", borderRadius: 4, fontSize: 12, color: "#1e40af", fontWeight: 500, cursor: "pointer" }}>
                     <b>Acme Corp - Buyer</b> (rahul@example.com)
                   </button>
                   <button type="button" onClick={() => setLoginData({ email: "maya@example.com", password: "password123" })}
-                    className="w-full text-left p-2 bg-purple-50 hover:bg-purple-100 border border-purple-100 rounded text-xs text-purple-800 font-medium transition-colors">
+                    style={{ width: "100%", textAlign: "left", padding: 8, backgroundColor: "#f5f3ff", border: "1px solid #ede9fe", borderRadius: 4, fontSize: 12, color: "#5b21b6", fontWeight: 500, cursor: "pointer" }}>
                     <b>TechVista - Seller</b> (maya@example.com)
                   </button>
                 </div>
               </div>
 
               <button type="submit" disabled={loading}
-                className="w-full py-2.5 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-60">
-                {loading ? <><Loader2 size={16} className="animate-spin"/> Signing in...</> : "Sign In"}
+                style={{ width: "100%", padding: "10px", backgroundColor: "#0f172a", color: "#ffffff", fontWeight: 500, borderRadius: 8, border: "none", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: loading ? 0.6 : 1 }}>
+                {loading ? <><Loader2 size={16} /> Signing in...</> : "Sign In"}
               </button>
             </form>
           ) : mode === "forgot-password" ? (
-            <form onSubmit={handleForgotPassword} className="space-y-4">
+            <form onSubmit={handleForgotPassword} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-                <div className="relative">
-                  <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <label style={{ display: "block", fontSize: 14, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Email</label>
+                <div style={{ position: "relative" }}>
+                  <Mail size={16} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
                   <input type="email" required value={resetData.email} onChange={e => setResetData(d => ({...d, email: e.target.value}))}
-                    className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-300"
+                    style={{ width: "100%", padding: "10px 16px 10px 36px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 14, outline: "none", boxSizing: "border-box" }}
                     placeholder="you@company.com" />
                 </div>
               </div>
               <button type="submit" disabled={loading}
-                className="w-full py-2.5 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-60">
-                {loading ? <><Loader2 size={16} className="animate-spin"/> Sending...</> : "Send Reset Link"}
+                style={{ width: "100%", padding: "10px", backgroundColor: "#0f172a", color: "#ffffff", fontWeight: 500, borderRadius: 8, border: "none", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: loading ? 0.6 : 1 }}>
+                {loading ? <><Loader2 size={16} /> Sending...</> : "Send Reset Link"}
               </button>
               <button type="button" onClick={() => { setMode("login"); setError(""); setSuccessMsg(""); }}
-                className="w-full py-2 text-sm text-slate-500 hover:text-slate-800">
+                style={{ width: "100%", padding: "8px", fontSize: 14, color: "#64748b", background: "none", border: "none", cursor: "pointer" }}>
                 Back to Sign In
               </button>
             </form>
           ) : mode === "reset-password" ? (
-            <form onSubmit={handleResetPassword} className="space-y-4">
+            <form onSubmit={handleResetPassword} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Reset Token</label>
+                <label style={{ display: "block", fontSize: 14, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Reset Token</label>
                 <input type="text" required value={resetData.token} onChange={e => setResetData(d => ({...d, token: e.target.value}))}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-300"
+                  style={{ width: "100%", padding: "10px 16px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 14, outline: "none", boxSizing: "border-box" }}
                   placeholder="Paste token from email" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">New Password</label>
-                <div className="relative">
-                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <label style={{ display: "block", fontSize: 14, fontWeight: 500, color: "#334155", marginBottom: 4 }}>New Password</label>
+                <div style={{ position: "relative" }}>
+                  <Lock size={16} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
                   <input type={showPassword ? "text" : "password"} required value={resetData.newPassword}
                     onChange={e => setResetData(d => ({...d, newPassword: e.target.value}))}
                     className="w-full pl-9 pr-10 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-300"
@@ -258,16 +261,16 @@ export function Auth() {
                 </div>
               </div>
               <button type="submit" disabled={loading}
-                className="w-full py-2.5 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-60">
-                {loading ? <><Loader2 size={16} className="animate-spin"/> Resetting...</> : "Reset Password"}
+                style={{ width: "100%", padding: "10px", backgroundColor: "#0f172a", color: "#ffffff", fontWeight: 500, borderRadius: 8, border: "none", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: loading ? 0.6 : 1 }}>
+                {loading ? <><Loader2 size={16} /> Resetting...</> : "Reset Password"}
               </button>
               <button type="button" onClick={() => { setMode("login"); setError(""); setSuccessMsg(""); }}
-                className="w-full py-2 text-sm text-slate-500 hover:text-slate-800">
+                style={{ width: "100%", padding: "8px", fontSize: 14, color: "#64748b", background: "none", border: "none", cursor: "pointer" }}>
                 Back to Sign In
               </button>
             </form>
           ) : (
-            <form onSubmit={handleRegister} className="space-y-4">
+            <form onSubmit={handleRegister} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {[
                 { label: "Full Name", key: "name", type: "text", icon: User, placeholder: "Arjun Sharma" },
                 { label: "Email Address", key: "email", type: "email", icon: Mail, placeholder: "you@company.com" },
@@ -276,18 +279,18 @@ export function Auth() {
                 { label: "GST Number (Optional)", key: "gstNumber", type: "text", icon: Building2, placeholder: "22AAAAA0000A1Z5" },
               ].map(({ label, key, type, icon: Icon, placeholder }) => (
                 <div key={key}>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
-                  <div className="relative">
-                    <Icon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <label style={{ display: "block", fontSize: 14, fontWeight: 500, color: "#334155", marginBottom: 4 }}>{label}</label>
+                  <div style={{ position: "relative" }}>
+                    <Icon size={16} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
                     <input type={type} required value={(registerData as any)[key]}
                       onChange={e => {
                         setRegisterData(d => ({...d, [key]: e.target.value}));
                         setFieldErrors(err => ({...err, [key]: ""}));
                       }}
-                      className={`w-full pl-9 pr-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-300 ${fieldErrors[key] ? 'border-red-500' : 'border-slate-200'}`}
+                      style={{ width: "100%", padding: "10px 16px 10px 36px", border: `1px solid ${fieldErrors[key] ? '#ef4444' : '#e2e8f0'}`, borderRadius: 8, fontSize: 14, outline: "none", boxSizing: "border-box" }}
                       placeholder={placeholder} />
                   </div>
-                  {fieldErrors[key] && <p className="text-red-500 text-xs mt-1">{fieldErrors[key]}</p>}
+                  {fieldErrors[key] && <p style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>{fieldErrors[key]}</p>}
                 </div>
               ))}
 
@@ -296,45 +299,45 @@ export function Auth() {
                 { label: "Confirm Password", key: "confirmPassword", show: showPassword, setShow: setShowPassword },
               ].map(({ label, key, show, setShow }) => (
                 <div key={key}>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
-                  <div className="relative">
-                    <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <label style={{ display: "block", fontSize: 14, fontWeight: 500, color: "#334155", marginBottom: 4 }}>{label}</label>
+                  <div style={{ position: "relative" }}>
+                    <Lock size={16} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
                     <input type={show ? "text" : "password"} required minLength={8}
                       value={(registerData as any)[key]}
                       onChange={e => {
                         setRegisterData(d => ({...d, [key]: e.target.value}));
                         setFieldErrors(err => ({...err, [key]: ""}));
                       }}
-                      className={`w-full pl-9 pr-10 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-300 ${fieldErrors[key] ? 'border-red-500' : 'border-slate-200'}`}
+                      style={{ width: "100%", padding: "10px 40px 10px 36px", border: `1px solid ${fieldErrors[key] ? '#ef4444' : '#e2e8f0'}`, borderRadius: 8, fontSize: 14, outline: "none", boxSizing: "border-box" }}
                       placeholder="••••••••" />
-                    <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                    <button type="button" onClick={() => setShow(!show)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8", background: "none", border: "none", cursor: "pointer" }}>
                       {show ? <EyeOff size={16}/> : <Eye size={16}/>}
                     </button>
                   </div>
-                  {fieldErrors[key] && <p className="text-red-500 text-xs mt-1">{fieldErrors[key]}</p>}
+                  {fieldErrors[key] && <p style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>{fieldErrors[key]}</p>}
                 </div>
               ))}
 
               {registerData.password && (
-                <div className="space-y-1">
-                  <div className="flex gap-1">
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <div style={{ display: "flex", gap: 4 }}>
                     {[1,2,3,4].map(i => (
-                      <div key={i} className={`h-1 flex-1 rounded-full transition-all ${i <= pwStrength.strength ? pwStrength.color : "bg-slate-200"}`}/>
+                      <div key={i} style={{ height: 4, flex: 1, borderRadius: 2, backgroundColor: i <= pwStrength.strength ? (pwStrength.color === "bg-red-500" ? "#ef4444" : pwStrength.color === "bg-yellow-500" ? "#eab308" : pwStrength.color === "bg-blue-500" ? "#3b82f6" : "#22c55e") : "#e2e8f0" }}/>
                     ))}
                   </div>
-                  {pwStrength.label && <p className="text-xs text-slate-500">Strength: <span className="font-medium">{pwStrength.label}</span></p>}
+                  {pwStrength.label && <p style={{ fontSize: 12, color: "#64748b", margin: 0 }}>Strength: <span style={{ fontWeight: 500 }}>{pwStrength.label}</span></p>}
                 </div>
               )}
 
               <button type="submit" disabled={loading}
-                className="w-full py-2.5 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-60">
-                {loading ? <><Loader2 size={16} className="animate-spin"/> Creating account...</> : "Create Account"}
+                style={{ width: "100%", padding: "10px", backgroundColor: "#0f172a", color: "#ffffff", fontWeight: 500, borderRadius: 8, border: "none", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: loading ? 0.6 : 1 }}>
+                {loading ? <><Loader2 size={16} /> Creating account...</> : "Create Account"}
               </button>
             </form>
           )}
         </div>
 
-        <p className="text-center text-xs text-slate-400 mt-6">
+        <p style={{ textAlign: "center", fontSize: 12, color: "#94a3b8", marginTop: 24 }}>
           © 2026 B2BForCorporates · Enterprise Collaboration Platform
         </p>
       </div>
