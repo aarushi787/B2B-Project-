@@ -127,7 +127,13 @@ export function ExploreBusinesses() {
           <div>
             {/* Results header */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <span style={{ fontSize: 13, color: "#64748b" }}>{businesses.length} businesses found</span>
+              <span style={{ fontSize: 13, color: "#64748b" }}>
+                {businesses.filter(b => {
+                  const matchCat = selectedCats.length === 0 || b.tags.some((t: string) => selectedCats.includes(t)) || selectedCats.includes(b.tags[0]);
+                  const matchLoc = selectedLocs.length === 0 || selectedLocs.some(l => b.location.toUpperCase().includes(l.toUpperCase()));
+                  return matchCat && matchLoc;
+                }).length} businesses found
+              </span>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontSize: 12, color: "#64748b" }}>Sort by:</span>
                 <button onClick={() => toast("Sorting changed")} style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 6, padding: "6px 12px", fontSize: 13, cursor: "pointer" }}>
@@ -157,7 +163,11 @@ export function ExploreBusinesses() {
               </div>
             ) : (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
-                {businesses.map((b, i) => (
+                {businesses.filter(b => {
+                  const matchCat = selectedCats.length === 0 || b.tags.some((t: string) => selectedCats.includes(t)) || selectedCats.includes(b.tags[0]);
+                  const matchLoc = selectedLocs.length === 0 || selectedLocs.some(l => b.location.toUpperCase().includes(l.toUpperCase()));
+                  return matchCat && matchLoc;
+                }).map((b, i) => (
                 <div key={i} style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 24 }}>
                   {/* Avatar + verified */}
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>

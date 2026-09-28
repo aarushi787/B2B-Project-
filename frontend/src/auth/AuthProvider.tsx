@@ -34,12 +34,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(u);
     } catch {
       // Fallback for local UI testing without a database
-      setUser({
-        id: "mock-admin-id",
-        name: "Super Admin (Local Test)",
-        email: "admin@local.test",
-        role: "admin",
-      });
+      // setUser({
+      //   id: "mock-admin-id",
+      //   name: "Super Admin (Local Test)",
+      //   email: "admin@local.test",
+      //   role: "admin",
+      // });
+      setUser(null);
     }
   };
 

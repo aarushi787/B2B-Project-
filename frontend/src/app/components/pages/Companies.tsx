@@ -50,18 +50,8 @@ export function Companies() {
           return;
         }
       }
-        // Fallback placeholder if no companies exist in DB
-        const placeholder: Company = {
-          id: "new",
-          name: "TechVista Solutions",
-          email: "enterprise@techvista.com",
-          phone: "+91 22 5554-1234",
-          website: "https://techvista.com",
-          industry: "Information Technology & Services",
-          description: "TechVista Solutions is a premier B2B software engineering and cloud infrastructure development firm.",
-        };
-        setCompany(placeholder);
-        setFormData(placeholder);
+      setCompany(null);
+      setFormData({});
     } catch (error) {
       toast.error("Failed to load company profile");
     } finally {
@@ -92,7 +82,50 @@ export function Companies() {
   };
 
   if (loading) return <div style={{ padding: 40, textAlign: "center" }}>Loading profile...</div>;
-  if (!company) return null;
+  if (!company) {
+    return (
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "40px 0", textAlign: "center", fontFamily: "Inter, sans-serif" }}>
+        <h2 style={{ fontSize: 24, fontWeight: 700, color: "#0f172a", marginBottom: 16 }}>No Company Profile</h2>
+        <p style={{ color: "#64748b", marginBottom: 24 }}>You have not set up a company profile yet.</p>
+        <PrimaryBtn onClick={() => setEditModalOpen(true)}>Create Company Profile</PrimaryBtn>
+        
+        <Modal isOpen={isEditModalOpen} onClose={() => setEditModalOpen(false)} title="Create Company Profile">
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 6 }}>Company Name</label>
+              <Input 
+                value={formData.name || ""} 
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="e.g. Acme Corp" 
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 6 }}>Industry</label>
+              <Input 
+                value={formData.industry || ""} 
+                onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+                placeholder="e.g. Technology" 
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 6 }}>Email</label>
+              <Input 
+                value={formData.email || ""} 
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="hello@acmecorp.com" 
+              />
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 16 }}>
+              <GhostBtn onClick={() => setEditModalOpen(false)}>Cancel</GhostBtn>
+              <PrimaryBtn onClick={handleSave} disabled={isSaving}>
+                {isSaving ? "Saving..." : "Save Profile"}
+              </PrimaryBtn>
+            </div>
+          </div>
+        </Modal>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto", fontFamily: "Inter, sans-serif" }}>

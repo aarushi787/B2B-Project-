@@ -107,24 +107,39 @@ export default function StripeCheckout({ dealId, amount, onComplete }: { dealId:
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-6">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
-          <Shield className="w-5 h-5 text-blue-600" />
+    <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl p-8 max-w-md mx-auto">
+      {/* Header section with Trust Indicators */}
+      <div className="flex items-center gap-4 mb-8 pb-6 border-b border-slate-100">
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-50 to-indigo-50 flex items-center justify-center shadow-inner border border-blue-100/50">
+          <Shield className="w-7 h-7 text-blue-600" />
         </div>
         <div>
-          <h3 className="text-lg font-bold text-slate-900">Secure Escrow Payment</h3>
-          <p className="text-sm text-slate-500">Powered by Stripe Connect</p>
+          <h3 className="text-xl font-black text-slate-900 tracking-tight">Secure Escrow</h3>
+          <p className="text-sm font-medium text-slate-500 mt-0.5 flex items-center gap-1.5">
+            <Lock className="w-3.5 h-3.5" /> 256-bit Encrypted
+          </p>
         </div>
       </div>
       
-      <Elements stripe={stripePromise} options={{ clientSecret }}>
-        <CheckoutForm dealId={dealId} amount={amount} onSuccess={onComplete} />
-      </Elements>
+      {/* Stripe Elements Form */}
+      <div className="mb-6">
+        <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#4f46e5', borderRadius: '12px' } } }}>
+          <CheckoutForm dealId={dealId} amount={amount} onSuccess={onComplete} />
+        </Elements>
+      </div>
       
-      <p className="text-[11px] text-slate-400 mt-6 text-center">
-        Your funds will be held securely in escrow by Stripe and only released when the contract milestones are met.
-      </p>
+      {/* Footer Trust copy */}
+      <div className="mt-8 pt-6 border-t border-slate-100 bg-slate-50/50 -mx-8 -mb-8 p-6 rounded-b-3xl">
+        <p className="text-xs text-slate-500 text-center font-medium leading-relaxed max-w-[280px] mx-auto">
+          Your funds are held securely by Stripe. They will only be released to the provider upon your explicit approval of completed milestones.
+        </p>
+        <div className="flex justify-center gap-3 mt-4 opacity-40 grayscale">
+          {/* Mock trusted logos */}
+          <div className="h-4 w-12 bg-slate-400 rounded-sm"></div>
+          <div className="h-4 w-12 bg-slate-400 rounded-sm"></div>
+          <div className="h-4 w-12 bg-slate-400 rounded-sm"></div>
+        </div>
+      </div>
     </div>
   );
 }

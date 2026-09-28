@@ -1,18 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useOutletContext } from 'react-router';
 import { Card, StatusBadge } from '../ui/DesignSystem';
 import { Bell, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export function NotificationsPage() {
-  const [notifications, setNotifications] = useState([
-    { id: 1, type: "success", title: "Proposal Accepted", message: "Your proposal for 'Enterprise CRM' was accepted by Acme Corp.", time: "10 minutes ago", read: false },
-    { id: 2, type: "info", title: "New Requirement Posted", message: "A new requirement matching your services was posted.", time: "2 hours ago", read: false },
-    { id: 3, type: "warning", title: "Escrow Payment Pending", message: "You need to release funds for Milestone 1.", time: "1 day ago", read: true },
-    { id: 4, type: "info", title: "System Update", message: "We've added new features to the dashboard.", time: "3 days ago", read: true },
-  ]);
+  const { notifications, setNotifications } = useOutletContext<any>();
 
   const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setNotifications((prev: any[]) => prev.map((n: any) => ({ ...n, read: true })));
   };
 
   return (
@@ -29,7 +25,7 @@ export function NotificationsPage() {
 
       <Card>
         <div style={{ display: "flex", flexDirection: "column" }}>
-          {notifications.map((n, i) => (
+          {notifications?.map((n: any, i: number) => (
             <motion.div 
               key={n.id}
               initial={{ opacity: 0, y: 10 }}

@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer';
 import { logger } from '../utils/logger.js';
 
-let transporter: nodemailer.Transporter;
+let transporter: any;
 
 async function initTransporter() {
   if (transporter) return transporter;

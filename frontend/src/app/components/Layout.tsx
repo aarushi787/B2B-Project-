@@ -402,9 +402,9 @@ export function Layout() {
                 className="relative p-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
               >
                 <Bell className="w-5 h-5" />
-                {notifications.length > 0 && (
+                {notifications.filter(n => !n.read).length > 0 && (
                   <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 border-2 border-white rounded-full text-[9px] font-bold text-white flex items-center justify-center">
-                    {notifications.length}
+                    {notifications.filter(n => !n.read).length}
                   </span>
                 )}
               </button>
@@ -432,13 +432,13 @@ export function Layout() {
                     <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Notifications</span>
-                        <span style={{ fontSize: 10, fontWeight: 700, background: "#ef4444", color: "#fff", padding: "2px 6px", borderRadius: 10 }}>{notifications.length} new</span>
+                        <span style={{ fontSize: 10, fontWeight: 700, background: "#ef4444", color: "#fff", padding: "2px 6px", borderRadius: 10 }}>{notifications.filter(n => !n.read).length} new</span>
                       </div>
-                      <button style={{ fontSize: 11, fontWeight: 600, color: "#2563EB", background: "none", border: "none", cursor: "pointer" }}>Mark all read</button>
+                      <button onClick={() => setNotifications(prev => prev.map(n => ({...n, read: true})))} style={{ fontSize: 11, fontWeight: 600, color: "#2563EB", background: "none", border: "none", cursor: "pointer" }}>Mark all read</button>
                     </div>
                     <div style={{ maxHeight: 320, overflowY: "auto" }}>
                       {notifications.map(n => (
-                        <div key={n.id} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 16px", borderBottom: "1px solid #f8fafc", cursor: "pointer" }}>
+                        <div key={n.id} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 16px", borderBottom: "1px solid #f8fafc", cursor: "pointer", background: n.read ? "#fff" : "#f8fafc" }}>
                           <div style={{
                             width: 32,
                             height: 32,
@@ -574,7 +574,7 @@ export function Layout() {
               transition={{ duration: 0.2 }}
               style={{ minHeight: "100%" }}
             >
-              <Outlet />
+              <Outlet context={{ notifications, setNotifications }} />
             </motion.div>
           </AnimatePresence>
         </main>

@@ -172,14 +172,6 @@ export function Dashboard() {
   const activeDeals = deals.filter(d => ["pending", "approved", "active"].includes(d.status));
 
   // Fallback static data for design fidelity
-  const staticActivity = [
-    { icon: Inbox,    title: "New Proposal received for 'Web Application Redesign'", source: "Nexis Digital Logistics", time: "2 hours ago" },
-    { icon: FileText, title: "Requirement posted for 'DevOps Infrastructure setup'",   source: "Umbrella Group",        time: "4 hours ago" },
-    { icon: Search,   title: "Enquiry sent regarding 'Database audit Services'",       source: "TechVista Solutions",   time: "1 day ago" },
-    { icon: Eye,      title: "Identity Verification was successfully approved",        source: "System Compliance",     time: "2 days ago" },
-    { icon: TrendingUp, title: "Profile updated with 2 new portfolio entries",         source: "TechVista Administrator", time: "3 days ago" },
-  ];
-
   const displayActivity = notifications.length > 0 
     ? notifications.map(n => ({
         icon: Inbox,
@@ -187,20 +179,9 @@ export function Dashboard() {
         source: n.type || "System",
         time: n.created_at ? new Date(n.created_at).toLocaleDateString() : "Just now"
       })).slice(0, 5)
-    : staticActivity;
+    : [];
 
-  const staticRecentReqs = [
-    { title: "E-Commerce Mobile Application Development", category: "App Development",  date: "Jan 15, 2026", proposals: "9 bids",  status: "active" },
-    { title: "SOC 2 Type II Auditing and Advisory",       category: "Cybersecurity",    date: "Jan 12, 2026", proposals: "3 bids",  status: "pending" },
-    { title: "Kubernetes Migration & CI/CD Pipeline Setup",category: "Cloud & DevOps",  date: "Jan 08, 2026", proposals: "14 bids", status: "active" },
-    { title: "Corporate Website UI/UX Design System",      category: "UI/UX Design",    date: "Jan 02, 2026", proposals: "8 bids",  status: "completed" },
-  ];
-
-  const deadlines = [
-    { title: "Security Audit RFI",          due: "Due Jan 28", tag: "Urgent",  tagBg: "#fee2e2", tagColor: "#dc2626" },
-    { title: "Cloud Migration RFP Proposal",due: "Due Feb 02", tag: "Active",  tagBg: "#dcfce7", tagColor: "#16a34a" },
-    { title: "Mobile App Wireframes Feedback", due: "Due Feb 10", tag: "Pending", tagBg: "#fef3c7", tagColor: "#d97706" },
-  ];
+  const deadlines: any[] = [];
 
   return (
     <motion.div 
@@ -241,10 +222,10 @@ export function Dashboard() {
         <>
           {/* KPI Cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 20, marginBottom: 28 }}>
-            <KPICard label="Active Requirements" value={activeDeals.length || 12} change="+8.4%" positive={true}  iconBg="#eff6ff" iconColor="#2563EB" icon={FileText} data={[{uv:4},{uv:7},{uv:6},{uv:9},{uv:12}]} />
-            <KPICard label="Received Proposals"  value={deals.length     || 34} change="+14.2%" positive={true}  iconBg="#dcfce7" iconColor="#16a34a" icon={Inbox} data={[{uv:12},{uv:18},{uv:14},{uv:22},{uv:34}]} />
-            <KPICard label="Pending Enquiries"   value={8}                       change="-2.1%"  positive={false} iconBg="#fef3c7" iconColor="#d97706" icon={Search} data={[{uv:10},{uv:12},{uv:9},{uv:11},{uv:8}]} />
-            <KPICard label="Profile Views"       value="1,247"                   change="+24.8%" positive={true}  iconBg="#ede9fe" iconColor="#7c3aed" icon={Eye} data={[{uv:200},{uv:400},{uv:300},{uv:800},{uv:1247}]} />
+            <KPICard label="Active Requirements" value={activeDeals.length} change="+0%" positive={true}  iconBg="#eff6ff" iconColor="#2563EB" icon={FileText} data={[{uv:0},{uv:0}]} />
+            <KPICard label="Received Proposals"  value={deals.length} change="+0%" positive={true}  iconBg="#dcfce7" iconColor="#16a34a" icon={Inbox} data={[{uv:0},{uv:0}]} />
+            <KPICard label="Pending Enquiries"   value={0}                       change="0%"  positive={true} iconBg="#fef3c7" iconColor="#d97706" icon={Search} data={[{uv:0},{uv:0}]} />
+            <KPICard label="Profile Views"       value="0"                   change="0%" positive={true}  iconBg="#ede9fe" iconColor="#7c3aed" icon={Eye} data={[{uv:0},{uv:0}]} />
           </div>
 
           {/* Middle row */}
@@ -335,27 +316,36 @@ export function Dashboard() {
             </div>
 
             {/* Rows from API or static fallback */}
-            {(deals.length > 0 ? deals.slice(0, 4).map(d => ({
-              title: d.title || `Deal #${d.id.slice(0, 8)}`,
-              category: d.category || "General",
-              date: d.created_at ? new Date(d.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—",
-              proposals: "—",
-              status: d.status,
-            })) : staticRecentReqs).map((req, i, arr) => (
-              <div key={i} style={{
-                display: "grid",
-                gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr",
-                padding: "16px 24px",
-                alignItems: "center",
-                borderBottom: i < arr.length - 1 ? "1px solid #f8fafc" : "none",
-              }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>{req.title}</span>
-                <span style={{ fontSize: 12, color: "#64748b" }}>{req.category}</span>
-                <span style={{ fontSize: 12, color: "#64748b" }}>{req.date}</span>
-                <span style={{ fontSize: 12, color: "#64748b" }}>{req.proposals}</span>
-                <StatusBadge status={req.status} />
+            {deals.length > 0 ? (
+              deals.slice(0, 4).map((d, i, arr) => {
+                const req = {
+                  title: d.title || `Deal #${d.id.slice(0, 8)}`,
+                  category: d.category || "General",
+                  date: d.created_at ? new Date(d.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—",
+                  proposals: "—",
+                  status: d.status,
+                };
+                return (
+                  <div key={i} style={{
+                    display: "grid",
+                    gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr",
+                    padding: "16px 24px",
+                    alignItems: "center",
+                    borderBottom: i < arr.length - 1 ? "1px solid #f8fafc" : "none",
+                  }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>{req.title}</span>
+                    <span style={{ fontSize: 12, color: "#64748b" }}>{req.category}</span>
+                    <span style={{ fontSize: 12, color: "#64748b" }}>{req.date}</span>
+                    <span style={{ fontSize: 12, color: "#64748b" }}>{req.proposals}</span>
+                    <StatusBadge status={req.status} />
+                  </div>
+                );
+              })
+            ) : (
+              <div style={{ padding: "32px", textAlign: "center", color: "#64748b", fontSize: 14 }}>
+                No recent requirements found.
               </div>
-            ))}
+            )}
           </div>
         </>
       )}

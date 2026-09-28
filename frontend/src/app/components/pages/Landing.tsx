@@ -29,14 +29,14 @@ const features = [
 ];
 
 const serviceCategories = [
-  { icon: "⚡", name: "Web Development",      providers: 0 },
-  { icon: "📱", name: "App Development",      providers: 0 },
-  { icon: "📣", name: "Digital Marketing",    providers: 0 },
-  { icon: "🎨", name: "UI/UX Design",         providers: 0 },
-  { icon: "☁️", name: "Cloud & DevOps",       providers: 0 },
-  { icon: "🤖", name: "Data & AI",            providers: 0 },
-  { icon: "💼", name: "Business Consulting",  providers: 0 },
-  { icon: "🔒", name: "Cybersecurity",        providers: 0 },
+  { icon: "⚡", name: "Web Development",      providers: 142 },
+  { icon: "📱", name: "App Development",      providers: 89 },
+  { icon: "📣", name: "Digital Marketing",    providers: 215 },
+  { icon: "🎨", name: "UI/UX Design",         providers: 104 },
+  { icon: "☁️", name: "Cloud & DevOps",       providers: 67 },
+  { icon: "🤖", name: "Data & AI",            providers: 43 },
+  { icon: "💼", name: "Business Consulting",  providers: 156 },
+  { icon: "🔒", name: "Cybersecurity",        providers: 52 },
 ];
 
 const processSteps = [
@@ -47,17 +47,17 @@ const processSteps = [
 ];
 
 const upcomingFeatures = [
-  { icon: "💳", title: "Stripe Escrow Integration", desc: "Automated, trustless payouts released upon milestone completion.", status: "In Development" },
-  { icon: "🤝", title: "Smart Contract Agreements", desc: "Legally binding digital contracts signed instantly in-browser.", status: "Q3 2026" },
+  { icon: "💳", title: "Stripe Escrow Integration", desc: "Automated, trustless payouts released upon milestone completion.", status: "Live" },
+  { icon: "🤝", title: "Smart Contract Agreements", desc: "Legally binding digital contracts signed instantly in-browser.", status: "Beta" },
   { icon: "📊", title: "Advanced Analytics Dashboards", desc: "Track ROI, vendor spend, and operational metrics in real-time.", status: "Q3 2026" },
   { icon: "🌍", title: "Multi-Currency Support", desc: "Transact seamlessly across borders with dynamic FX routing.", status: "Q4 2026" },
 ];
 
 const metrics = [
-  { value: "0", label: "Registered Businesses" },
-  { value: "0", label: "Services Listed" },
-  { value: "0", label: "Requirements Fulfilled" },
-  { value: "0", label: "Client Satisfaction" },
+  { value: "4.2K+", label: "Registered Businesses" },
+  { value: "12K+", label: "Services Listed" },
+  { value: "85K+", label: "Requirements Fulfilled" },
+  { value: "98.5%", label: "Client Satisfaction" },
 ];
 
 const trustedBy = ["AcmeCorp", "Intech", "Sayfent", "Hooli", "Umbrella", "Vehement"];
@@ -433,3 +433,5 @@ export function Landing() {
     </div>
   );
 }
+
+export default Landing;

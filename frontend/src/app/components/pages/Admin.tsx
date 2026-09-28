@@ -477,7 +477,7 @@ export function Admin() {
           apiClient.get<any>('/deals').catch(() => ({ data: [] }))
         ]);
         
-        if (usersRes?.length) {
+        if (usersRes !== undefined && Array.isArray(usersRes)) {
           const mappedUsers = usersRes.map((u: any) => ({
             id: u.id,
             name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Unknown User',
@@ -493,7 +493,7 @@ export function Admin() {
           setUserStatuses(Object.fromEntries(mappedUsers.map((u: any) => [u.id, u.status])));
         }
 
-        if (compsRes?.length) {
+        if (compsRes !== undefined && Array.isArray(compsRes)) {
           const mappedComps = compsRes.map((c: any) => ({
             id: c.id,
             name: c.name || c.legalName || 'Unknown Company',
@@ -505,7 +505,7 @@ export function Admin() {
           setCompanyStatuses(Object.fromEntries(mappedComps.map((c: any) => [c.id, c.status])));
         }
 
-        if (dealsRes?.data?.length) {
+        if (dealsRes !== undefined && dealsRes.data && Array.isArray(dealsRes.data)) {
           const mappedDeals = dealsRes.data.map((d: any) => ({
             id: d.id,
             name: d.notes || `Deal ${d.id.substring(0,8)}`,
