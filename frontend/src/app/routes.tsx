@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate } from "react-router";
 import { Layout } from "./components/Layout";
 import { Auth } from "./components/pages/Auth";
 import { Landing } from "./components/pages/Landing";
+import { AdminGuard } from "../auth/AdminGuard";
 
 const Dashboard = React.lazy(() => import("./components/pages/Dashboard").then(m => ({ default: m.Dashboard })));
 const Companies = React.lazy(() => import("./components/pages/Companies").then(m => ({ default: m.Companies })));
@@ -27,6 +28,7 @@ const EnquiriesReceived = React.lazy(() => import("./components/pages/EnquiriesR
 const EnquiriesArchived = React.lazy(() => import("./components/pages/EnquiriesArchived").then(m => ({ default: m.EnquiriesArchived })));
 const ServicesPage = React.lazy(() => import("./components/pages/ServicesPage").then(m => ({ default: m.ServicesPage })));
 const ExploreBusinesses = React.lazy(() => import("./components/pages/ExploreBusinesses").then(m => ({ default: m.ExploreBusinesses })));
+const NotificationsPage = React.lazy(() => import("./components/pages/NotificationsPage").then(m => ({ default: m.NotificationsPage })));
 
 export const router = createBrowserRouter([
   { path: "/",         element: <Navigate to="/landing" replace /> },
@@ -46,7 +48,7 @@ export const router = createBrowserRouter([
       { path: "contracts",                    Component: Contracts },
       { path: "messaging",                    Component: Messaging },
       { path: "ledger",                       Component: Ledger },
-      { path: "admin",                        Component: Admin },
+      { path: "admin",                        element: <AdminGuard><Admin /></AdminGuard> },
       { path: "marketplace",                  Component: Marketplace },
       { path: "investor",                     Component: Investor },
       { path: "settings",                     Component: Settings },
@@ -63,6 +65,8 @@ export const router = createBrowserRouter([
       { path: "enquiries/sent",               Component: EnquiriesSent },
       { path: "enquiries/received",           Component: EnquiriesReceived },
       { path: "enquiries/archived",           Component: EnquiriesArchived },
+      // Notifications
+      { path: "notifications",                Component: NotificationsPage },
       // Fallback
       { path: "*",                            Component: Dashboard },
     ],

@@ -5,6 +5,7 @@ import pool from '../config/database.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { encryptJson } from '../utils/encryption.js';
 import { createAuditLog } from '../utils/audit.js';
+import { sendNotificationEmail } from '../services/email.js';
 import { kycUploadSchema, kycVerifySchema, validateRequest } from '../middleware/validation.js';
 import { resolveStoragePath } from '../services/storage.js';
 import { logger } from '../utils/logger.js';
@@ -107,6 +108,17 @@ router.put('/:id/verify', authMiddleware, validateRequest(kycVerifySchema), asyn
       ipAddress: req.ip,
       userAgent: req.get('user-agent'),
     });
+
+    // Notify user async
+    if (status === 'VERIFIED') {
+      sendNotificationEmail(
+        'admin@b2bforcorporates.com', // Would normally look up company owner's email
+        'KYC Document Verified',
+        `Your ${updated.documentType} document has been verified. Your company profile is now one step closer to full approval.`,
+        `${process.env.FRONTEND_URL || 'http://localhost:5173'}/app/contracts`,
+        'View Verification Progress'
+      ).catch(e => logger.error('Email error', e));
+    }
 
     res.json({
       id: updated.id,

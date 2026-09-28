@@ -46,6 +46,13 @@ const processSteps = [
   { num: "04", title: "Collaborate & Deliver",    desc: "Initiate project milestones, unlock protected escrow payments, and deploy safely." },
 ];
 
+const upcomingFeatures = [
+  { icon: "💳", title: "Stripe Escrow Integration", desc: "Automated, trustless payouts released upon milestone completion.", status: "In Development" },
+  { icon: "🤝", title: "Smart Contract Agreements", desc: "Legally binding digital contracts signed instantly in-browser.", status: "Q3 2026" },
+  { icon: "📊", title: "Advanced Analytics Dashboards", desc: "Track ROI, vendor spend, and operational metrics in real-time.", status: "Q3 2026" },
+  { icon: "🌍", title: "Multi-Currency Support", desc: "Transact seamlessly across borders with dynamic FX routing.", status: "Q4 2026" },
+];
+
 const metrics = [
   { value: "0", label: "Registered Businesses" },
   { value: "0", label: "Services Listed" },
@@ -88,11 +95,7 @@ function Navbar() {
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", gap: 32, height: 60 }}>
         {/* Logo */}
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <img src="/logo.png" alt="B2B Logo" style={{ height: "32px", width: "auto", objectFit: "contain" }} />
-          <div>
-            <div style={{ fontWeight: 800, fontSize: 13, lineHeight: "1.1", color: "#0f172a" }}>B2B</div>
-            <div style={{ fontWeight: 700, fontSize: 8, lineHeight: "1.1", color: "#0f172a", textTransform: "uppercase", letterSpacing: "0.05em" }}>CORPORATES</div>
-          </div>
+          <img src="/logo.png" alt="B2B Logo" style={{ height: "40px", width: "auto", objectFit: "contain" }} />
         </div>
 
         {/* Links */}
@@ -265,6 +268,46 @@ export function Landing() {
                 </div>
                 <h3 style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>{step.title}</h3>
                 <p style={{ fontSize: 13, color: "#64748b", lineHeight: 1.6, margin: 0 }}>{step.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Coming Soon / Roadmap ── */}
+      <section style={{ padding: "72px 24px", background: "#f8fafc", borderTop: "1px solid #e2e8f0" }}>
+        <div style={{ maxWidth: 1120, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 52 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: "#8B5CF6", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 12 }}>
+              PRODUCT ROADMAP
+            </p>
+            <h2 style={{ fontSize: "clamp(22px, 3vw, 34px)", fontWeight: 700, color: "#0f172a" }}>
+              Coming Soon to B2B Nexus
+            </h2>
+            <p style={{ fontSize: 15, color: "#64748b", maxWidth: 600, margin: "16px auto 0" }}>
+              We are constantly evolving our platform to bring you the most secure, intelligent, and frictionless B2B experience possible.
+            </p>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20 }}>
+            {upcomingFeatures.map((feat, i) => (
+              <div key={i} style={{
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: 16,
+                padding: "24px",
+                position: "relative",
+                overflow: "hidden"
+              }}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
+                  <div style={{ fontSize: 24, background: "#f1f5f9", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 12 }}>
+                    {feat.icon}
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: feat.status === "In Development" ? "#2563EB" : "#8B5CF6", background: feat.status === "In Development" ? "#eff6ff" : "#f5f3ff", padding: "4px 10px", borderRadius: 20 }}>
+                    {feat.status}
+                  </span>
+                </div>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>{feat.title}</h3>
+                <p style={{ fontSize: 13, color: "#64748b", margin: 0, lineHeight: 1.6 }}>{feat.desc}</p>
               </div>
             ))}
           </div>

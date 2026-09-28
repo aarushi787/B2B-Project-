@@ -3,20 +3,14 @@ import { StatusBadge, Card, SearchInput, FilterPill, Skeleton, EmptyState, Pagin
 import { Eye, CheckCircle, Loader2, Inbox } from "lucide-react";
 import { apiClient } from "../../../services/apiClient";
 import toast from "react-hot-toast";
-
-const RECEIVED = [
-  { from: "TechVista Solutions",  req: "Enterprise CRM Development",         amount: "$32,000", date: "Sep 22, 2026", rating: "4.8 ★", status: "pending" },
-  { from: "Apex Digital Systems", req: "Cloud Migration AWS Infrastructure",  amount: "$24,500", date: "Sep 20, 2026", rating: "4.9 ★", status: "shortlisted" },
-  { from: "PixelCraft Studio",    req: "Mobile Banking App Redesign",         amount: "$18,000", date: "Sep 17, 2026", rating: "4.7 ★", status: "pending" },
-  { from: "Vortex Growth Agency", req: "SEO & Content Marketing Strategy",    amount: "$7,500",  date: "Sep 15, 2026", rating: "4.6 ★", status: "active" },
-  { from: "Kratos AI Labs",       req: "AI Chatbot Integration",              amount: "$28,000", date: "Sep 12, 2026", rating: "4.8 ★", status: "shortlisted" },
-];
+import { ProposalModal, Proposal } from "../ProposalModal";
 
 export function ReceivedProposals() {
   const [proposals, setProposals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
 
   useEffect(() => {
     async function loadProposals() {
@@ -40,6 +34,7 @@ export function ReceivedProposals() {
 
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto", fontFamily: "Inter, sans-serif" }}>
+      <ProposalModal proposal={selectedProposal} onClose={() => setSelectedProposal(null)} isReceived={true} />
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
         <SearchInput placeholder="Search proposals..." />
         <FilterPill label="Status" />
@@ -94,7 +89,7 @@ export function ReceivedProposals() {
             <span style={{ fontSize: 12, color: "#64748b" }}>{new Date(r.createdAt).toLocaleDateString()}</span>
             <span style={{ fontSize: 12, fontWeight: 600, color: "#d97706" }}>4.8 ★</span>
             <StatusBadge status={r.status} />
-            <button onClick={() => toast("Proposal details coming soon!", { icon: "👁️" })} style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b" }}><Eye style={{ width: 15, height: 15 }} /></button>
+            <button onClick={() => setSelectedProposal(r)} style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b" }}><Eye style={{ width: 15, height: 15 }} /></button>
           </div>
         ))}
         </div>

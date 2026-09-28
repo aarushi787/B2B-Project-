@@ -59,7 +59,7 @@ export function ChartContainer({
   minWidth,
   className = "",
   badge,
-  badgeColor = "#0F9D9D",
+  badgeColor = "#8B5CF6",
   headerDark = false,
   actions,
 }: ChartContainerProps) {
@@ -211,7 +211,7 @@ export function ChartContainer({
               {onRefresh && (
                 <button
                   onClick={onRefresh}
-                  className="px-4 py-2 text-xs font-bold text-white bg-[#0F9D9D] hover:bg-[#0c8686] rounded-xl transition-colors"
+                  className="px-4 py-2 text-xs font-bold text-white bg-[#8B5CF6] hover:bg-[#7C3AED] rounded-xl transition-colors"
                 >
                   Try again
                 </button>

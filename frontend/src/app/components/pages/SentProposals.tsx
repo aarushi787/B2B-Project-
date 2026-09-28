@@ -4,13 +4,7 @@ import { Eye, Loader2, Send } from "lucide-react";
 import { apiClient } from "../../../services/apiClient";
 import { useAuth } from "../../../auth/AuthProvider";
 import toast from "react-hot-toast";
-
-const SENT = [
-  { to: "Acme Financial Inc.", req: "Full-Stack Web Application for FinTech Startup", amount: "$35,000", date: "Sep 20, 2026", status: "pending" },
-  { to: "Soylent Corp",        req: "Enterprise CRM Integration & Custom Dashboard",  amount: "$22,000", date: "Sep 18, 2026", status: "shortlisted" },
-  { to: "HealthFirst Alliance",req: "Native iOS & Android Mobile Healthcare App",     amount: "$65,000", date: "Sep 14, 2026", status: "active" },
-  { to: "Umbrella Corp",       req: "Cloud Infrastructure Setup & Security Audit",    amount: "$38,000", date: "Sep 10, 2026", status: "completed" },
-];
+import { ProposalModal, Proposal } from "../ProposalModal";
 
 export function SentProposals() {
   const { user } = useAuth();
@@ -18,6 +12,7 @@ export function SentProposals() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
 
   useEffect(() => {
     async function loadProposals() {
@@ -42,6 +37,7 @@ export function SentProposals() {
 
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto", fontFamily: "Inter, sans-serif" }}>
+      <ProposalModal proposal={selectedProposal} onClose={() => setSelectedProposal(null)} isReceived={false} />
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
         <SearchInput placeholder="Search proposals..." />
         <FilterPill label="Status" />
@@ -89,7 +85,7 @@ export function SentProposals() {
             <span style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>${s.amount || s.totalAmount || 0}</span>
             <span style={{ fontSize: 12, color: "#64748b" }}>{new Date(s.createdAt).toLocaleDateString()}</span>
             <StatusBadge status={s.status} />
-            <button onClick={() => toast("Proposal details coming soon!", { icon: "👁️" })} style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b" }}><Eye style={{ width: 15, height: 15 }} /></button>
+            <button onClick={() => setSelectedProposal(s)} style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b" }}><Eye style={{ width: 15, height: 15 }} /></button>
           </div>
         ))}
         </div>

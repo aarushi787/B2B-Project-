@@ -14,6 +14,9 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar
 } from "recharts";
 import { toast, Toaster } from "sonner";
+import { apiClient } from "../../../services/apiClient";
+import { socketService } from "../../../services/socketService";
+import { useAuth } from "../../../auth/AuthProvider";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type TxType = "Credit" | "Debit";
@@ -22,7 +25,7 @@ type ViewMode = "table" | "chart";
 type SortKey = "date_desc" | "date_asc" | "amount_desc" | "amount_asc";
 
 interface Transaction {
-  id: number;
+  id: number | string;
   date: string;
   time: string;
   type: TxType;
@@ -177,7 +180,7 @@ const STATUS_STYLES: Record<TxStatus, { bg: string; text: string; border: string
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  Revenue: "#0F9D9D", "Operating Expenses": "#8B5CF6", Marketing: "#F59E0B",
+  Revenue: "#8B5CF6", "Operating Expenses": "#8B5CF6", Marketing: "#F59E0B",
   Technology: "#3B82F6", Salaries: "#EC4899", Legal: "#EF4444",
 };
 
@@ -217,7 +220,7 @@ function BalanceCard({ label, value, icon: Icon, iconBg, iconColor, trend, trend
       whileHover={{ y: -3, boxShadow: "0 12px 36px -8px rgba(0,0,0,0.10)" }}
       className={`rounded-2xl border shadow-sm p-5 cursor-default transition-all ${
         accent
-          ? "bg-gradient-to-br from-[#0F9D9D] to-[#0c8080] text-white border-teal-400"
+          ? "bg-gradient-to-br from-[#8B5CF6] to-[#0c8080] text-white border-cyan-400"
           : "bg-white border-slate-100"
       }`}
     >
@@ -383,14 +386,14 @@ function DetailPanel({ tx, onClose }: { tx: Transaction; onClose: () => void }) 
             </div>
 
             {/* Linked Deal */}
-            <div className="p-3.5 bg-teal-50 border border-teal-100 rounded-xl flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[#0F9D9D]/10 flex items-center justify-center shrink-0">
-                <Layers className="w-4 h-4 text-[#0F9D9D]" />
+            <div className="p-3.5 bg-purple-50 border border-purple-100 rounded-xl flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-[#8B5CF6]/10 flex items-center justify-center shrink-0">
+                <Layers className="w-4 h-4 text-[#8B5CF6]" />
               </div>
               <div className="flex-1">
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Linked Deal</p>
                 <p className="text-xs font-semibold text-slate-800">{tx.dealReference}</p>
-                <p className="text-[10px] text-[#0F9D9D]">{tx.dealId}</p>
+                <p className="text-[10px] text-[#8B5CF6]">{tx.dealId}</p>
               </div>
               <ChevronRight className="w-4 h-4 text-slate-300" />
             </div>
@@ -407,7 +410,7 @@ function DetailPanel({ tx, onClose }: { tx: Transaction; onClose: () => void }) 
           </button>
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 text-xs font-bold text-white bg-[#0F9D9D] hover:bg-[#0c8686] rounded-xl transition-colors"
+            className="flex-1 py-2.5 text-xs font-bold text-white bg-[#8B5CF6] hover:bg-[#7C3AED] rounded-xl transition-colors"
           >
             Close
           </button>
@@ -448,6 +451,7 @@ function TableSkeleton() {
 const PAGE_SIZE = 8;
 
 export function Ledger() {
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<"All" | TxType>("All");
   const [statusFilter, setStatusFilter] = useState<"All" | TxStatus>("All");
@@ -465,10 +469,60 @@ export function Ledger() {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
 
+  const [transactions, setTransactions] = useState<Transaction[]>(ALL_TRANSACTIONS);
+
+  const fetchTransactions = useCallback(async () => {
+    try {
+      // In a real app, we'd fetch specific company or all if admin
+      let data = [];
+      if (user?.role === 'admin') {
+        data = await apiClient.get<any[]>('/ledger');
+      } else if (user?.companyId) {
+        data = await apiClient.get<any[]>(`/ledger/company/${user.companyId}`);
+      }
+      
+      if (data && data.length > 0) {
+        const mapped: Transaction[] = data.map((t: any, i: number) => {
+          const d = new Date(t.timestamp || Date.now());
+          return {
+            id: t.id || i,
+            date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            time: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            type: t.type === 'PAYOUT' || t.type === 'credit' ? 'Credit' : 'Debit',
+            amount: t.amount || 0,
+            dealReference: t.counterparty || 'Unknown Counterparty',
+            dealId: t.dealId || 'N/A',
+            category: t.type === 'PAYOUT' || t.type === 'credit' ? 'Revenue' : 'Operating Expenses',
+            status: 'Completed', // Our backend maps all currently to COMPLETED
+            description: t.description || 'System transaction',
+            from: t.type === 'PAYOUT' || t.type === 'credit' ? (t.counterparty || 'System') : 'FinanceHub Inc',
+            to: t.type === 'PAYOUT' || t.type === 'credit' ? 'FinanceHub Inc' : (t.counterparty || 'System'),
+            fee: 0,
+            statusHistory: [
+              { status: "Completed", timestamp: d.toLocaleString(), note: "Processed by backend" }
+            ]
+          };
+        });
+        setTransactions(mapped);
+      }
+    } catch (e) {
+      console.error("Failed to fetch ledger", e);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user]);
+
   useEffect(() => {
-    const t = setTimeout(() => setIsLoading(false), 1200);
-    return () => clearTimeout(t);
-  }, []);
+    fetchTransactions();
+    
+    socketService.connect();
+    const unsub = socketService.on('ledger:updated', () => {
+      fetchTransactions();
+      toast.info("Ledger updated in real-time");
+    });
+    
+    return () => unsub();
+  }, [fetchTransactions]);
 
   useEffect(() => {
     const h = (e: MouseEvent) => {
@@ -480,13 +534,13 @@ export function Ledger() {
   }, []);
 
   // Derived stats
-  const totalIn = ALL_TRANSACTIONS.filter(t => t.type === "Credit" && t.status !== "Failed").reduce((s, t) => s + t.amount, 0);
-  const totalOut = ALL_TRANSACTIONS.filter(t => t.type === "Debit" && t.status !== "Failed").reduce((s, t) => s + t.amount, 0);
-  const pending = ALL_TRANSACTIONS.filter(t => t.status === "Pending").reduce((s, t) => s + t.amount, 0);
+  const totalIn = transactions.filter(t => t.type === "Credit" && t.status !== "Failed").reduce((s, t) => s + t.amount, 0);
+  const totalOut = transactions.filter(t => t.type === "Debit" && t.status !== "Failed").reduce((s, t) => s + t.amount, 0);
+  const pending = transactions.filter(t => t.status === "Pending").reduce((s, t) => s + t.amount, 0);
   const balance = totalIn - totalOut;
 
   // Filtered + sorted
-  const filtered = ALL_TRANSACTIONS.filter(tx => {
+  const filtered = transactions.filter(tx => {
     const ms = tx.dealReference.toLowerCase().includes(search.toLowerCase()) ||
       tx.description.toLowerCase().includes(search.toLowerCase()) ||
       tx.dealId.toLowerCase().includes(search.toLowerCase());
@@ -495,8 +549,8 @@ export function Ledger() {
     const mc = categoryFilter === "All" || tx.category === categoryFilter;
     return ms && mt && mst && mc;
   }).sort((a, b) => {
-    if (sortKey === "date_desc") return b.id - a.id;
-    if (sortKey === "date_asc") return a.id - b.id;
+    if (sortKey === "date_desc") return new Date(b.date).getTime() - new Date(a.date).getTime();
+    if (sortKey === "date_asc") return new Date(a.date).getTime() - new Date(b.date).getTime();
     if (sortKey === "amount_desc") return b.amount - a.amount;
     if (sortKey === "amount_asc") return a.amount - b.amount;
     return 0;
@@ -504,7 +558,7 @@ export function Ledger() {
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const categories = ["All", ...Array.from(new Set(ALL_TRANSACTIONS.map(t => t.category)))];
+  const categories = ["All", ...Array.from(new Set(transactions.map(t => t.category)))];
 
   const handleExport = (format: "csv" | "pdf") => {
     setShowExportMenu(false);
@@ -544,12 +598,12 @@ export function Ledger() {
           <div className="h-14 flex items-center justify-between gap-4">
             {/* Left */}
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#0F9D9D] to-teal-400 flex items-center justify-center shadow-sm">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#8B5CF6] to-cyan-400 flex items-center justify-center shadow-sm">
                 <Wallet className="w-4 h-4 text-white" />
               </div>
               <div>
                 <h1 className="text-base font-bold text-slate-900 leading-none">Financial Ledger</h1>
-                <p className="text-[10px] text-slate-400 mt-0.5">{ALL_TRANSACTIONS.length} transactions · Apr 2026</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">{transactions.length} transactions · Apr 2026</p>
               </div>
             </div>
 
@@ -573,7 +627,7 @@ export function Ledger() {
                   placeholder="Search transactions..."
                   value={search}
                   onChange={e => { setSearch(e.target.value); setPage(1); }}
-                  className="pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#0F9D9D]/30 focus:border-[#0F9D9D] w-48 transition-all"
+                  className="pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/30 focus:border-[#8B5CF6] w-48 transition-all"
                 />
               </div>
 
@@ -582,7 +636,7 @@ export function Ledger() {
                 <motion.button
                   whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                   onClick={() => setShowExportMenu(o => !o)}
-                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-[#0F9D9D] hover:bg-[#0c8686] rounded-xl transition-all shadow-sm shadow-teal-500/20"
+                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-[#8B5CF6] hover:bg-[#7C3AED] rounded-xl transition-all shadow-sm shadow-cyan-500/20"
                 >
                   <Download className="w-3.5 h-3.5" /> Export <ChevronDown className="w-3 h-3 ml-0.5" />
                 </motion.button>
@@ -613,7 +667,7 @@ export function Ledger() {
 
         {/* ── Balance Cards ───────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <BalanceCard label="Current Balance" value={balance} icon={Wallet} iconBg="bg-teal-50" iconColor="text-[#0F9D9D]" trend="+12.5% vs last month" trendUp={true} accent delay={0} />
+          <BalanceCard label="Current Balance" value={balance} icon={Wallet} iconBg="bg-purple-50" iconColor="text-[#8B5CF6]" trend="+12.5% vs last month" trendUp={true} accent delay={0} />
           <BalanceCard label="Total Inflow" value={totalIn} icon={ArrowDownRight} iconBg="bg-green-50" iconColor="text-green-600" trend="+8.3% vs last month" trendUp={true} delay={0.07} />
           <BalanceCard label="Total Outflow" value={totalOut} icon={ArrowUpRight} iconBg="bg-red-50" iconColor="text-red-500" trend="-4.1% vs last month" trendUp={false} delay={0.14} />
           <BalanceCard label="Pending Amount" value={pending} icon={Clock} iconBg="bg-amber-50" iconColor="text-amber-500" trend="2 transactions" delay={0.21} />
@@ -626,11 +680,11 @@ export function Ledger() {
               <h3 className="text-sm font-bold text-slate-900">How to Use</h3>
               <p className="text-[10px] text-slate-400">Standard financial workflow</p>
             </div>
-            <span className="text-[10px] font-semibold text-[#0F9D9D] bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-100">3 Steps</span>
+            <span className="text-[10px] font-semibold text-[#8B5CF6] bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-100">3 Steps</span>
           </div>
           <div className="flex items-start gap-0">
             {[
-              { icon: Activity, label: "View Transactions", desc: "Explore all entries", color: "#0F9D9D" },
+              { icon: Activity, label: "View Transactions", desc: "Explore all entries", color: "#8B5CF6" },
               { icon: SlidersHorizontal, label: "Apply Filters", desc: "Type, status, date", color: "#8B5CF6" },
               { icon: Download, label: "Export Data", desc: "CSV or PDF report", color: "#22C55E" },
             ].map((s, i, arr) => (
@@ -667,8 +721,8 @@ export function Ledger() {
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
             <div className="px-5 pt-5 pb-4 border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-teal-50 flex items-center justify-center">
-                  <TrendingUp className="w-4 h-4 text-[#0F9D9D]" />
+                <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-[#8B5CF6]" />
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-slate-900">Revenue vs Expenses</h2>
@@ -695,8 +749,8 @@ export function Ledger() {
                     <AreaChart data={MONTHLY_DATA} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
                       <defs key="ledger-main-defs">
                         <linearGradient id="ledgerGradRev" x1="0" y1="0" x2="0" y2="1">
-                          <stop key="rev-s0" offset="5%" stopColor="#0F9D9D" stopOpacity={0.18} />
-                          <stop key="rev-s1" offset="95%" stopColor="#0F9D9D" stopOpacity={0} />
+                          <stop key="rev-s0" offset="5%" stopColor="#8B5CF6" stopOpacity={0.18} />
+                          <stop key="rev-s1" offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
                         </linearGradient>
                         <linearGradient id="ledgerGradExp" x1="0" y1="0" x2="0" y2="1">
                           <stop key="exp-s0" offset="5%" stopColor="#EF4444" stopOpacity={0.14} />
@@ -712,7 +766,7 @@ export function Ledger() {
                       <YAxis key="lm-ya" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} tickFormatter={v => fmt(v)} width={64} />
                       <Tooltip key="lm-tt" content={<CustomTooltip />} />
                       <Legend key="lm-lg" wrapperStyle={{ fontSize: 11, color: "#94A3B8", paddingTop: 8 }} />
-                      <Area key="lm-area-rev" type="monotone" dataKey="revenue" stroke="#0F9D9D" strokeWidth={2} fill="url(#ledgerGradRev)" name="Revenue" dot={false} activeDot={{ r: 5 }} />
+                      <Area key="lm-area-rev" type="monotone" dataKey="revenue" stroke="#8B5CF6" strokeWidth={2} fill="url(#ledgerGradRev)" name="Revenue" dot={false} activeDot={{ r: 5 }} />
                       <Area key="lm-area-exp" type="monotone" dataKey="expenses" stroke="#EF4444" strokeWidth={2} fill="url(#ledgerGradExp)" name="Expenses" dot={false} activeDot={{ r: 5 }} />
                       <Area key="lm-area-net" type="monotone" dataKey="net" stroke="#8B5CF6" strokeWidth={2} fill="url(#ledgerGradNet)" name="Net" dot={false} activeDot={{ r: 5 }} strokeDasharray="4 3" />
                     </AreaChart>
@@ -723,7 +777,7 @@ export function Ledger() {
                       <YAxis key="lb-ya" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} tickFormatter={v => fmt(v)} width={64} />
                       <Tooltip key="lb-tt" content={<CustomTooltip />} />
                       <Legend key="lb-lg" wrapperStyle={{ fontSize: 11, color: "#94A3B8", paddingTop: 8 }} />
-                      <Bar key="lb-bar-rev" dataKey="revenue" fill="#0F9D9D" name="Revenue" radius={[4, 4, 0, 0]} />
+                      <Bar key="lb-bar-rev" dataKey="revenue" fill="#8B5CF6" name="Revenue" radius={[4, 4, 0, 0]} />
                       <Bar key="lb-bar-exp" dataKey="expenses" fill="#EF4444" name="Expenses" radius={[4, 4, 0, 0]} opacity={0.8} />
                     </BarChart>
                   )}
@@ -751,7 +805,7 @@ export function Ledger() {
                   typeFilter === t
                     ? t === "Credit" ? "bg-green-500 text-white border-green-500" :
                       t === "Debit" ? "bg-red-500 text-white border-red-500" :
-                      "bg-[#0F9D9D] text-white border-[#0F9D9D]"
+                      "bg-[#8B5CF6] text-white border-[#8B5CF6]"
                     : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
                 }`}
               >
@@ -786,7 +840,7 @@ export function Ledger() {
           <select
             value={categoryFilter}
             onChange={e => { setCategoryFilter(e.target.value); setPage(1); }}
-            className="px-3 py-1.5 text-[11px] font-semibold border border-slate-200 rounded-full bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#0F9D9D]/20 cursor-pointer"
+            className="px-3 py-1.5 text-[11px] font-semibold border border-slate-200 rounded-full bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20 cursor-pointer"
           >
             {categories.map(c => <option key={c} value={c}>{c === "All" ? "All Categories" : c}</option>)}
           </select>
@@ -812,7 +866,7 @@ export function Ledger() {
                       <button
                         key={k}
                         onClick={() => { setSortKey(k); setSortOpen(false); setPage(1); }}
-                        className={`w-full text-left px-4 py-2 text-xs transition-colors flex items-center gap-2 ${sortKey === k ? "text-[#0F9D9D] bg-teal-50" : "text-slate-600 hover:bg-slate-50"}`}
+                        className={`w-full text-left px-4 py-2 text-xs transition-colors flex items-center gap-2 ${sortKey === k ? "text-[#8B5CF6] bg-purple-50" : "text-slate-600 hover:bg-slate-50"}`}
                       >
                         {sortKey === k && <CheckCircle2 className="w-3 h-3" />}
                         {v}
@@ -889,7 +943,7 @@ export function Ledger() {
                           exit={{ opacity: 0 }}
                           transition={{ delay: i * 0.04 }}
                           onClick={() => setSelectedTx(tx)}
-                          className="border-b border-slate-50 cursor-pointer hover:bg-teal-50/30 transition-colors group"
+                          className="border-b border-slate-50 cursor-pointer hover:bg-purple-50/30 transition-colors group"
                         >
                           {/* Date */}
                           <td className="py-3.5 px-4 whitespace-nowrap">
@@ -920,7 +974,7 @@ export function Ledger() {
                           {/* Deal */}
                           <td className="py-3.5 px-4">
                             <p className="font-semibold text-slate-700 max-w-[160px] truncate">{tx.dealReference}</p>
-                            <p className="text-[10px] text-[#0F9D9D]">{tx.dealId}</p>
+                            <p className="text-[10px] text-[#8B5CF6]">{tx.dealId}</p>
                           </td>
 
                           {/* Category */}
@@ -946,7 +1000,7 @@ export function Ledger() {
 
                           {/* Action */}
                           <td className="py-3.5 px-4">
-                            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#0F9D9D] transition-colors" />
+                            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#8B5CF6] transition-colors" />
                           </td>
                         </motion.tr>
                       ))}
@@ -977,7 +1031,7 @@ export function Ledger() {
                     onClick={() => setPage(p)}
                     className={`w-8 h-8 flex items-center justify-center rounded-xl text-[11px] font-bold transition-all ${
                       p === page
-                        ? "bg-[#0F9D9D] text-white shadow-sm shadow-teal-500/20"
+                        ? "bg-[#8B5CF6] text-white shadow-sm shadow-cyan-500/20"
                         : "border border-slate-200 text-slate-500 hover:bg-white hover:text-slate-700"
                     }`}
                   >
@@ -1006,7 +1060,7 @@ export function Ledger() {
                   <XAxis key="cv-bar-xa" dataKey="month" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
                   <YAxis key="cv-bar-ya" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} tickFormatter={v => fmt(v)} width={64} />
                   <Tooltip key="cv-bar-tt" content={<CustomTooltip />} />
-                  <Bar key="cv-bar-net" dataKey="net" fill="#0F9D9D" name="Net Income" radius={[6, 6, 0, 0]} />
+                  <Bar key="cv-bar-net" dataKey="net" fill="#8B5CF6" name="Net Income" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -1016,15 +1070,15 @@ export function Ledger() {
                 <AreaChart data={MONTHLY_DATA}>
                   <defs key="ledger-cv-defs">
                     <linearGradient id="ledgerGradRev2" x1="0" y1="0" x2="0" y2="1">
-                      <stop key="cv-s0" offset="5%" stopColor="#0F9D9D" stopOpacity={0.2} />
-                      <stop key="cv-s1" offset="95%" stopColor="#0F9D9D" stopOpacity={0} />
+                      <stop key="cv-s0" offset="5%" stopColor="#8B5CF6" stopOpacity={0.2} />
+                      <stop key="cv-s1" offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid key="cv-area-cg" strokeDasharray="3 3" stroke="#F1F5F9" />
                   <XAxis key="cv-area-xa" dataKey="month" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
                   <YAxis key="cv-area-ya" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} tickFormatter={v => fmt(v)} width={64} />
                   <Tooltip key="cv-area-tt" content={<CustomTooltip />} />
-                  <Area key="cv-area-rev" type="monotone" dataKey="revenue" stroke="#0F9D9D" strokeWidth={2.5} fill="url(#ledgerGradRev2)" name="Revenue" dot={false} />
+                  <Area key="cv-area-rev" type="monotone" dataKey="revenue" stroke="#8B5CF6" strokeWidth={2.5} fill="url(#ledgerGradRev2)" name="Revenue" dot={false} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>

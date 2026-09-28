@@ -49,7 +49,7 @@ const USER_GROWTH_DATA = [
 ];
 
 const DEAL_CATEGORY_DATA = [
-  { category: "Technology", count: 124, value: 42.1, color: "#0F9D9D" },
+  { category: "Technology", count: 124, value: 42.1, color: "#8B5CF6" },
   { category: "Manufacturing", count: 89, value: 31.4, color: "#8B5CF6" },
   { category: "Healthcare", count: 76, value: 28.8, color: "#3B82F6" },
   { category: "Energy", count: 58, value: 22.6, color: "#22C55E" },
@@ -116,7 +116,7 @@ function KpiCard({
       whileHover={{ y: -4, boxShadow: dark ? "0 20px 48px -12px rgba(15,157,157,0.35)" : "0 16px 40px -12px rgba(0,0,0,0.10)" }}
       className={`rounded-2xl border p-5 cursor-default transition-all relative overflow-hidden ${
         dark
-          ? "bg-gradient-to-br from-[#0F9D9D] to-[#0c8080] border-teal-400 text-white"
+          ? "bg-gradient-to-br from-[#8B5CF6] to-[#0c8080] border-cyan-400 text-white"
           : "bg-white border-slate-100 shadow-sm"
       }`}
     >
@@ -164,7 +164,7 @@ export function Investor() {
   };
 
   const metricMeta = {
-    gmv: { key: "gmv", name: "GMV ($M)", color: "#0F9D9D", gradId: "invGradGMV" },
+    gmv: { key: "gmv", name: "GMV ($M)", color: "#8B5CF6", gradId: "invGradGMV" },
     revenue: { key: "revenue", name: "Revenue ($M)", color: "#8B5CF6", gradId: "invGradRev" },
     deals: { key: "deals", name: "Deals Closed", color: "#F59E0B", gradId: "invGradDeals" },
   }[chartMetric];
@@ -178,7 +178,7 @@ export function Investor() {
         <div className="max-w-[1440px] mx-auto px-6 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-900 to-slate-700 flex items-center justify-center shadow-sm">
-              <TrendingUp className="w-4.5 h-4.5 text-[#0F9D9D]" style={{ width: 18, height: 18 }} />
+              <TrendingUp className="w-4.5 h-4.5 text-[#8B5CF6]" style={{ width: 18, height: 18 }} />
             </div>
             <div>
               <h1 className="text-sm font-black text-slate-900 leading-none">Investor Dashboard</h1>
@@ -271,7 +271,7 @@ export function Investor() {
               ].map(s => (
                 <div key={s.label} className="flex flex-col">
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{s.label}</span>
-                  <span className={`text-sm font-black ${s.positive ? "text-[#0F9D9D]" : "text-slate-900"}`}>{s.value}</span>
+                  <span className={`text-sm font-black ${s.positive ? "text-[#8B5CF6]" : "text-slate-900"}`}>{s.value}</span>
                   <span className="text-[10px] text-slate-400">{s.sub}</span>
                 </div>
               ))}
@@ -330,7 +330,7 @@ export function Investor() {
                   <YAxis key="ug-ya" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} width={44} />
                   <Tooltip key="ug-tt" content={<InvTooltip />} />
                   <Legend key="ug-lg" wrapperStyle={{ fontSize: 11, color: "#94A3B8" }} />
-                  <Bar key="ug-bar-ret" dataKey="retainedUsers" name="Retained Users" fill="#0F9D9D" radius={[4, 4, 0, 0]} opacity={0.8} />
+                  <Bar key="ug-bar-ret" dataKey="retainedUsers" name="Retained Users" fill="#8B5CF6" radius={[4, 4, 0, 0]} opacity={0.8} />
                   <Bar key="ug-bar-new" dataKey="newUsers" name="New Users" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -354,7 +354,7 @@ export function Investor() {
                 {[
                   { label: "Total Deals", value: "423", change: "+18%", up: true, color: "text-slate-900" },
                   { label: "Success Rate", value: "87.3%", change: "+2.1pp", up: true, color: "text-green-600" },
-                  { label: "Avg Size", value: "$184K", change: "+29.6%", up: true, color: "text-[#0F9D9D]" },
+                  { label: "Avg Size", value: "$184K", change: "+29.6%", up: true, color: "text-[#8B5CF6]" },
                 ].map(m => (
                   <div key={m.label} className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
                     <p className={`text-lg font-black ${m.color}`}>{m.value}</p>
@@ -378,7 +378,7 @@ export function Investor() {
               <div className="space-y-3">
                 {[
                   { label: "Payment Success Rate", value: 99.2, color: "#22C55E" },
-                  { label: "Transaction Volume", value: 87, color: "#0F9D9D" },
+                  { label: "Transaction Volume", value: 87, color: "#8B5CF6" },
                   { label: "Platform Uptime", value: 99.9, color: "#8B5CF6" },
                   { label: "Settlement SLA", value: 94.5, color: "#F59E0B" },
                 ].map(h => (
@@ -447,8 +447,8 @@ export function Investor() {
           {/* Trend Analysis */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-teal-50 flex items-center justify-center">
-                <Target className="w-4 h-4 text-[#0F9D9D]" />
+              <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center">
+                <Target className="w-4 h-4 text-[#8B5CF6]" />
               </div>
               <div>
                 <p className="text-xs font-bold text-slate-900">Trend Analysis</p>
@@ -462,7 +462,7 @@ export function Investor() {
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.06 }}
-                  className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 hover:border-teal-200 hover:bg-teal-50/30 transition-all cursor-default"
+                  className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 hover:border-purple-200 hover:bg-purple-50/30 transition-all cursor-default"
                 >
                   <div className="flex items-start justify-between mb-1.5">
                     <span className="text-[10px] text-slate-500 leading-tight">{t.label}</span>

@@ -45,8 +45,8 @@ export function ActivityChat({ messages, onSend, role }: ActivityChatProps) {
       {/* Header */}
       <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-teal-50 flex items-center justify-center">
-            <MessageSquare className="w-4 h-4 text-[#0F9D9D]" />
+          <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center">
+            <MessageSquare className="w-4 h-4 text-[#8B5CF6]" />
           </div>
           <div>
             <h2 className="text-xs font-bold text-slate-900">Activity & Chat</h2>
@@ -102,7 +102,7 @@ export function ActivityChat({ messages, onSend, role }: ActivityChatProps) {
                   </div>
                   <div className={`px-3.5 py-2.5 rounded-2xl text-xs leading-relaxed ${
                     isMe
-                      ? "bg-[#0F9D9D] text-white rounded-tr-sm shadow-md shadow-teal-500/15"
+                      ? "bg-[#8B5CF6] text-white rounded-tr-sm shadow-md shadow-cyan-500/15"
                       : msg.role === "Admin"
                         ? "bg-slate-800 text-white rounded-tl-sm"
                         : "bg-slate-100 text-slate-700 rounded-tl-sm border border-slate-200"
@@ -125,7 +125,7 @@ export function ActivityChat({ messages, onSend, role }: ActivityChatProps) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type a message..."
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#0F9D9D]/30 focus:border-[#0F9D9D] transition-all placeholder:text-slate-400"
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/30 focus:border-[#8B5CF6] transition-all placeholder:text-slate-400"
           />
         </div>
         <motion.button
@@ -133,7 +133,7 @@ export function ActivityChat({ messages, onSend, role }: ActivityChatProps) {
           disabled={!input.trim()}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="w-9 h-9 bg-[#0F9D9D] text-white rounded-xl hover:bg-[#0c8686] disabled:opacity-40 disabled:hover:bg-[#0F9D9D] transition-all shadow-sm shadow-teal-500/20 flex items-center justify-center shrink-0"
+          className="w-9 h-9 bg-[#8B5CF6] text-white rounded-xl hover:bg-[#7C3AED] disabled:opacity-40 disabled:hover:bg-[#8B5CF6] transition-all shadow-sm shadow-cyan-500/20 flex items-center justify-center shrink-0"
         >
           <Send className="w-3.5 h-3.5" />
         </motion.button>

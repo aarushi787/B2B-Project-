@@ -35,9 +35,9 @@ export function StatusBadge({ status, custom }: { status: string; custom?: { bg:
 }
 
 // Page card wrapper
-export function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+export function Card({ children, style, className }: { children: React.ReactNode; style?: React.CSSProperties; className?: string }) {
   return (
-    <div style={{
+    <div className={className} style={{
       background: "#ffffff",
       border: "1px solid #e2e8f0",
       borderRadius: 12,
@@ -158,11 +158,11 @@ export function MetricCard({ label, value, icon: Icon, iconBg, iconColor }: { la
 }
 
 // Modal
-export function Modal({ isOpen, onClose, title, children }: { isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode }) {
+export function Modal({ isOpen, onClose, title, children, width = 500 }: { isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode; width?: number | string }) {
   if (!isOpen) return null;
   return (
     <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15, 23, 42, 0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
-      <div style={{ background: "#fff", borderRadius: 16, width: "100%", maxWidth: 500, display: "flex", flexDirection: "column", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)", maxHeight: "90vh" }}>
+      <div style={{ background: "#fff", borderRadius: 16, width: "100%", maxWidth: width, display: "flex", flexDirection: "column", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)", maxHeight: "90vh" }}>
         <div style={{ padding: "20px 24px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#0f172a" }}>{title}</h2>
           <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#64748b" }}>&times;</button>

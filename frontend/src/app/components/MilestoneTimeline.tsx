@@ -13,7 +13,7 @@ const steps = [
     desc: "Deal terms agreed",
     icon: FileText,
     date: "Apr 10, 2024",
-    color: "#0F9D9D",
+    color: "#8B5CF6",
   },
   {
     title: "Contract Signed",
@@ -47,11 +47,11 @@ export function MilestoneTimeline({ currentStep, onStepClick }: MilestoneTimelin
       <div className="relative">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-semibold text-slate-500">Overall Progress</span>
-          <span className="text-xs font-bold text-[#0F9D9D]">{Math.round(progress)}%</span>
+          <span className="text-xs font-bold text-[#8B5CF6]">{Math.round(progress)}%</span>
         </div>
         <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-[#0F9D9D] via-purple-400 to-green-400 rounded-full"
+            className="h-full bg-gradient-to-r from-[#8B5CF6] via-purple-400 to-green-400 rounded-full"
             initial={{ width: "0%" }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.8, ease: "easeInOut" }}
@@ -64,7 +64,7 @@ export function MilestoneTimeline({ currentStep, onStepClick }: MilestoneTimelin
         {/* Connector Line */}
         <div className="absolute top-6 left-6 right-6 h-0.5 bg-slate-100 z-0">
           <motion.div
-            className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#0F9D9D] to-green-400"
+            className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#8B5CF6] to-green-400"
             initial={{ width: "0%" }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.8, ease: "easeInOut" }}

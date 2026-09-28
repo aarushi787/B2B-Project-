@@ -4,6 +4,8 @@ import { PlusSquare, Tag, PauseCircle, XCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { StatusBadge, Card, SearchInput, FilterPill, PrimaryBtn, Modal, Input, TextArea, GhostBtn } from "../ui/DesignSystem";
 import { apiClient } from "../../../services/apiClient";
+import { socketService } from "../../../services/socketService";
+import { useAuth } from "../../../auth/AuthProvider";
 
 interface ServiceItem {
   id: string;
@@ -16,6 +18,7 @@ interface ServiceItem {
 }
 
 export function Marketplace() {
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,6 +30,14 @@ export function Marketplace() {
 
   useEffect(() => {
     fetchServices();
+    
+    socketService.connect();
+    // Assuming backend emits 'products:updated' or similar
+    const unsub = socketService.on('products:updated', () => {
+      fetchServices();
+    });
+    
+    return () => unsub();
   }, []);
 
   const fetchServices = async () => {
@@ -62,7 +73,7 @@ export function Marketplace() {
         category: formData.category,
         description: formData.description,
         price: parseFloat(formData.price),
-        merchantId: "dummy-merchant-id" // Replace with real auth id when available
+        merchantId: user?.companyId || "no-company-id"
       });
       toast.success("Service added successfully!");
       setServices([newService, ...services]);

@@ -28,7 +28,7 @@ export function DealDetails({ dealStatus }: DealDetailsProps) {
     switch (dealStatus) {
       case "Approved": return "from-green-50 to-emerald-50 border-green-100";
       case "Rejected": return "from-red-50 to-rose-50 border-red-100";
-      case "Completed": return "from-emerald-50 to-teal-50 border-emerald-100";
+      case "Completed": return "from-emerald-50 to-purple-50 border-emerald-100";
       default: return "from-amber-50 to-yellow-50 border-amber-100";
     }
   };
@@ -43,7 +43,7 @@ export function DealDetails({ dealStatus }: DealDetailsProps) {
       <div className={`p-4 bg-gradient-to-r ${getStatusBg()} border-b`}>
         <div className="flex items-center justify-between mb-2">
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Deal Details</span>
-          <a href="#" className="text-[10px] text-[#0F9D9D] hover:underline flex items-center gap-1 font-semibold">
+          <a href="#" className="text-[10px] text-[#8B5CF6] hover:underline flex items-center gap-1 font-semibold">
             View Full <ExternalLink className="w-2.5 h-2.5" />
           </a>
         </div>
@@ -116,8 +116,8 @@ export function DealDetails({ dealStatus }: DealDetailsProps) {
           </div>
 
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-teal-50 flex items-center justify-center shrink-0">
-              <span className="text-[10px] font-black text-[#0F9D9D]">₹</span>
+            <div className="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
+              <span className="text-[10px] font-black text-[#8B5CF6]">₹</span>
             </div>
             <div>
               <p className="text-[10px] text-slate-400">Deal Amount</p>

@@ -11,7 +11,7 @@ import { logger } from '../utils/logger.js';
 
 const router = Router();
 
-router.get('/', authMiddleware, requireCompanyRole(['LEGAL']), async (req: AuthRequest, res: Response) => {
+router.get('/', authMiddleware, requireCompanyRole(['OWNER', 'ADMIN', 'LEGAL']), async (req: AuthRequest, res: Response) => {
   try {
     const connection = await pool.getConnection();
     const [rows] = await connection.query(
@@ -28,7 +28,7 @@ router.get('/', authMiddleware, requireCompanyRole(['LEGAL']), async (req: AuthR
   }
 });
 
-router.post('/upload', authMiddleware, requireCompanyRole(['LEGAL']), validateRequest(documentUploadSchema), async (req: AuthRequest, res: Response) => {
+router.post('/upload', authMiddleware, requireCompanyRole(['OWNER', 'ADMIN', 'LEGAL']), validateRequest(documentUploadSchema), async (req: AuthRequest, res: Response) => {
   try {
     const { dealId, fileName, filePath, mimeType, sizeBytes, docType, companyId } = req.body;
     if (!fileName) {
@@ -97,7 +97,7 @@ router.post('/presigned-url', authMiddleware, async (req: AuthRequest, res: Resp
 });
 
 
-router.post('/:id/sign', authMiddleware, requireCompanyRole(['LEGAL']), validateRequest(documentSignSchema), async (req: AuthRequest, res: Response) => {
+router.post('/:id/sign', authMiddleware, requireCompanyRole(['OWNER', 'ADMIN', 'LEGAL']), validateRequest(documentSignSchema), async (req: AuthRequest, res: Response) => {
   try {
     const signatureType = String(req.body.signatureType || 'CLICK').toUpperCase();
     if (!['CLICK', 'OTP', 'DIGITAL'].includes(signatureType)) {

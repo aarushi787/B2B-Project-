@@ -38,12 +38,15 @@ function Navbar() {
   );
 }
 
+import { BusinessProfileModal } from "../BusinessProfileModal";
+
 export function ExploreBusinesses() {
   const [activeTab, setActiveTab] = useState("All Businesses");
   const [selectedCats, setSelectedCats] = useState<string[]>(["Web Development"]);
   const [selectedLocs, setSelectedLocs] = useState<string[]>([]);
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedBusiness, setSelectedBusiness] = useState<any | null>(null);
 
   useEffect(() => {
     apiClient.get<any>('/companies')
@@ -182,7 +185,7 @@ export function ExploreBusinesses() {
                       <span key={tag} style={{ fontSize: 10, fontWeight: 600, background: "#f1f5f9", color: "#475569", padding: "2px 8px", borderRadius: 20 }}>{tag}</span>
                     ))}
                   </div>
-                  <button onClick={() => toast("Profile view coming soon!")} style={{ width: "100%", background: "none", border: "1px solid #2563EB", color: "#2563EB", padding: "9px 0", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                  <button onClick={() => setSelectedBusiness(b)} style={{ width: "100%", background: "none", border: "1px solid #2563EB", color: "#2563EB", padding: "9px 0", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
                     View Profile
                   </button>
                 </div>
@@ -216,6 +219,11 @@ export function ExploreBusinesses() {
           </div>
         </div>
       </div>
+
+      <BusinessProfileModal 
+        business={selectedBusiness} 
+        onClose={() => setSelectedBusiness(null)} 
+      />
     </div>
   );
 }

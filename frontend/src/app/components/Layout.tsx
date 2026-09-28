@@ -4,14 +4,14 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   LayoutDashboard, Building2, ShoppingBag, Folder,
   Shield, Settings, FileText, Sparkles, Send, Inbox,
-  Archive, MessageSquare, Search, Bell, ChevronDown,
+  Archive, MessageSquare, Search, Bell, ChevronDown, ChevronRight,
   PanelLeftClose, PanelLeftOpen, Menu, X,
   CheckCircle, AlertCircle, Clock, LogOut, User,
 } from "lucide-react";
 import { Onboarding } from "./Onboarding";
 import { useAuth } from "../../auth/AuthProvider";
+import { socketService } from "../../services/socketService";
 
-// ─── Nav config ─────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: "Overview",              path: "/app/dashboard",              group: "root" },
 
@@ -62,20 +62,14 @@ const BREADCRUMB_MAP: Record<string, string> = {
 // ─── Brand Logo ─────────────────────────────────────────────────────────────
 function BrandLogo({ small }: { small?: boolean }) {
   return (
-    <div className="flex items-center gap-2.5">
-      <img src="/logo.png" alt="B2B Logo" style={{ height: small ? 28 : 34, width: "auto", objectFit: "contain" }} className="shrink-0" />
-      {!small && (
-        <div>
-          <div style={{ fontWeight: 800, fontSize: 14, color: "#0f172a", lineHeight: "1.1" }}>B2B</div>
-          <div style={{ fontWeight: 600, fontSize: 9, color: "#2563EB", textTransform: "uppercase", letterSpacing: "0.08em", lineHeight: "1.1" }}>CORPORATES</div>
-        </div>
-      )}
+    <div className="flex items-center justify-center w-full">
+      <img src="/logo.png" alt="B2B Logo" style={{ height: small ? 32 : 44, width: "auto", objectFit: "contain" }} className="shrink-0" />
     </div>
   );
 }
 
 export function Layout() {
-  const { user, logout: authLogout } = useAuth();
+  const { user, logout: authLogout, isAdmin } = useAuth();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -86,13 +80,25 @@ export function Layout() {
   const avatarRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
 
-  const notifications = [
-    { id: 1, type: "success", title: "Deal Approved", message: "TechCorp Equipment Purchase has been approved by admin.", time: "5 min ago" },
-    { id: 2, type: "info",    title: "New Message",   message: "Jane Smith sent a message about the Green Energy partnership.", time: "1 hour ago" },
-    { id: 3, type: "warning", title: "Contract Expiring", message: "Office Supplies Contract expires in 3 days — action required.", time: "2 hours ago" },
-    { id: 4, type: "info",    title: "Payment Received",  message: "₹85,000 received from HealthFirst Medical.", time: "3 hours ago" },
-    { id: 5, type: "warning", title: "KYC Pending",       message: "RetailPro Solutions has not completed KYC verification.", time: "5 hours ago" },
-  ];
+  const [notifications, setNotifications] = useState<any[]>([
+    { id: 1, type: "success", title: "Welcome!", message: "Your real-time notifications will appear here.", time: "Just now" },
+  ]);
+
+  useEffect(() => {
+    socketService.connect();
+    const handleNotification = (data: any) => {
+      setNotifications(prev => [{
+        id: Date.now(),
+        type: data.type || "info",
+        title: data.title || "New Notification",
+        message: data.message || data.text || "You have a new alert.",
+        time: "Just now"
+      }, ...prev]);
+    };
+    
+    const unsubscribe = socketService.on('notification', handleNotification);
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
@@ -341,104 +347,66 @@ export function Layout() {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
 
         {/* Top Header */}
-        <header style={{
-          background: "#ffffff",
-          borderBottom: "1px solid #e2e8f0",
-          flexShrink: 0,
-          zIndex: 10,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "0 24px", height: 64 }}>
-
+        <header className="sticky top-0 z-30 bg-white/70 backdrop-blur-lg border-b border-slate-200/60 shadow-sm transition-all">
+          <div className="flex items-center gap-6 px-6 h-[72px]">
             {/* Mobile hamburger */}
             <button
               onClick={() => setMobileOpen(true)}
-              style={{ padding: 6, color: "#64748b", background: "none", border: "none", cursor: "pointer", borderRadius: 6 }}
-              className="md:hidden"
+              className="md:hidden p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
             >
-              <Menu style={{ width: 20, height: 20 }} />
+              <Menu className="w-5 h-5" />
             </button>
 
             {/* Breadcrumbs + Title */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
                 {crumbs.map((c, i) => (
                   <React.Fragment key={`${c.path}-${i}`}>
-                    {i > 0 && <span style={{ fontSize: 12, color: "#94a3b8" }}>/</span>}
+                    {i > 0 && <ChevronRight className="w-3 h-3 text-slate-300" />}
                     <Link
                       to={c.path}
-                      style={{
-                        fontSize: 12,
-                        color: i === crumbs.length - 1 ? "#64748b" : "#94a3b8",
-                        textDecoration: "none",
-                        fontWeight: 500,
-                      }}
+                      className={`text-[11px] font-semibold tracking-wide uppercase transition-colors ${
+                        i === crumbs.length - 1 ? "text-[#8B5CF6]" : "text-slate-400 hover:text-slate-600"
+                      }`}
                     >
                       {c.label}
                     </Link>
                   </React.Fragment>
                 ))}
               </div>
-              <h1 style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", margin: 0, lineHeight: "1.2" }}>
+              <h1 className="text-xl font-black text-slate-900 tracking-tight leading-tight">
                 {pageTitle}
               </h1>
             </div>
 
             {/* Search */}
-            <div style={{ position: "relative", width: 260 }}>
-              <Search style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", width: 15, height: 15, color: "#94a3b8", pointerEvents: "none" }} />
+            <div className="relative hidden md:block w-[320px] group">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#8B5CF6] transition-colors" />
               <input
                 type="text"
-                placeholder="Search..."
+                placeholder="Search deals, companies, or users..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                style={{
-                  width: "100%",
-                  paddingLeft: 32,
-                  paddingRight: 12,
-                  paddingTop: 8,
-                  paddingBottom: 8,
-                  fontSize: 13,
-                  border: "1px solid #e2e8f0",
-                  borderRadius: 8,
-                  background: "#f8fafc",
-                  color: "#0f172a",
-                  outline: "none",
-                }}
+                className="w-full pl-9 pr-12 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20 focus:border-[#8B5CF6] focus:bg-white transition-all shadow-sm"
               />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-60">
+                <kbd className="px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 bg-white border border-slate-200 rounded">⌘</kbd>
+                <kbd className="px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 bg-white border border-slate-200 rounded">K</kbd>
+              </div>
             </div>
 
             {/* Notifications */}
-            <div style={{ position: "relative" }} ref={notifRef}>
+            <div className="relative" ref={notifRef}>
               <button
                 onClick={() => setNotifOpen(o => !o)}
-                style={{
-                  position: "relative",
-                  padding: 8,
-                  color: "#64748b",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  borderRadius: 8,
-                }}
+                className="relative p-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
               >
-                <Bell style={{ width: 18, height: 18 }} />
-                <span style={{
-                  position: "absolute",
-                  top: 2,
-                  right: 2,
-                  width: 16,
-                  height: 16,
-                  background: "#ef4444",
-                  color: "#fff",
-                  fontSize: 9,
-                  fontWeight: 700,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}>
-                  {notifications.length}
-                </span>
+                <Bell className="w-5 h-5" />
+                {notifications.length > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 border-2 border-white rounded-full text-[9px] font-bold text-white flex items-center justify-center">
+                    {notifications.length}
+                  </span>
+                )}
               </button>
 
               <AnimatePresence>
@@ -497,48 +465,35 @@ export function Layout() {
                       ))}
                     </div>
                     <div style={{ padding: "10px 16px", borderTop: "1px solid #f1f5f9", textAlign: "center" }}>
-                      <button style={{ fontSize: 12, fontWeight: 600, color: "#2563EB", background: "none", border: "none", cursor: "pointer" }}>View All Notifications</button>
+                      <Link to="/app/notifications" onClick={() => setNotifOpen(false)} style={{ fontSize: 12, fontWeight: 600, color: "#2563EB", textDecoration: "none" }}>View All Notifications</Link>
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
 
-            {/* Avatar / User menu */}
-            <div style={{ position: "relative" }} ref={avatarRef}>
+            <div className="relative" ref={avatarRef}>
               <button
                 onClick={() => setAvatarOpen(o => !o)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "4px 8px",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  borderRadius: 8,
-                }}
+                className="flex items-center gap-2.5 p-1.5 hover:bg-slate-100 rounded-xl transition-colors border border-transparent hover:border-slate-200 group"
               >
-                <div style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: "50%",
-                  overflow: "hidden",
-                  flexShrink: 0,
-                  border: "2px solid #e2e8f0",
-                }}>
+                <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 border-2 border-slate-100 shadow-sm group-hover:border-[#8B5CF6]/30 transition-colors">
                   <img
                     src="https://i.pravatar.cc/34?img=12"
                     alt="User"
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    className="w-full h-full object-cover"
                     onError={e => {
                       const el = e.target as HTMLImageElement;
-                      el.parentElement!.style.background = "#2563EB";
-                      el.style.display = "none";
+                      el.parentElement!.className += " bg-gradient-to-br from-[#8B5CF6] to-cyan-400 flex items-center justify-center";
+                      el.parentElement!.innerHTML = '<span class="text-white text-xs font-bold">JS</span>';
                     }}
                   />
                 </div>
-                <ChevronDown style={{ width: 14, height: 14, color: "#64748b" }} />
+                <div className="hidden sm:block text-left pr-1">
+                  <p className="text-xs font-bold text-slate-800 leading-none group-hover:text-[#8B5CF6] transition-colors">{user?.name || "Jane Smith"}</p>
+                  <p className="text-[10px] font-semibold text-slate-400 mt-1 leading-none">{user?.companyId || "TechCorp Inc"}</p>
+                </div>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:block group-hover:text-[#8B5CF6] transition-colors" />
               </button>
 
               <AnimatePresence>
@@ -568,6 +523,7 @@ export function Layout() {
                       { icon: User, label: "Profile", path: "/app/settings" },
                       { icon: Settings, label: "Settings", path: "/app/settings" },
                       { icon: Sparkles, label: "Platform Tour", action: () => { setShowOnboarding(true); setAvatarOpen(false); } },
+                      ...(isAdmin ? [{ icon: Shield, label: "Super Admin Portal", path: "/app/admin" }] : []),
                     ].map(item => (
                       item.action ? (
                         <button key={item.label} onClick={item.action}

@@ -133,9 +133,8 @@ export function Auth() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center text-white font-bold text-lg">B</div>
-            <span className="text-2xl font-bold text-slate-900">B2BForCorporates</span>
+          <div className="inline-flex items-center justify-center mb-2 w-full">
+            <img src="/logo.png" alt="B2BForCorporates Logo" className="h-16 w-auto object-contain" />
           </div>
           <p className="text-slate-500 text-sm">Enterprise Collaboration Platform</p>
         </div>
@@ -197,13 +196,17 @@ export function Auth() {
               <div className="pt-2">
                 <p className="text-xs text-slate-500 font-semibold mb-2 uppercase tracking-wide">Quick Demo Login</p>
                 <div className="flex flex-col gap-2">
+                  <button type="button" onClick={() => setLoginData({ email: "admin@example.com", password: "password123" })}
+                    className="w-full text-left p-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded text-xs text-slate-800 font-medium transition-colors">
+                    <b>Admin Console</b> (admin@example.com)
+                  </button>
                   <button type="button" onClick={() => setLoginData({ email: "rahul@example.com", password: "password123" })}
                     className="w-full text-left p-2 bg-blue-50 hover:bg-blue-100 border border-blue-100 rounded text-xs text-blue-800 font-medium transition-colors">
-                    <b>Acme Corp</b> (rahul@example.com)
+                    <b>Acme Corp - Buyer</b> (rahul@example.com)
                   </button>
                   <button type="button" onClick={() => setLoginData({ email: "maya@example.com", password: "password123" })}
                     className="w-full text-left p-2 bg-purple-50 hover:bg-purple-100 border border-purple-100 rounded text-xs text-purple-800 font-medium transition-colors">
-                    <b>TechVista</b> (maya@example.com)
+                    <b>TechVista - Seller</b> (maya@example.com)
                   </button>
                 </div>
               </div>

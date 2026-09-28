@@ -1,8 +1,104 @@
-// Verification Center — matches dashboard-verification.png UI design
-import { Check, Mail, Smartphone, FileText, User, UploadCloud, File } from "lucide-react";
-import { Card, GhostBtn } from "../ui/DesignSystem";
-
+import React, { useState, useEffect, useRef } from "react";
+import { Check, Mail, Smartphone, FileText, User, UploadCloud, File, AlertCircle } from "lucide-react";
+import { Card, GhostBtn, PrimaryBtn, StatusBadge } from "../ui/DesignSystem";
+import { apiClient } from "../../../services/apiClient";
+import { useAuth } from "../../../auth/AuthProvider";
+import { socketService } from "../../../services/socketService";
 export function Contracts() {
+  const { user } = useAuth();
+  const [kycDocs, setKycDocs] = useState<any[]>([]);
+  const [businessDocs, setBusinessDocs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploadingKyc, setUploadingKyc] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  
+  const kycInputRef = useRef<HTMLInputElement>(null);
+  const docInputRef = useRef<HTMLInputElement>(null);
+
+  const fetchDocs = async () => {
+    if (!user?.companyId) return;
+    try {
+      const [kycRes, docRes] = await Promise.all([
+        apiClient.get<any[]>(`/kyc/company/${user.companyId}`),
+        apiClient.get<any[]>('/documents')
+      ]);
+      setKycDocs(kycRes || []);
+      setBusinessDocs(docRes || []);
+    } catch (err) {
+      console.error("Failed to fetch documents", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDocs();
+
+    socketService.connect();
+    const unsubKyc = socketService.on('kyc:updated', () => fetchDocs());
+    const unsubDoc = socketService.on('documents:updated', () => fetchDocs());
+    return () => { unsubKyc(); unsubDoc(); };
+  }, [user]);
+
+  const handleKycUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.companyId) return;
+    setUploadingKyc(true);
+    try {
+      await apiClient.post('/kyc/upload', {
+        companyId: user.companyId,
+        documentType: 'GOV_ID',
+        fileName: file.name,
+        mimeType: file.type,
+        sizeBytes: file.size,
+        filePath: `uploads/kyc/${Date.now()}_${file.name}`
+      });
+      await fetchDocs();
+    } catch (err) {
+      console.error("Failed to upload KYC", err);
+    } finally {
+      setUploadingKyc(false);
+    }
+  };
+
+  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.companyId) return;
+    setUploadingDoc(true);
+    try {
+      await apiClient.post('/documents/upload', {
+        companyId: user.companyId,
+        docType: 'GENERAL',
+        fileName: file.name,
+        mimeType: file.type,
+        sizeBytes: file.size,
+        filePath: `uploads/docs/${Date.now()}_${file.name}`
+      });
+      await fetchDocs();
+    } catch (err) {
+      console.error("Failed to upload document", err);
+    } finally {
+      setUploadingDoc(false);
+    }
+  };
+
+  // Derived status
+  const emailVerified = user?.email ? true : false;
+  const phoneVerified = user?.phone ? true : false; // Assuming phone verification uses user.phone
+  
+  // Check if KYC (Gov ID) is uploaded and verified
+  const govIdDoc = kycDocs.find(d => d.documentType === 'GOV_ID');
+  const govIdStatus = govIdDoc ? govIdDoc.status : 'PENDING';
+  
+  // Check if Business documents exist
+  const businessDocStatus = businessDocs.length > 0 ? 'VERIFIED' : 'PENDING';
+
+  let completedSteps = 0;
+  if (emailVerified) completedSteps++;
+  if (phoneVerified) completedSteps++;
+  if (businessDocStatus === 'VERIFIED') completedSteps++;
+  if (govIdStatus === 'VERIFIED') completedSteps++;
+
   return (
     <div style={{ maxWidth: 1000, margin: "0 auto", fontFamily: "Inter, sans-serif" }}>
       {/* Top Stepper */}
@@ -12,52 +108,54 @@ export function Contracts() {
             <h2 style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", margin: "0 0 6px" }}>Verification Progress</h2>
             <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>Complete all required legal steps to unlock high-tier matching priority.</p>
           </div>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "#2563EB" }}>2 of 4 steps completed</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "#2563EB" }}>{completedSteps} of 4 steps completed</span>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
           {/* Step 1 */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, zIndex: 1, background: "#fff", paddingRight: 16 }}>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid #16a34a", display: "flex", alignItems: "center", justifyContent: "center", color: "#16a34a" }}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", border: emailVerified ? "2px solid #16a34a" : "2px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "center", color: emailVerified ? "#16a34a" : "#cbd5e1" }}>
               <Check style={{ width: 16, height: 16 }} />
             </div>
             <div>
-              <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", margin: 0 }}>Email Verified</p>
+              <p style={{ fontSize: 13, fontWeight: 700, color: emailVerified ? "#0f172a" : "#64748b", margin: 0 }}>Email Verified</p>
               <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>Legal Contact</p>
             </div>
           </div>
-          <div style={{ height: 2, background: "#16a34a", flex: 1, margin: "0 16px" }} />
+          <div style={{ height: 2, background: emailVerified ? "#16a34a" : "#e2e8f0", flex: 1, margin: "0 16px" }} />
 
           {/* Step 2 */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, zIndex: 1, background: "#fff", padding: "0 16px" }}>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid #16a34a", display: "flex", alignItems: "center", justifyContent: "center", color: "#16a34a" }}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", border: phoneVerified ? "2px solid #16a34a" : "2px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "center", color: phoneVerified ? "#16a34a" : "#cbd5e1" }}>
               <Check style={{ width: 16, height: 16 }} />
             </div>
             <div>
-              <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", margin: 0 }}>Phone Verified</p>
+              <p style={{ fontSize: 13, fontWeight: 700, color: phoneVerified ? "#0f172a" : "#64748b", margin: 0 }}>Phone Verified</p>
               <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>SMS Alerts</p>
             </div>
           </div>
-          <div style={{ height: 2, borderTop: "2px dashed #2563EB", flex: 1, margin: "0 16px" }} />
+          <div style={{ height: 2, borderTop: businessDocStatus === 'VERIFIED' ? "2px solid #16a34a" : "2px dashed #2563EB", flex: 1, margin: "0 16px" }} />
 
           {/* Step 3 */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, zIndex: 1, background: "#fff", padding: "0 16px" }}>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid #2563EB", display: "flex", alignItems: "center", justifyContent: "center", color: "#2563EB" }}>
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#2563EB" }} />
+            <div style={{ width: 32, height: 32, borderRadius: "50%", border: businessDocStatus === 'VERIFIED' ? "2px solid #16a34a" : "2px solid #2563EB", display: "flex", alignItems: "center", justifyContent: "center", color: businessDocStatus === 'VERIFIED' ? "#16a34a" : "#2563EB" }}>
+              {businessDocStatus === 'VERIFIED' ? <Check style={{ width: 16, height: 16 }} /> : <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#2563EB" }} />}
             </div>
             <div>
-              <p style={{ fontSize: 13, fontWeight: 700, color: "#2563EB", margin: 0 }}>Business Documents</p>
-              <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>In Review</p>
+              <p style={{ fontSize: 13, fontWeight: 700, color: businessDocStatus === 'VERIFIED' ? "#16a34a" : "#2563EB", margin: 0 }}>Business Documents</p>
+              <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>{businessDocStatus === 'VERIFIED' ? 'Verified' : 'Upload Required'}</p>
             </div>
           </div>
-          <div style={{ height: 2, background: "#e2e8f0", flex: 1, margin: "0 16px" }} />
+          <div style={{ height: 2, background: govIdStatus === 'VERIFIED' ? "#16a34a" : "#e2e8f0", flex: 1, margin: "0 16px" }} />
 
           {/* Step 4 */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, zIndex: 1, background: "#fff", paddingLeft: 16 }}>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid #e2e8f0", background: "#f8fafc" }} />
+            <div style={{ width: 32, height: 32, borderRadius: "50%", border: govIdStatus === 'VERIFIED' ? "2px solid #16a34a" : "2px solid #e2e8f0", background: govIdStatus === 'VERIFIED' ? "#fff" : "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", color: "#16a34a" }}>
+              {govIdStatus === 'VERIFIED' ? <Check style={{ width: 16, height: 16 }} /> : null}
+            </div>
             <div>
-              <p style={{ fontSize: 13, fontWeight: 700, color: "#64748b", margin: 0 }}>Government ID</p>
-              <p style={{ fontSize: 11, color: "#94a3b8", margin: 0 }}>Pending</p>
+              <p style={{ fontSize: 13, fontWeight: 700, color: govIdStatus === 'VERIFIED' ? "#16a34a" : "#64748b", margin: 0 }}>Government ID</p>
+              <p style={{ fontSize: 11, color: "#94a3b8", margin: 0 }}>{govIdStatus}</p>
             </div>
           </div>
         </div>
@@ -114,25 +212,23 @@ export function Contracts() {
                 <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>Under review — typically takes 2-3 business days</p>
               </div>
             </div>
-            <GhostBtn style={{ color: "#0f172a" }}>Upload Additional Documents</GhostBtn>
+            <GhostBtn style={{ color: "#0f172a" }} onClick={() => docInputRef.current?.click()} disabled={uploadingDoc}>
+              {uploadingDoc ? "Uploading..." : "Upload Additional Documents"}
+            </GhostBtn>
+            <input type="file" ref={docInputRef} style={{ display: "none" }} onChange={handleDocUpload} />
           </div>
-          <div style={{ display: "flex", gap: 16, marginLeft: 56 }}>
-            {/* Doc 1 */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, border: "1px solid #e2e8f0", borderRadius: 8, background: "#f8fafc", width: 260 }}>
-              <File style={{ width: 24, height: 24, color: "#94a3b8" }} />
-              <div>
-                <p style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", margin: "0 0 2px" }}>GST Certificate.pdf</p>
-                <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>1.4 MB • Uploaded Jan 14, 2026</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginLeft: 56 }}>
+            {businessDocs.length === 0 ? (
+               <p style={{ fontSize: 13, color: "#64748b" }}>No documents uploaded yet.</p>
+            ) : businessDocs.map(doc => (
+              <div key={doc.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, border: "1px solid #e2e8f0", borderRadius: 8, background: "#f8fafc", width: 260 }}>
+                <File style={{ width: 24, height: 24, color: "#8B5CF6" }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", margin: "0 0 2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{doc.fileName}</p>
+                  <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>{doc.status} • {new Date(doc.createdAt).toLocaleDateString()}</p>
+                </div>
               </div>
-            </div>
-            {/* Doc 2 */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, border: "1px solid #e2e8f0", borderRadius: 8, background: "#f8fafc", width: 260 }}>
-              <File style={{ width: 24, height: 24, color: "#94a3b8" }} />
-              <div>
-                <p style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", margin: "0 0 2px" }}>Company Registration.pdf</p>
-                <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>2.8 MB • Uploaded Jan 14, 2026</p>
-              </div>
-            </div>
+            ))}
           </div>
         </Card>
 
@@ -155,9 +251,18 @@ export function Contracts() {
             <UploadCloud style={{ width: 32, height: 32, color: "#94a3b8", marginBottom: 12 }} />
             <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", margin: "0 0 4px" }}>Drag and drop or click to upload</p>
             <p style={{ fontSize: 12, color: "#64748b", margin: "0 0 16px" }}>Accepted formats: PDF, PNG, JPG (Max 5MB)</p>
-            <button style={{ background: "#fff", border: "1px solid #e2e8f0", color: "#0f172a", fontSize: 13, fontWeight: 600, padding: "8px 24px", borderRadius: 8, cursor: "pointer" }}>
-              Upload
+            <input type="file" ref={kycInputRef} style={{ display: "none" }} onChange={handleKycUpload} />
+            <button 
+              onClick={() => kycInputRef.current?.click()}
+              disabled={uploadingKyc}
+              style={{ background: "#fff", border: "1px solid #e2e8f0", color: "#0f172a", fontSize: 13, fontWeight: 600, padding: "8px 24px", borderRadius: 8, cursor: "pointer", opacity: uploadingKyc ? 0.7 : 1 }}>
+              {uploadingKyc ? "Uploading..." : "Upload ID Document"}
             </button>
+            {govIdDoc && (
+              <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#16a34a", background: "#f0fdf4", padding: "6px 12px", borderRadius: 12, border: "1px solid #bbf7d0" }}>
+                <Check style={{ width: 14, height: 14 }} /> Document successfully uploaded and is {govIdDoc.status.toLowerCase()}.
+              </div>
+            )}
           </div>
         </Card>
       </div>
