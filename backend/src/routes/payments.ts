@@ -3,7 +3,7 @@ import Stripe from 'stripe';
 
 const router = Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_mock', {
-  apiVersion: '2026-08-26.dahlia' as any, // bypassing strict types here if needed, or exact matching
+  apiVersion: '2025-01-27.acacia' as any,
 });
 
 // Create a PaymentIntent for holding funds in Escrow
