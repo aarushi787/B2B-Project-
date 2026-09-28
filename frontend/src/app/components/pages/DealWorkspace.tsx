@@ -160,7 +160,7 @@ export function DealWorkspace() {
       <div className="bg-white border-b border-slate-200 shadow-sm mb-6 rounded-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0F9D9D] to-teal-400 flex items-center justify-center shadow-sm shadow-teal-500/20">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#8B5CF6] to-cyan-400 flex items-center justify-center shadow-sm shadow-cyan-500/20">
               <ShieldCheck className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -201,7 +201,7 @@ export function DealWorkspace() {
         <div className="flex items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
           <div className="flex items-center gap-2 text-xs text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 font-medium">
             <span>Deal ID:</span>
-            <span className="text-[#0F9D9D] font-bold">DW-2024-001</span>
+            <span className="text-[#8B5CF6] font-bold">DW-2024-001</span>
           </div>
         </div>
 
@@ -238,7 +238,7 @@ export function DealWorkspace() {
                   <h2 className="text-sm font-bold text-slate-900">Milestone Timeline</h2>
                   <p className="text-xs text-slate-400 mt-0.5">Click any step to update progress</p>
                 </div>
-                <span className="text-xs font-semibold text-[#0F9D9D] bg-teal-50 px-3 py-1 rounded-full border border-teal-100">
+                <span className="text-xs font-semibold text-[#8B5CF6] bg-purple-50 px-3 py-1 rounded-full border border-purple-100">
                   {milestone}/3 Steps
                 </span>
               </div>

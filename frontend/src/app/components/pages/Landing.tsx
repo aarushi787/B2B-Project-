@@ -88,11 +88,7 @@ function Navbar() {
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", gap: 32, height: 60 }}>
         {/* Logo */}
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <img src="/logo.png" alt="B2B Logo" style={{ height: "32px", width: "auto", objectFit: "contain" }} />
-          <div>
-            <div style={{ fontWeight: 800, fontSize: 13, lineHeight: "1.1", color: "#0f172a" }}>B2B</div>
-            <div style={{ fontWeight: 700, fontSize: 8, lineHeight: "1.1", color: "#0f172a", textTransform: "uppercase", letterSpacing: "0.05em" }}>CORPORATES</div>
-          </div>
+          <img src="/logo.png" alt="B2B Logo" style={{ height: "40px", width: "auto", objectFit: "contain" }} />
         </div>
 
         {/* Links */}

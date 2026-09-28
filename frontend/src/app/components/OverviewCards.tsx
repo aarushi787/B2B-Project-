@@ -11,7 +11,7 @@ interface OverviewCardsProps {
 }
 
 // Circular Progress Ring SVG
-function CircularProgress({ value, size = 72, stroke = 6, color = "#0F9D9D" }: {
+function CircularProgress({ value, size = 72, stroke = 6, color = "#8B5CF6" }: {
   value: number; size?: number; stroke?: number; color?: string;
 }) {
   const radius = (size - stroke) / 2;
@@ -46,7 +46,7 @@ export function OverviewCards({ dealAmount, client, provider, progress, riskScor
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0 }}
         whileHover={{ y: -4, boxShadow: "0 12px 30px -8px rgba(15, 157, 157, 0.15)" }}
-        className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 group cursor-default transition-all duration-300 hover:border-teal-200/60"
+        className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 group cursor-default transition-all duration-300 hover:border-purple-200/60"
       >
         <div className="flex items-start justify-between mb-4">
           <div>
@@ -55,7 +55,7 @@ export function OverviewCards({ dealAmount, client, provider, progress, riskScor
               <span className="text-2xl font-black text-slate-900">$1,50,000</span>
             </div>
           </div>
-          <div className="p-2 rounded-xl bg-teal-50 text-[#0F9D9D] group-hover:scale-110 transition-transform">
+          <div className="p-2 rounded-xl bg-purple-50 text-[#8B5CF6] group-hover:scale-110 transition-transform">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -73,7 +73,7 @@ export function OverviewCards({ dealAmount, client, provider, progress, riskScor
             initial={{ width: 0 }}
             animate={{ width: "68%" }}
             transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-            className="h-full bg-gradient-to-r from-[#0F9D9D] to-teal-400 rounded-full"
+            className="h-full bg-gradient-to-r from-[#8B5CF6] to-cyan-400 rounded-full"
           />
         </div>
         <p className="text-[10px] text-slate-400 mt-1">68% of annual target</p>

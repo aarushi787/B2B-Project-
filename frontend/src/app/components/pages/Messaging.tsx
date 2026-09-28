@@ -166,7 +166,7 @@ export function Messaging() {
             <input
               type="text"
               placeholder="Search conversations..."
-              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-xs"
+              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 text-xs"
             />
           </div>
         </div>
@@ -179,11 +179,11 @@ export function Messaging() {
               key={conversation.id}
               onClick={() => setSelectedConvId(conversation.id)}
               className={`w-full p-3 flex items-start gap-3 hover:bg-gray-50 transition-colors border-b border-gray-100 ${
-                selectedConvId === conversation.id ? "bg-teal-50" : ""
+                selectedConvId === conversation.id ? "bg-purple-50" : ""
               }`}
             >
               <div className="relative shrink-0">
-                <div className="w-10 h-10 bg-teal-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                <div className="w-10 h-10 bg-cyan-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
                   {conversation.avatar}
                 </div>
                 {conversation.online && (
@@ -200,7 +200,7 @@ export function Messaging() {
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-gray-500 truncate">{conversation.lastMessage}</p>
                   {conversation.unread > 0 && (
-                    <span className="ml-1.5 bg-teal-600 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center flex-shrink-0">
+                    <span className="ml-1.5 bg-cyan-600 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center flex-shrink-0">
                       {conversation.unread}
                     </span>
                   )}
@@ -219,7 +219,7 @@ export function Messaging() {
             <div className="p-4 border-b border-gray-200 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="w-9 h-9 bg-teal-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                  <div className="w-9 h-9 bg-cyan-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
                     {selectedConv?.avatar}
                   </div>
                   {selectedConv?.online && (
@@ -259,7 +259,7 @@ export function Messaging() {
                       <div
                         className={`rounded-2xl px-4 py-2.5 ${
                           isMe
-                            ? "bg-teal-600 text-white"
+                            ? "bg-cyan-600 text-white"
                             : "bg-gray-100 text-gray-900"
                         }`}
                       >
@@ -315,13 +315,13 @@ export function Messaging() {
                     onKeyPress={handleKeyPress}
                     placeholder="Type a message..."
                     rows={1}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none text-xs"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none text-xs"
                   />
                 </div>
                 <button
                   onClick={handleSendMessage}
                   disabled={!messageInput.trim()}
-                  className="p-2.5 bg-teal-600 text-white rounded-xl hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2.5 bg-cyan-600 text-white rounded-xl hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Send className="w-4 h-4" />
                 </button>

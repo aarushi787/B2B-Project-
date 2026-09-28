@@ -377,7 +377,7 @@ export function ComponentMap() {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
 
   const categories = [
-    { id: "pages", label: "Pages", color: "bg-teal-100 text-teal-700", count: 13 },
+    { id: "pages", label: "Pages", color: "bg-purple-100 text-teal-700", count: 13 },
     { id: "features", label: "Features", color: "bg-blue-100 text-blue-700", count: 12 },
     { id: "layout", label: "Layout", color: "bg-purple-100 text-purple-700", count: 2 },
     { id: "ui", label: "UI Library", color: "bg-gray-100 text-gray-700", count: 43 },
@@ -406,7 +406,7 @@ export function ComponentMap() {
           className="mb-8"
         >
           <div className="flex items-center gap-3 mb-2">
-            <Code2 className="w-8 h-8 text-[#0F9D9D]" />
+            <Code2 className="w-8 h-8 text-[#8B5CF6]" />
             <h1 className="text-3xl font-semibold text-gray-900">Component Map</h1>
           </div>
           <p className="text-gray-600">
@@ -430,7 +430,7 @@ export function ComponentMap() {
               whileHover={{ y: -4, boxShadow: "0 12px 24px rgba(0,0,0,0.08)" }}
               onClick={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
               className={`bg-white rounded-xl p-6 cursor-pointer transition-all ${
-                selectedCategory === cat.id ? "ring-2 ring-[#0F9D9D]" : ""
+                selectedCategory === cat.id ? "ring-2 ring-[#8B5CF6]" : ""
               }`}
             >
               <div className="flex items-center justify-between mb-2">
@@ -460,7 +460,7 @@ export function ComponentMap() {
               placeholder="Search components..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0F9D9D] transition-all"
+              className="w-full pl-12 pr-4 py-3 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] transition-all"
             />
           </div>
           {selectedCategory && (
@@ -470,7 +470,7 @@ export function ComponentMap() {
                 className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-2"
               >
                 <span>Clear filter</span>
-                <span className="text-[#0F9D9D]">×</span>
+                <span className="text-[#8B5CF6]">×</span>
               </button>
             </div>
           )}
@@ -525,14 +525,14 @@ export function ComponentMap() {
                         className={`bg-white rounded-xl p-5 transition-all ${
                           isNavigable ? "cursor-pointer" : ""
                         } ${
-                          isHovered && hasDependencies ? "ring-2 ring-[#0F9D9D]" : ""
+                          isHovered && hasDependencies ? "ring-2 ring-[#8B5CF6]" : ""
                         }`}
                       >
                         <div className="flex items-start justify-between mb-3">
                           <div
                             className={`p-3 rounded-lg ${
                               group.id === "pages"
-                                ? "bg-teal-50"
+                                ? "bg-purple-50"
                                 : group.id === "features"
                                 ? "bg-blue-50"
                                 : group.id === "layout"
@@ -543,7 +543,7 @@ export function ComponentMap() {
                             <Icon
                               className={`w-6 h-6 ${
                                 group.id === "pages"
-                                  ? "text-teal-600"
+                                  ? "text-cyan-600"
                                   : group.id === "features"
                                   ? "text-blue-600"
                                   : group.id === "layout"
@@ -553,7 +553,7 @@ export function ComponentMap() {
                             />
                           </div>
                           {isNavigable && (
-                            <span className="px-2 py-1 bg-[#0F9D9D] bg-opacity-10 text-[#0F9D9D] text-xs rounded-md font-medium">
+                            <span className="px-2 py-1 bg-[#8B5CF6] bg-opacity-10 text-[#8B5CF6] text-xs rounded-md font-medium">
                               Navigate
                             </span>
                           )}
@@ -568,7 +568,7 @@ export function ComponentMap() {
 
                         {component.filePath && (
                           <div className="flex items-center gap-2 mb-2">
-                            <code className="text-xs text-[#0F9D9D] bg-teal-50 px-2 py-1 rounded font-mono flex-1">
+                            <code className="text-xs text-[#8B5CF6] bg-purple-50 px-2 py-1 rounded font-mono flex-1">
                               {component.filePath}
                             </code>
                           </div>

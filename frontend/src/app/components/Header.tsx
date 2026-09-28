@@ -70,13 +70,13 @@ export function Header({ dealStatus, role, onApprove, onReject, onFundEscrow, no
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-1.5 py-2 border-b border-slate-100">
-          <a href="/" className="text-xs text-slate-400 hover:text-[#0F9D9D] transition-colors flex items-center gap-1">
+          <a href="/" className="text-xs text-slate-400 hover:text-[#8B5CF6] transition-colors flex items-center gap-1">
             <Home className="w-3 h-3" /> Dashboard
           </a>
           <ChevronRight className="w-3 h-3 text-slate-300" />
-          <a href="/deals" className="text-xs text-slate-400 hover:text-[#0F9D9D] transition-colors">Deals</a>
+          <a href="/deals" className="text-xs text-slate-400 hover:text-[#8B5CF6] transition-colors">Deals</a>
           <ChevronRight className="w-3 h-3 text-slate-300" />
-          <span className="text-xs font-semibold text-[#0F9D9D]">Deal Workspace</span>
+          <span className="text-xs font-semibold text-[#8B5CF6]">Deal Workspace</span>
           <span className="text-xs text-slate-300 ml-1">#DW-2024-001</span>
         </div>
 
@@ -85,7 +85,7 @@ export function Header({ dealStatus, role, onApprove, onReject, onFundEscrow, no
           {/* Left: Title + Status */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#0F9D9D] to-teal-400 flex items-center justify-center shadow-sm shadow-teal-500/20">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#8B5CF6] to-cyan-400 flex items-center justify-center shadow-sm shadow-cyan-500/20">
                 <ShieldCheck className="w-4 h-4 text-white" />
               </div>
               <div>
@@ -157,7 +157,7 @@ export function Header({ dealStatus, role, onApprove, onReject, onFundEscrow, no
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={onFundEscrow}
-                  className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold text-white bg-[#0F9D9D] hover:bg-[#0c8686] rounded-lg transition-all shadow-sm shadow-teal-500/25"
+                  className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold text-white bg-[#8B5CF6] hover:bg-[#7C3AED] rounded-lg transition-all shadow-sm shadow-cyan-500/25"
                 >
                   <Wallet className="w-3.5 h-3.5" /> Fund Escrow
                 </motion.button>
@@ -197,7 +197,7 @@ export function Header({ dealStatus, role, onApprove, onReject, onFundEscrow, no
                   >
                     <div className="p-3 border-b border-slate-100 flex items-center justify-between">
                       <span className="text-xs font-bold text-slate-700">Notifications</span>
-                      <span className="text-[10px] font-semibold text-[#0F9D9D] cursor-pointer hover:underline">Mark all read</span>
+                      <span className="text-[10px] font-semibold text-[#8B5CF6] cursor-pointer hover:underline">Mark all read</span>
                     </div>
                     {notifications.map((n) => (
                       <div key={n.id} className="p-3 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 cursor-pointer">
@@ -219,7 +219,7 @@ export function Header({ dealStatus, role, onApprove, onReject, onFundEscrow, no
             </div>
 
             {/* Avatar */}
-            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#0F9D9D] to-teal-300 border-2 border-white shadow-sm flex items-center justify-center text-white text-[10px] font-bold">
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#8B5CF6] to-teal-300 border-2 border-white shadow-sm flex items-center justify-center text-white text-[10px] font-bold">
               {role.charAt(0)}
             </div>
 

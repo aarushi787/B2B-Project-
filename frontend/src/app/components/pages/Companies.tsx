@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { Card, GhostBtn, PrimaryBtn, Modal, Input, TextArea } from "../ui/DesignSystem";
 import { apiClient } from "../../../services/apiClient";
 import { useAuth } from "../../../auth/AuthProvider";
+import { socketService } from "../../../services/socketService";
 
 interface Company {
   id: string;
@@ -30,6 +31,13 @@ export function Companies() {
 
   useEffect(() => {
     fetchCompany();
+    
+    socketService.connect();
+    const unsub = socketService.on('company:updated', () => {
+      fetchCompany();
+    });
+    
+    return () => unsub();
   }, []);
 
   const fetchCompany = async () => {

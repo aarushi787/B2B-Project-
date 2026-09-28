@@ -66,7 +66,7 @@ export function ContractDocs({ documents, onSign, onUpload, role }: ContractDocs
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search docs..."
-              className="pl-7 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F9D9D]/30 focus:border-[#0F9D9D] bg-slate-50 w-32 transition-all"
+              className="pl-7 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/30 focus:border-[#8B5CF6] bg-slate-50 w-32 transition-all"
             />
           </div>
           {/* View Toggle */}
@@ -93,8 +93,8 @@ export function ContractDocs({ documents, onSign, onUpload, role }: ContractDocs
           <motion.div
             className={`relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all group ${
               dragActive
-                ? "border-[#0F9D9D] bg-teal-50 scale-[1.01]"
-                : "border-slate-200 hover:border-[#0F9D9D]/60 hover:bg-slate-50/80"
+                ? "border-[#8B5CF6] bg-purple-50 scale-[1.01]"
+                : "border-slate-200 hover:border-[#8B5CF6]/60 hover:bg-slate-50/80"
             }`}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
@@ -107,12 +107,12 @@ export function ContractDocs({ documents, onSign, onUpload, role }: ContractDocs
             <div className="flex flex-col items-center gap-2">
               <motion.div
                 animate={{ y: dragActive ? -4 : 0 }}
-                className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center border border-teal-100"
+                className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center border border-purple-100"
               >
                 {dragActive ? (
-                  <FilePlus2 className="w-5 h-5 text-[#0F9D9D]" />
+                  <FilePlus2 className="w-5 h-5 text-[#8B5CF6]" />
                 ) : (
-                  <Upload className="w-5 h-5 text-[#0F9D9D]" />
+                  <Upload className="w-5 h-5 text-[#8B5CF6]" />
                 )}
               </motion.div>
               <div>
@@ -181,7 +181,7 @@ export function ContractDocs({ documents, onSign, onUpload, role }: ContractDocs
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => onSign(doc.id)}
-                        className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold bg-[#0F9D9D] text-white rounded-lg hover:bg-[#0c8686] transition-colors shadow-sm"
+                        className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold bg-[#8B5CF6] text-white rounded-lg hover:bg-[#7C3AED] transition-colors shadow-sm"
                       >
                         <Edit3 className="w-3 h-3" /> E-sign
                       </motion.button>
@@ -221,7 +221,7 @@ export function ContractDocs({ documents, onSign, onUpload, role }: ContractDocs
                     {doc.status !== "Signed" && (role === "Client" || role === "Admin") && (
                       <button
                         onClick={() => onSign(doc.id)}
-                        className="flex-1 py-1.5 text-[10px] font-bold text-white bg-[#0F9D9D] hover:bg-[#0c8686] rounded-lg transition-colors flex items-center justify-center gap-1"
+                        className="flex-1 py-1.5 text-[10px] font-bold text-white bg-[#8B5CF6] hover:bg-[#7C3AED] rounded-lg transition-colors flex items-center justify-center gap-1"
                       >
                         <Edit3 className="w-3 h-3" /> Sign
                       </button>

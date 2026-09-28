@@ -43,8 +43,8 @@ function FundModal({ amount, onConfirm, onClose }: { amount: string; onConfirm: 
         {/* Modal Header */}
         <div className="p-6 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center">
-              <Shield className="w-5 h-5 text-[#0F9D9D]" />
+            <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
+              <Shield className="w-5 h-5 text-[#8B5CF6]" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-900">Fund Escrow</h3>
@@ -58,8 +58,8 @@ function FundModal({ amount, onConfirm, onClose }: { amount: string; onConfirm: 
 
         <div className="p-6 space-y-5">
           {/* Amount Display */}
-          <div className="p-4 bg-gradient-to-r from-teal-50 to-emerald-50 rounded-xl border border-teal-100">
-            <p className="text-xs text-teal-600 font-medium mb-1">Total to Fund</p>
+          <div className="p-4 bg-gradient-to-r from-purple-50 to-emerald-50 rounded-xl border border-purple-100">
+            <p className="text-xs text-cyan-600 font-medium mb-1">Total to Fund</p>
             <p className="text-3xl font-black text-slate-900">{amount}</p>
             <p className="text-[10px] text-slate-500 mt-1">Held in secure escrow until deal completion</p>
           </div>
@@ -106,7 +106,7 @@ function FundModal({ amount, onConfirm, onClose }: { amount: string; onConfirm: 
             whileTap={{ scale: 0.98 }}
             onClick={handleConfirm}
             disabled={loading}
-            className="flex-1 py-2.5 text-sm font-bold text-white bg-[#0F9D9D] hover:bg-[#0c8686] rounded-xl transition-all shadow-md shadow-teal-500/20 flex items-center justify-center gap-2 disabled:opacity-70"
+            className="flex-1 py-2.5 text-sm font-bold text-white bg-[#8B5CF6] hover:bg-[#7C3AED] rounded-xl transition-all shadow-md shadow-cyan-500/20 flex items-center justify-center gap-2 disabled:opacity-70"
           >
             {loading ? (
               <>
@@ -143,13 +143,13 @@ export function EscrowPayment({ status, amount, role, onFund, onRelease }: Escro
     },
     "Funded": {
       icon: Shield,
-      color: "text-[#0F9D9D]",
-      bg: "bg-teal-50",
-      border: "border-teal-200",
-      glow: "shadow-teal-100",
+      color: "text-[#8B5CF6]",
+      bg: "bg-purple-50",
+      border: "border-purple-200",
+      glow: "shadow-purple-100",
       label: "Secured in Escrow",
       barWidth: "60%",
-      barColor: "bg-[#0F9D9D]",
+      barColor: "bg-[#8B5CF6]",
     },
     "Released": {
       icon: Unlock,
@@ -182,8 +182,8 @@ export function EscrowPayment({ status, amount, role, onFund, onRelease }: Escro
         {/* Header */}
         <div className="p-5 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center">
-              <Shield className="w-4 h-4 text-[#0F9D9D]" />
+            <div className="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center">
+              <Shield className="w-4 h-4 text-[#8B5CF6]" />
             </div>
             <div>
               <h2 className="text-sm font-bold text-slate-900">Escrow Payment</h2>
@@ -209,7 +209,7 @@ export function EscrowPayment({ status, amount, role, onFund, onRelease }: Escro
             <div className="mt-3 space-y-1.5">
               <div className="flex justify-between text-[10px] text-slate-500">
                 <span>Escrow Progress</span>
-                <span className="font-semibold" style={{ color: status === "Not Funded" ? "#F59E0B" : status === "Funded" ? "#0F9D9D" : "#22C55E" }}>
+                <span className="font-semibold" style={{ color: status === "Not Funded" ? "#F59E0B" : status === "Funded" ? "#8B5CF6" : "#22C55E" }}>
                   {status === "Not Funded" ? "0%" : status === "Funded" ? "60%" : "100%"}
                 </span>
               </div>
@@ -234,7 +234,7 @@ export function EscrowPayment({ status, amount, role, onFund, onRelease }: Escro
               <React.Fragment key={step}>
                 <div className={`flex-1 text-center py-1.5 rounded-lg text-[10px] font-semibold ${
                   (status === "Not Funded" && i === 0) || (status === "Funded" && i === 1) || (status === "Released" && i === 2)
-                    ? "bg-teal-50 text-teal-700 border border-teal-200"
+                    ? "bg-purple-50 text-teal-700 border border-purple-200"
                     : (status === "Funded" && i === 0) || (status === "Released" && i <= 1)
                       ? "bg-green-50 text-green-600 border border-green-200"
                       : "bg-slate-50 text-slate-400 border border-slate-100"
@@ -257,7 +257,7 @@ export function EscrowPayment({ status, amount, role, onFund, onRelease }: Escro
                 whileHover={{ scale: 1.01, y: -1 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setShowModal(true)}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-[#0F9D9D] hover:bg-[#0c8686] text-white font-semibold rounded-xl shadow-md shadow-teal-500/20 transition-all text-sm"
+                className="w-full flex items-center justify-center gap-2 py-3 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold rounded-xl shadow-md shadow-cyan-500/20 transition-all text-sm"
               >
                 <Zap className="w-4 h-4" /> Fund Escrow Now
               </motion.button>
@@ -290,7 +290,7 @@ export function EscrowPayment({ status, amount, role, onFund, onRelease }: Escro
               <motion.div
                 key="secured"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="w-full py-3 bg-teal-50 border border-teal-200 text-teal-700 font-semibold rounded-xl text-xs text-center flex items-center justify-center gap-2"
+                className="w-full py-3 bg-purple-50 border border-purple-200 text-teal-700 font-semibold rounded-xl text-xs text-center flex items-center justify-center gap-2"
               >
                 <Shield className="w-3.5 h-3.5" /> Funds Secured in Escrow
               </motion.div>

@@ -17,6 +17,7 @@ import {
   Tooltip, ResponsiveContainer, Legend
 } from "recharts";
 import { apiClient } from "../../../services/apiClient";
+import { socketService } from "../../../services/socketService";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type AdminRole = "Admin" | "Moderator" | "Viewer";
@@ -121,7 +122,7 @@ const INV_MONTHLY_DATA = [
 ];
 
 const INV_DEAL_CATEGORIES = [
-  { category: "Technology", count: 124, value: 42.1, color: "#0F9D9D" },
+  { category: "Technology", count: 124, value: 42.1, color: "#8B5CF6" },
   { category: "Manufacturing", count: 89, value: 31.4, color: "#8B5CF6" },
   { category: "Healthcare", count: 76, value: 28.8, color: "#3B82F6" },
   { category: "Energy", count: 58, value: 22.6, color: "#22C55E" },
@@ -170,8 +171,8 @@ function SectionHeader({ icon: Icon, title, subtitle, action }: {
   return (
     <div className="flex items-center justify-between mb-5">
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center">
-          <Icon className="w-4.5 h-4.5 text-[#0F9D9D]" style={{ width: 18, height: 18 }} />
+        <div className="w-9 h-9 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center">
+          <Icon className="w-4.5 h-4.5 text-[#8B5CF6]" style={{ width: 18, height: 18 }} />
         </div>
         <div>
           <h2 className="text-sm font-bold text-slate-900">{title}</h2>
@@ -248,10 +249,10 @@ function UserModal({ user, status, onToggle, onClose }: {
       onClick={e => e.currentTarget === e.target && onClose()}>
       <motion.div initial={{ scale: 0.95, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 12 }}
         className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
-        <div className="h-20 bg-gradient-to-r from-[#0F9D9D] to-teal-400" />
+        <div className="h-20 bg-gradient-to-r from-[#8B5CF6] to-cyan-400" />
         <div className="px-6 pb-6 -mt-10">
           <div className="flex items-end justify-between mb-4">
-            <div className="w-16 h-16 rounded-2xl bg-white border-4 border-white shadow-lg flex items-center justify-center text-xl font-black text-[#0F9D9D]">
+            <div className="w-16 h-16 rounded-2xl bg-white border-4 border-white shadow-lg flex items-center justify-center text-xl font-black text-[#8B5CF6]">
               {user.name.charAt(0)}
             </div>
             <button onClick={onClose} className="p-2 text-slate-400 hover:bg-slate-100 rounded-xl mb-1"><X className="w-4 h-4" /></button>
@@ -299,8 +300,8 @@ function DealPanel({ deal, onClose, onFlag, canFlag }: {
         className="w-full max-w-sm bg-white h-full shadow-2xl flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#0F9D9D]/10 flex items-center justify-center">
-              <Handshake className="w-4 h-4 text-[#0F9D9D]" />
+            <div className="w-8 h-8 rounded-lg bg-[#8B5CF6]/10 flex items-center justify-center">
+              <Handshake className="w-4 h-4 text-[#8B5CF6]" />
             </div>
             <div>
               <p className="text-xs font-bold text-slate-900">Deal Detail</p>
@@ -389,14 +390,14 @@ function NotifPanel({ notifs, onMarkRead, onClearAll, onClose }: {
             const Icon = typeIcon[n.type];
             return (
               <div key={n.id} onClick={() => onMarkRead(n.id)}
-                className={`flex gap-3 p-3.5 border-b border-slate-50 cursor-pointer hover:bg-slate-50 transition-colors ${!n.read ? "bg-teal-50/30" : ""}`}>
+                className={`flex gap-3 p-3.5 border-b border-slate-50 cursor-pointer hover:bg-slate-50 transition-colors ${!n.read ? "bg-purple-50/30" : ""}`}>
                 <div className={`w-7 h-7 rounded-full ${typeBg[n.type]} flex items-center justify-center shrink-0`}>
                   <Icon className={`w-3.5 h-3.5 ${typeColor[n.type]}`} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <p className={`text-[11px] font-bold ${n.read ? "text-slate-600" : "text-slate-900"}`}>{n.title}</p>
-                    {!n.read && <div className="w-2 h-2 rounded-full bg-[#0F9D9D] shrink-0 mt-0.5" />}
+                    {!n.read && <div className="w-2 h-2 rounded-full bg-[#8B5CF6] shrink-0 mt-0.5" />}
                   </div>
                   <p className="text-[10px] text-slate-500 leading-relaxed mt-0.5">{n.message}</p>
                   <p className="text-[9px] text-slate-400 mt-1">{n.time}</p>
@@ -454,9 +455,9 @@ export function Admin() {
     const fetchData = async () => {
       try {
         const [usersRes, compsRes, dealsRes] = await Promise.all([
-          apiClient.get('/admin/users').catch(() => []),
-          apiClient.get('/admin/companies').catch(() => []),
-          apiClient.get('/deals').catch(() => ({ data: [] }))
+          apiClient.get<any[]>('/admin/users').catch(() => []),
+          apiClient.get<any[]>('/admin/companies').catch(() => []),
+          apiClient.get<any>('/deals').catch(() => ({ data: [] }))
         ]);
         
         if (usersRes?.length) {
@@ -506,6 +507,14 @@ export function Admin() {
       }
     };
     fetchData();
+
+    socketService.connect();
+    const unsubDeals = socketService.on('deals:updated', () => fetchData());
+    const unsubCompany = socketService.on('company:updated', () => fetchData());
+    return () => {
+      unsubDeals();
+      unsubCompany();
+    };
   }, []);
   const [viewDeal, setViewDeal] = useState<Deal | null>(null);
   const [fraudAlerts, setFraudAlerts] = useState<FraudAlert[]>(INIT_FRAUD);
@@ -556,7 +565,7 @@ export function Admin() {
     }, ...prev]);
   };
 
-  const handleToggleUser = (id: number) => {
+  const handleToggleUser = (id: string | number) => {
     const cur = userStatuses[id];
     const next: UserStatus = cur === "Active" ? "Suspended" : "Active";
     setUserStatuses(p => ({ ...p, [id]: next }));
@@ -576,7 +585,7 @@ export function Admin() {
     setSelectedUsers(new Set());
   };
 
-  const toggleSelectUser = (id: number) => {
+  const toggleSelectUser = (id: string | number) => {
     setSelectedUsers(prev => {
       const s = new Set(prev);
       s.has(id) ? s.delete(id) : s.add(id);
@@ -584,21 +593,21 @@ export function Admin() {
     });
   };
 
-  const handleApprove = (id: number) => {
-    setCompanyStatuses(p => ({ ...p, [id]: "Verified" }));
+  const handleApprove = (id: string | number) => {
+    setCompanyStatuses(p => ({ ...p, [id]: "Verified" as CompanyStatus }));
     const c = companies.find(x => x.id === id);
     addLog(`Company Approved: ${c?.name}`, "company");
     toast.success(`${c?.name} verified successfully!`);
   };
 
   const handleRejectConfirm = (reason: string) => {
-    setCompanyStatuses(p => ({ ...p, [rejectModal.id]: "Rejected" }));
+    setCompanyStatuses(p => ({ ...p, [rejectModal.id]: "Rejected" as CompanyStatus }));
     addLog(`Company Rejected: ${rejectModal.name} — ${reason}`, "company");
     toast.error(`${rejectModal.name} rejected.`);
-    setRejectModal({ open: false, id: 0, name: "" });
+    setRejectModal({ open: false, id: "", name: "" });
   };
 
-  const handleFlagDeal = (id: number) => {
+  const handleFlagDeal = (id: string | number) => {
     setDeals(prev => prev.map(d => d.id === id ? { ...d, flagged: true, status: "Flagged" as DealStatus } : d));
     const deal = deals.find(d => d.id === id);
     addLog(`Deal Flagged: ${deal?.name}`, "deal");
@@ -606,7 +615,7 @@ export function Admin() {
     setViewDeal(null);
   };
 
-  const handleResolveFraud = (id: number) => {
+  const handleResolveFraud = (id: string | number) => {
     setFraudAlerts(prev => prev.map(f => f.id === id ? { ...f, resolved: true } : f));
     toast.success("Fraud alert resolved.");
   };
@@ -640,7 +649,7 @@ export function Admin() {
       <aside className="w-52 bg-white border-r border-slate-200 flex flex-col shrink-0">
         <div className="p-4 border-b border-slate-100">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#0F9D9D] to-teal-400 flex items-center justify-center shadow-sm">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#8B5CF6] to-cyan-400 flex items-center justify-center shadow-sm">
               <Shield className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -655,7 +664,7 @@ export function Admin() {
           <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Your Role</p>
           <button onClick={() => setRoleOpen(o => !o)}
             className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold border transition-all ${
-              adminRole === "Admin" ? "bg-teal-50 text-[#0F9D9D] border-teal-200" :
+              adminRole === "Admin" ? "bg-purple-50 text-[#8B5CF6] border-purple-200" :
               adminRole === "Moderator" ? "bg-purple-50 text-purple-700 border-purple-200" :
               "bg-slate-100 text-slate-600 border-slate-200"
             }`}>
@@ -671,7 +680,7 @@ export function Admin() {
                 className="mt-1 bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden z-50 relative">
                 {(["Admin", "Moderator", "Viewer"] as AdminRole[]).map(r => (
                   <button key={r} onClick={() => { setAdminRole(r); setRoleOpen(false); toast.info(`Switched to ${r} role`); }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${adminRole === r ? "bg-teal-50 text-[#0F9D9D] font-bold" : "text-slate-600 hover:bg-slate-50"}`}>
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${adminRole === r ? "bg-purple-50 text-[#8B5CF6] font-bold" : "text-slate-600 hover:bg-slate-50"}`}>
                     {r === "Admin" ? <ShieldCheck className="w-3.5 h-3.5" /> : r === "Moderator" ? <ShieldAlert className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                     {r}
                     <span className="ml-auto text-[9px] opacity-60">{r === "Admin" ? "Full" : r === "Moderator" ? "Limited" : "Read-only"}</span>
@@ -686,7 +695,7 @@ export function Admin() {
         <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
           {SIDEBAR_ITEMS.map(item => (
             <motion.button key={item.key} whileHover={{ x: 2 }} onClick={() => setSection(item.key)}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${section === item.key ? "bg-[#0F9D9D] text-white shadow-sm shadow-teal-500/20" : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"}`}>
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${section === item.key ? "bg-[#8B5CF6] text-white shadow-sm shadow-cyan-500/20" : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"}`}>
               <div className="flex items-center gap-2.5">
                 <item.icon className="w-4 h-4" />
                 {item.label}
@@ -718,7 +727,7 @@ export function Admin() {
           <div className="relative flex-1 max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
             <input type="text" placeholder="Search users, companies, deals..." value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#0F9D9D]/30 focus:border-[#0F9D9D] transition-all" />
+              className="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/30 focus:border-[#8B5CF6] transition-all" />
           </div>
 
           <div className="ml-auto flex items-center gap-2">
@@ -744,7 +753,7 @@ export function Admin() {
             {/* Avatar dropdown */}
             <div className="relative" ref={avatarRef}>
               <button onClick={() => setAvatarOpen(o => !o)} className="flex items-center gap-2 px-2.5 py-1.5 hover:bg-slate-100 rounded-xl transition-colors">
-                <div className="w-7 h-7 bg-gradient-to-br from-[#0F9D9D] to-teal-400 rounded-xl flex items-center justify-center text-[10px] font-black text-white">A</div>
+                <div className="w-7 h-7 bg-gradient-to-br from-[#8B5CF6] to-cyan-400 rounded-xl flex items-center justify-center text-[10px] font-black text-white">A</div>
                 <span className="text-xs font-semibold text-slate-700 hidden sm:block">Admin</span>
                 <ChevronDown className="w-3 h-3 text-slate-400" />
               </button>
@@ -800,7 +809,7 @@ export function Admin() {
                   {/* Metrics */}
                   <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
                     {[
-                      { label: "Total Users", value: users.length.toString(), sub: `+3 this week`, icon: Users, color: "#0F9D9D", bg: "bg-teal-50", sec: "users" as Section },
+                      { label: "Total Users", value: users.length.toString(), sub: `+3 this week`, icon: Users, color: "#8B5CF6", bg: "bg-purple-50", sec: "users" as Section },
                       { label: "Companies", value: companies.length.toString(), sub: `${Object.values(companyStatuses).filter(s => s === "Pending").length} pending`, icon: Building2, color: "#8B5CF6", bg: "bg-purple-50", sec: "companies" as Section },
                       { label: "Active Deals", value: deals.filter(d => d.status === "In Progress").length.toString(), sub: `${deals.filter(d => d.flagged).length} flagged`, icon: Handshake, color: "#3B82F6", bg: "bg-blue-50", sec: "deals" as Section },
                       { label: "Revenue (MTD)", value: "$2.4M", sub: "+15% vs last month", icon: DollarSign, color: "#22C55E", bg: "bg-green-50", sec: "reports" as Section },
@@ -848,7 +857,7 @@ export function Admin() {
                                   {f.resolved ? "Resolved" : `Risk ${f.riskScore}`}
                                 </div>
                                 {!f.resolved && canWrite && (
-                                  <button onClick={() => handleResolveFraud(f.id)} className="text-[9px] font-bold text-[#0F9D9D] hover:underline">Resolve</button>
+                                  <button onClick={() => handleResolveFraud(f.id)} className="text-[9px] font-bold text-[#8B5CF6] hover:underline">Resolve</button>
                                 )}
                               </div>
                             </div>
@@ -864,7 +873,7 @@ export function Admin() {
                           <div className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center"><Activity className="w-4 h-4 text-slate-500" /></div>
                           <div><p className="text-xs font-bold text-slate-900">Recent Activity</p><p className="text-[10px] text-slate-400">Last 5 events</p></div>
                         </div>
-                        <button onClick={() => setSection("compliance")} className="text-[10px] font-semibold text-[#0F9D9D] hover:underline">View all</button>
+                        <button onClick={() => setSection("compliance")} className="text-[10px] font-semibold text-[#8B5CF6] hover:underline">View all</button>
                       </div>
                       <div className="p-4 space-y-0">
                         {logs.slice(0, 5).map((log, i) => (
@@ -902,8 +911,8 @@ export function Admin() {
                   <AnimatePresence>
                     {selectedUsers.size > 0 && canWrite && (
                       <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-                        className="flex items-center gap-3 p-3 bg-[#0F9D9D]/5 border border-teal-200 rounded-2xl">
-                        <span className="text-xs font-bold text-[#0F9D9D]">{selectedUsers.size} selected</span>
+                        className="flex items-center gap-3 p-3 bg-[#8B5CF6]/5 border border-purple-200 rounded-2xl">
+                        <span className="text-xs font-bold text-[#8B5CF6]">{selectedUsers.size} selected</span>
                         <div className="flex gap-2 ml-auto">
                           <motion.button whileTap={{ scale: 0.97 }} onClick={() => handleBulkAction("activate")}
                             className="px-3 py-1.5 text-[11px] font-bold text-white bg-green-500 hover:bg-green-600 rounded-xl flex items-center gap-1.5 transition-colors">
@@ -924,7 +933,7 @@ export function Admin() {
                       <table className="w-full text-xs">
                         <thead>
                           <tr className="bg-slate-50 border-b border-slate-100">
-                            {canWrite && <th className="py-3 px-4 w-10"><button onClick={() => selectedUsers.size === users.length ? setSelectedUsers(new Set()) : setSelectedUsers(new Set(users.map(u => u.id)))} className="text-slate-400 hover:text-slate-600">{selectedUsers.size === users.length ? <CheckSquare className="w-3.5 h-3.5 text-[#0F9D9D]" /> : <Square className="w-3.5 h-3.5" />}</button></th>}
+                            {canWrite && <th className="py-3 px-4 w-10"><button onClick={() => selectedUsers.size === users.length ? setSelectedUsers(new Set()) : setSelectedUsers(new Set(users.map(u => u.id)))} className="text-slate-400 hover:text-slate-600">{selectedUsers.size === users.length ? <CheckSquare className="w-3.5 h-3.5 text-[#8B5CF6]" /> : <Square className="w-3.5 h-3.5" />}</button></th>}
                             {["User", "Company", "Role", "Status", "Last Active", "Actions"].map(h => <th key={h} className="text-left py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">{h}</th>)}
                           </tr>
                         </thead>
@@ -940,10 +949,10 @@ export function Admin() {
                               {users.map((u, i) => (
                               <motion.tr key={u.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }}
                                 className="border-b border-slate-50 hover:bg-slate-50/60 transition-colors">
-                                {canWrite && <td className="py-3 px-4"><button onClick={() => toggleSelectUser(u.id)}>{selectedUsers.has(u.id) ? <CheckSquare className="w-3.5 h-3.5 text-[#0F9D9D]" /> : <Square className="w-3.5 h-3.5 text-slate-300" />}</button></td>}
+                                {canWrite && <td className="py-3 px-4"><button onClick={() => toggleSelectUser(u.id)}>{selectedUsers.has(u.id) ? <CheckSquare className="w-3.5 h-3.5 text-[#8B5CF6]" /> : <Square className="w-3.5 h-3.5 text-slate-300" />}</button></td>}
                                 <td className="py-3 px-4">
                                   <div className="flex items-center gap-2.5">
-                                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-[11px] font-black text-white shrink-0 ${userStatuses[u.id] === "Suspended" ? "bg-slate-400" : "bg-gradient-to-br from-[#0F9D9D] to-teal-400"}`}>{u.name.charAt(0)}</div>
+                                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-[11px] font-black text-white shrink-0 ${userStatuses[u.id] === "Suspended" ? "bg-slate-400" : "bg-gradient-to-br from-[#8B5CF6] to-cyan-400"}`}>{u.name.charAt(0)}</div>
                                     <div>
                                       <p className="font-bold text-slate-800">{u.name}</p>
                                       <p className="text-[10px] text-slate-400">{u.email}</p>
@@ -958,7 +967,7 @@ export function Admin() {
                                 <td className="py-3 px-4 text-slate-400 text-[10px]">{u.lastActive}</td>
                                 <td className="py-3 px-4">
                                   <div className="flex items-center gap-1">
-                                    <button onClick={() => setViewUser(u)} className="p-1.5 text-slate-400 hover:text-[#0F9D9D] hover:bg-teal-50 rounded-lg transition-colors" title="View Profile"><Eye className="w-3.5 h-3.5" /></button>
+                                    <button onClick={() => setViewUser(u)} className="p-1.5 text-slate-400 hover:text-[#8B5CF6] hover:bg-purple-50 rounded-lg transition-colors" title="View Profile"><Eye className="w-3.5 h-3.5" /></button>
                                     {canWrite && (
                                       <>
                                         <button onClick={() => handleToggleUser(u.id)}
@@ -1073,7 +1082,7 @@ export function Admin() {
                             deals.map((d, i) => (
                             <motion.tr key={d.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                               onClick={() => setViewDeal(d)}
-                              className={`border-b border-slate-50 cursor-pointer transition-colors group ${d.flagged ? "bg-red-50/40 hover:bg-red-50" : "hover:bg-teal-50/30"}`}>
+                              className={`border-b border-slate-50 cursor-pointer transition-colors group ${d.flagged ? "bg-red-50/40 hover:bg-red-50" : "hover:bg-purple-50/30"}`}>
                               <td className="py-3.5 px-4">
                                 <div className="flex items-center gap-2.5">
                                   {d.flagged && <Flag className="w-3.5 h-3.5 text-red-500 shrink-0" />}
@@ -1099,7 +1108,7 @@ export function Admin() {
                               </td>
                               <td className="py-3.5 px-4"><Badge label={d.risk} style={riskStyle[d.risk]} /></td>
                               <td className="py-3.5 px-4">
-                                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#0F9D9D] transition-colors" />
+                                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#8B5CF6] transition-colors" />
                               </td>
                             </motion.tr>
                           )))}
@@ -1119,7 +1128,7 @@ export function Admin() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[
                       { label: "KYC Verified", value: Object.values(companyStatuses).filter(s => s === "Verified").length, total: companies.length, color: "#22C55E", bg: "bg-green-50", border: "border-green-200", icon: ShieldCheck },
-                      { label: "AML Checks Passed", value: 4, total: 5, color: "#0F9D9D", bg: "bg-teal-50", border: "border-teal-200", icon: CheckCircle },
+                      { label: "AML Checks Passed", value: 4, total: 5, color: "#8B5CF6", bg: "bg-purple-50", border: "border-purple-200", icon: CheckCircle },
                       { label: "High Risk Entities", value: fraudAlerts.filter(f => !f.resolved).length, total: fraudAlerts.length, color: "#EF4444", bg: "bg-red-50", border: "border-red-200", icon: AlertTriangle },
                     ].map(c => (
                       <div key={c.label} className={`bg-white rounded-2xl border ${c.border} shadow-sm p-5`}>
@@ -1189,7 +1198,7 @@ export function Admin() {
                     action={
                       <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                         onClick={() => toast.success("Report exported!", { description: "admin_report_apr2026.csv downloaded." })}
-                        className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-[#0F9D9D] hover:bg-[#0c8686] rounded-xl transition-colors shadow-sm">
+                        className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-[#8B5CF6] hover:bg-[#7C3AED] rounded-xl transition-colors shadow-sm">
                         <Download className="w-3.5 h-3.5" /> Export Report
                       </motion.button>
                     }
@@ -1201,15 +1210,15 @@ export function Admin() {
                         <AreaChart data={GROWTH_DATA}>
                           <defs key="admin-area-defs">
                             <linearGradient id="adminGradUsers" x1="0" y1="0" x2="0" y2="1">
-                              <stop key="s0" offset="5%" stopColor="#0F9D9D" stopOpacity={0.18} />
-                              <stop key="s1" offset="95%" stopColor="#0F9D9D" stopOpacity={0} />
+                              <stop key="s0" offset="5%" stopColor="#8B5CF6" stopOpacity={0.18} />
+                              <stop key="s1" offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
                             </linearGradient>
                           </defs>
                           <CartesianGrid key="ag-cg" strokeDasharray="3 3" stroke="#F1F5F9" />
                           <XAxis key="ag-xa" dataKey="month" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
                           <YAxis key="ag-ya" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} width={40} />
                           <Tooltip key="ag-tt" content={<ChartTooltip />} />
-                          <Area key="ag-users" type="monotone" dataKey="users" stroke="#0F9D9D" strokeWidth={2.5} fill="url(#adminGradUsers)" name="Users" dot={false} activeDot={{ r: 5 }} />
+                          <Area key="ag-users" type="monotone" dataKey="users" stroke="#8B5CF6" strokeWidth={2.5} fill="url(#adminGradUsers)" name="Users" dot={false} activeDot={{ r: 5 }} />
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
@@ -1221,7 +1230,7 @@ export function Admin() {
                           <XAxis key="abr-xa" dataKey="month" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
                           <YAxis key="abr-ya" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} width={40} />
                           <Tooltip key="abr-tt" content={<ChartTooltip />} />
-                          <Bar key="abr-rev" dataKey="revenue" fill="#0F9D9D" name="Revenue" radius={[6, 6, 0, 0]} />
+                          <Bar key="abr-rev" dataKey="revenue" fill="#8B5CF6" name="Revenue" radius={[6, 6, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -1254,7 +1263,7 @@ export function Admin() {
                     action={
                       <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                         onClick={() => toast.success("Investor report exported!", { description: "investor_report_apr2026.pdf downloaded." })}
-                        className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-[#0F9D9D] hover:bg-[#0c8080] rounded-xl transition-colors shadow-sm">
+                        className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-[#8B5CF6] hover:bg-[#0c8080] rounded-xl transition-colors shadow-sm">
                         <Download className="w-3.5 h-3.5" /> Export Report
                       </motion.button>
                     }
@@ -1270,7 +1279,7 @@ export function Admin() {
                     ].map((m, i) => (
                       <motion.div key={m.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
                         whileHover={{ y: -3, boxShadow: "0 10px 28px -8px rgba(0,0,0,0.12)" }}
-                        className={`rounded-2xl border shadow-sm p-4 ${m.gradient ? "bg-gradient-to-br from-[#0F9D9D] to-[#0c8080] border-teal-600" : "bg-white border-slate-100"}`}>
+                        className={`rounded-2xl border shadow-sm p-4 ${m.gradient ? "bg-gradient-to-br from-[#8B5CF6] to-[#0c8080] border-cyan-600" : "bg-white border-slate-100"}`}>
                         <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 ${m.gradient ? "bg-white/20" : m.bg}`}>
                           <m.icon className="w-4.5 h-4.5" style={{ width: 18, height: 18, color: m.gradient ? "#fff" : m.color }} />
                         </div>
@@ -1297,15 +1306,15 @@ export function Admin() {
                         <AreaChart data={INV_MONTHLY_DATA}>
                           <defs>
                             <linearGradient id="invGmvGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#0F9D9D" stopOpacity={0.2} />
-                              <stop offset="95%" stopColor="#0F9D9D" stopOpacity={0} />
+                              <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.2} />
+                              <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
                             </linearGradient>
                           </defs>
                           <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
                           <XAxis dataKey="period" tick={{ fontSize: 9, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
                           <YAxis tick={{ fontSize: 9, fill: "#94A3B8" }} axisLine={false} tickLine={false} width={32} />
                           <Tooltip contentStyle={{ fontSize: 11, borderRadius: 10, border: "1px solid #E2E8F0", boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }} />
-                          <Area type="monotone" dataKey="gmv" stroke="#0F9D9D" strokeWidth={2.5} fill="url(#invGmvGrad)" name="GMV ($M)" dot={false} activeDot={{ r: 5 }} />
+                          <Area type="monotone" dataKey="gmv" stroke="#8B5CF6" strokeWidth={2.5} fill="url(#invGmvGrad)" name="GMV ($M)" dot={false} activeDot={{ r: 5 }} />
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
@@ -1340,8 +1349,8 @@ export function Admin() {
                     {/* Deal Breakdown */}
                     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                       <div className="p-4 border-b border-slate-100 flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center">
-                          <PieChartIcon className="w-4 h-4 text-[#0F9D9D]" />
+                        <div className="w-8 h-8 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center">
+                          <PieChartIcon className="w-4 h-4 text-[#8B5CF6]" />
                         </div>
                         <div>
                           <p className="text-xs font-bold text-slate-900">Deal Breakdown by Sector</p>
@@ -1404,10 +1413,10 @@ export function Admin() {
                   </div>
 
                   {/* Platform Health Banner */}
-                  <div className="bg-gradient-to-r from-[#0F9D9D]/8 to-teal-50 border border-teal-200 rounded-2xl p-5">
+                  <div className="bg-gradient-to-r from-[#8B5CF6]/8 to-purple-50 border border-purple-200 rounded-2xl p-5">
                     <div className="flex items-center justify-between flex-wrap gap-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-[#0F9D9D] flex items-center justify-center shadow-sm">
+                        <div className="w-10 h-10 rounded-xl bg-[#8B5CF6] flex items-center justify-center shadow-sm">
                           <Globe className="w-5 h-5 text-white" />
                         </div>
                         <div>
@@ -1418,7 +1427,7 @@ export function Admin() {
                       <div className="flex items-center gap-6 flex-wrap">
                         {[
                           { label: "Uptime", value: "99.97%", color: "text-green-600" },
-                          { label: "API Latency", value: "42ms", color: "text-[#0F9D9D]" },
+                          { label: "API Latency", value: "42ms", color: "text-[#8B5CF6]" },
                           { label: "Error Rate", value: "0.03%", color: "text-green-600" },
                         ].map(s => (
                           <div key={s.label} className="text-center">
@@ -1472,7 +1481,7 @@ export function Admin() {
                               setSettingsState(prev => ({ ...prev, [s.title]: !prev[s.title] }));
                               toast[on ? "warning" : "success"](`${s.title} ${on ? "disabled" : "enabled"}`);
                             }}
-                            className={`rounded-full transition-all relative ${on ? "bg-[#0F9D9D]" : "bg-slate-200"} ${!isAdmin ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                            className={`rounded-full transition-all relative ${on ? "bg-[#8B5CF6]" : "bg-slate-200"} ${!isAdmin ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                             style={{ height: 22, width: 40, flexShrink: 0 }}>
                             <motion.div animate={{ x: on ? 18 : 2 }} transition={{ type: "spring", stiffness: 400, damping: 30 }}
                               className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm" style={{ margin: 1 }} />
