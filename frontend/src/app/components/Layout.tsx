@@ -18,22 +18,34 @@ const NAV_ITEMS = [
   // Highest Priority: Core Marketplace Actions
   { icon: Sparkles,        label: "Discover Leads",       path: "/app/opportunities/matching", group: "marketplace" },
   { icon: FileText,        label: "My Requirements",      path: "/app/requirements/active",    group: "marketplace" },
-  { icon: Send,            label: "Proposals",            path: "/app/opportunities/sent",     group: "marketplace" },
+  { icon: Send,            label: "Sent Proposals",       path: "/app/opportunities/sent",     group: "marketplace" },
+  { icon: Inbox,           label: "Received Proposals",   path: "/app/opportunities/received", group: "marketplace" },
+
+  // Projects & Deals
+  { icon: Folder,          label: "Portfolio / Deals",    path: "/app/deals",                  group: "projects" },
+  { icon: Shield,          label: "Verification",         path: "/app/contracts",              group: "projects" },
+  { icon: FileText,        label: "Ledger",               path: "/app/ledger",                 group: "projects" },
 
   // Communication
   { icon: MessageSquare,   label: "Messages",             path: "/app/messaging",              group: "communication" },
+  { icon: Send,            label: "Sent Enquiries",       path: "/app/enquiries/sent",         group: "communication" },
+  { icon: Inbox,           label: "Received Enquiries",   path: "/app/enquiries/received",     group: "communication" },
 
   // Administrative: Company Identity
   { icon: Building2,       label: "Business Profile",     path: "/app/companies",              group: "company" },
   { icon: ShoppingBag,     label: "Services Catalog",     path: "/app/marketplace",            group: "company" },
+  { icon: FileText,        label: "Investor Portal",      path: "/app/investor",               group: "company" },
 
-  // Lowest Priority: Settings
+  // Admin & Settings
+  { icon: Shield,          label: "Admin Console",        path: "/app/admin",                  group: "settings" },
   { icon: Settings,        label: "Settings",             path: "/app/settings",               group: "settings" },
+  { icon: Settings,        label: "Component Map",        path: "/app/component-map",          group: "settings" },
 ];
 
 const GROUPS = [
   { id: "root",           label: null,              items: NAV_ITEMS.filter(n => n.group === "root") },
   { id: "marketplace",    label: "MARKETPLACE",     items: NAV_ITEMS.filter(n => n.group === "marketplace") },
+  { id: "projects",       label: "PROJECTS",        items: NAV_ITEMS.filter(n => n.group === "projects") },
   { id: "communication",  label: "COMMUNICATION",   items: NAV_ITEMS.filter(n => n.group === "communication") },
   { id: "company",        label: "MY BUSINESS",     items: NAV_ITEMS.filter(n => n.group === "company") },
   { id: "settings",       label: null,              items: NAV_ITEMS.filter(n => n.group === "settings") },
