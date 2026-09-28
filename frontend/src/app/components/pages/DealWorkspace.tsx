@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Toaster, toast } from "sonner";
 import { OverviewCards } from "../OverviewCards";
 import { MilestoneTimeline } from "../MilestoneTimeline";
@@ -8,6 +8,8 @@ import { RiskPanel } from "../RiskPanel";
 import { DealAlerts } from "../DealAlerts";
 import { DealDetails } from "../DealDetails";
 import { UserFlowStepper } from "../UserFlowStepper";
+import { useParams } from "react-router";
+import { socketService } from "../../../services/socketService";
 import { motion } from "motion/react";
 import { ShieldCheck } from "lucide-react";
 
@@ -33,10 +35,31 @@ export interface ChatMessage {
 }
 
 export function DealWorkspace() {
+  const { id = "DW-2024-001" } = useParams<{ id: string }>();
   const [role, setRole] = useState<Role>("Admin");
   const [dealStatus, setDealStatus] = useState<DealStatus>("Pending");
   const [escrowStatus, setEscrowStatus] = useState<EscrowStatus>("Not Funded");
   const [milestone, setMilestone] = useState<number>(1);
+
+  // Hook up WebSockets for real-time updates
+  useEffect(() => {
+    socketService.connect();
+    socketService.watchDeal(id);
+    
+    const unsubscribe = socketService.on('deals:updated', (data: any) => {
+      // Map backend status to frontend status
+      const newStatus = data.status === 'CONFIRMED' || data.status === 'approved' ? 'Approved' :
+                        data.status === 'COMPLETED' || data.status === 'completed' ? 'Completed' :
+                        data.status === 'VOIDED' || data.status === 'rejected' ? 'Rejected' : 'Pending';
+      setDealStatus(newStatus as DealStatus);
+      toast.info(`Deal status updated in real-time to ${newStatus}`);
+    });
+
+    return () => {
+      unsubscribe();
+      socketService.unwatchDeal(id);
+    };
+  }, [id]);
 
   const [documents, setDocuments] = useState<Document[]>([
     { id: "1", name: "Master_Service_Agreement.pdf", size: "2.4 MB", status: "Signed", uploadedBy: "Provider" },
@@ -72,6 +95,9 @@ export function DealWorkspace() {
     setDealStatus("Approved");
     setChat(c => [...c, { id: Date.now().toString(), sender: "System", role: "Admin", text: "Deal approved by Admin.", timestamp: new Date() }]);
     toast.success("✅ Deal Approved successfully!", { description: "All parties have been notified." });
+    
+    // In a real app, this would hit the API:
+    // apiClient.put(`/deals/${id}/approve`);
   };
 
   const handleReject = () => {

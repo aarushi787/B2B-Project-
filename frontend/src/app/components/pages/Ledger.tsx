@@ -14,6 +14,9 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar
 } from "recharts";
 import { toast, Toaster } from "sonner";
+import { apiClient } from "../../../services/apiClient";
+import { socketService } from "../../../services/socketService";
+import { useAuth } from "../../../auth/AuthProvider";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type TxType = "Credit" | "Debit";
@@ -22,7 +25,7 @@ type ViewMode = "table" | "chart";
 type SortKey = "date_desc" | "date_asc" | "amount_desc" | "amount_asc";
 
 interface Transaction {
-  id: number;
+  id: number | string;
   date: string;
   time: string;
   type: TxType;
@@ -448,6 +451,7 @@ function TableSkeleton() {
 const PAGE_SIZE = 8;
 
 export function Ledger() {
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<"All" | TxType>("All");
   const [statusFilter, setStatusFilter] = useState<"All" | TxStatus>("All");
@@ -465,10 +469,60 @@ export function Ledger() {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
 
+  const [transactions, setTransactions] = useState<Transaction[]>(ALL_TRANSACTIONS);
+
+  const fetchTransactions = useCallback(async () => {
+    try {
+      // In a real app, we'd fetch specific company or all if admin
+      let data = [];
+      if (user?.role === 'admin') {
+        data = await apiClient.get<any[]>('/ledger');
+      } else if (user?.companyId) {
+        data = await apiClient.get<any[]>(`/ledger/company/${user.companyId}`);
+      }
+      
+      if (data && data.length > 0) {
+        const mapped: Transaction[] = data.map((t: any, i: number) => {
+          const d = new Date(t.timestamp || Date.now());
+          return {
+            id: t.id || i,
+            date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            time: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            type: t.type === 'PAYOUT' || t.type === 'credit' ? 'Credit' : 'Debit',
+            amount: t.amount || 0,
+            dealReference: t.counterparty || 'Unknown Counterparty',
+            dealId: t.dealId || 'N/A',
+            category: t.type === 'PAYOUT' || t.type === 'credit' ? 'Revenue' : 'Operating Expenses',
+            status: 'Completed', // Our backend maps all currently to COMPLETED
+            description: t.description || 'System transaction',
+            from: t.type === 'PAYOUT' || t.type === 'credit' ? (t.counterparty || 'System') : 'FinanceHub Inc',
+            to: t.type === 'PAYOUT' || t.type === 'credit' ? 'FinanceHub Inc' : (t.counterparty || 'System'),
+            fee: 0,
+            statusHistory: [
+              { status: "Completed", timestamp: d.toLocaleString(), note: "Processed by backend" }
+            ]
+          };
+        });
+        setTransactions(mapped);
+      }
+    } catch (e) {
+      console.error("Failed to fetch ledger", e);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user]);
+
   useEffect(() => {
-    const t = setTimeout(() => setIsLoading(false), 1200);
-    return () => clearTimeout(t);
-  }, []);
+    fetchTransactions();
+    
+    socketService.connect();
+    const unsub = socketService.on('ledger:updated', () => {
+      fetchTransactions();
+      toast.info("Ledger updated in real-time");
+    });
+    
+    return () => unsub();
+  }, [fetchTransactions]);
 
   useEffect(() => {
     const h = (e: MouseEvent) => {
@@ -480,13 +534,13 @@ export function Ledger() {
   }, []);
 
   // Derived stats
-  const totalIn = ALL_TRANSACTIONS.filter(t => t.type === "Credit" && t.status !== "Failed").reduce((s, t) => s + t.amount, 0);
-  const totalOut = ALL_TRANSACTIONS.filter(t => t.type === "Debit" && t.status !== "Failed").reduce((s, t) => s + t.amount, 0);
-  const pending = ALL_TRANSACTIONS.filter(t => t.status === "Pending").reduce((s, t) => s + t.amount, 0);
+  const totalIn = transactions.filter(t => t.type === "Credit" && t.status !== "Failed").reduce((s, t) => s + t.amount, 0);
+  const totalOut = transactions.filter(t => t.type === "Debit" && t.status !== "Failed").reduce((s, t) => s + t.amount, 0);
+  const pending = transactions.filter(t => t.status === "Pending").reduce((s, t) => s + t.amount, 0);
   const balance = totalIn - totalOut;
 
   // Filtered + sorted
-  const filtered = ALL_TRANSACTIONS.filter(tx => {
+  const filtered = transactions.filter(tx => {
     const ms = tx.dealReference.toLowerCase().includes(search.toLowerCase()) ||
       tx.description.toLowerCase().includes(search.toLowerCase()) ||
       tx.dealId.toLowerCase().includes(search.toLowerCase());
@@ -504,7 +558,7 @@ export function Ledger() {
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const categories = ["All", ...Array.from(new Set(ALL_TRANSACTIONS.map(t => t.category)))];
+  const categories = ["All", ...Array.from(new Set(transactions.map(t => t.category)))];
 
   const handleExport = (format: "csv" | "pdf") => {
     setShowExportMenu(false);
@@ -549,7 +603,7 @@ export function Ledger() {
               </div>
               <div>
                 <h1 className="text-base font-bold text-slate-900 leading-none">Financial Ledger</h1>
-                <p className="text-[10px] text-slate-400 mt-0.5">{ALL_TRANSACTIONS.length} transactions · Apr 2026</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">{transactions.length} transactions · Apr 2026</p>
               </div>
             </div>
 

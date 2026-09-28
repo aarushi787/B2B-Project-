@@ -5,6 +5,7 @@ import { Eye, Edit2, Plus, FileText, Inbox, Clock } from "lucide-react";
 import toast from "react-hot-toast";
 import { StatusBadge, Card, MetricCard, SearchInput, FilterPill, PrimaryBtn, GhostBtn, Modal, Input, TextArea } from "../ui/DesignSystem";
 import { apiClient } from "../../../services/apiClient";
+import { socketService } from "../../../services/socketService";
 
 interface RequirementItem {
   id: string;
@@ -26,6 +27,13 @@ export function ActiveRequirements() {
 
   useEffect(() => {
     fetchRequirements();
+    
+    socketService.connect();
+    const unsub = socketService.on('deals:updated', () => {
+      fetchRequirements();
+    });
+    
+    return () => unsub();
   }, []);
 
   const fetchRequirements = async () => {

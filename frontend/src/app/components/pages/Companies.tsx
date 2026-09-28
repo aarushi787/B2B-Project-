@@ -4,6 +4,7 @@ import { CheckCircle2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Card, GhostBtn, PrimaryBtn, Modal, Input, TextArea } from "../ui/DesignSystem";
 import { apiClient } from "../../../services/apiClient";
+import { useAuth } from "../../../auth/AuthProvider";
 
 interface Company {
   id: string;
@@ -18,6 +19,7 @@ interface Company {
 }
 
 export function Companies() {
+  const { user } = useAuth();
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
@@ -32,12 +34,14 @@ export function Companies() {
 
   const fetchCompany = async () => {
     try {
-      // For demonstration, fetch all companies and take the first one
-      const data = await apiClient.get<Company[]>('/companies');
-      if (data && data.length > 0) {
-        setCompany(data[0]);
-        setFormData(data[0]);
-      } else {
+      if (user?.companyId) {
+        const data = await apiClient.get<Company>(`/companies/${user.companyId}`);
+        if (data) {
+          setCompany(data);
+          setFormData(data);
+          return;
+        }
+      }
         // Fallback placeholder if no companies exist in DB
         const placeholder: Company = {
           id: "new",
@@ -50,7 +54,6 @@ export function Companies() {
         };
         setCompany(placeholder);
         setFormData(placeholder);
-      }
     } catch (error) {
       toast.error("Failed to load company profile");
     } finally {

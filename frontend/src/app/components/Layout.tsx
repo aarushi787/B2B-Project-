@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Onboarding } from "./Onboarding";
 import { useAuth } from "../../auth/AuthProvider";
+import { socketService } from "../../services/socketService";
 
 // ─── Nav config ─────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
@@ -29,6 +30,7 @@ const NAV_ITEMS = [
 
   // Lowest Priority: Settings
   { icon: Settings,        label: "Settings",             path: "/app/settings",               group: "settings" },
+  { icon: Shield,          label: "Admin Portal",         path: "/app/admin",                  group: "settings" },
 ];
 
 const GROUPS = [
@@ -86,13 +88,25 @@ export function Layout() {
   const avatarRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
 
-  const notifications = [
-    { id: 1, type: "success", title: "Deal Approved", message: "TechCorp Equipment Purchase has been approved by admin.", time: "5 min ago" },
-    { id: 2, type: "info",    title: "New Message",   message: "Jane Smith sent a message about the Green Energy partnership.", time: "1 hour ago" },
-    { id: 3, type: "warning", title: "Contract Expiring", message: "Office Supplies Contract expires in 3 days — action required.", time: "2 hours ago" },
-    { id: 4, type: "info",    title: "Payment Received",  message: "₹85,000 received from HealthFirst Medical.", time: "3 hours ago" },
-    { id: 5, type: "warning", title: "KYC Pending",       message: "RetailPro Solutions has not completed KYC verification.", time: "5 hours ago" },
-  ];
+  const [notifications, setNotifications] = useState<any[]>([
+    { id: 1, type: "success", title: "Welcome!", message: "Your real-time notifications will appear here.", time: "Just now" },
+  ]);
+
+  useEffect(() => {
+    socketService.connect();
+    const handleNotification = (data: any) => {
+      setNotifications(prev => [{
+        id: Date.now(),
+        type: data.type || "info",
+        title: data.title || "New Notification",
+        message: data.message || data.text || "You have a new alert.",
+        time: "Just now"
+      }, ...prev]);
+    };
+    
+    const unsubscribe = socketService.on('notification', handleNotification);
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 

@@ -1,8 +1,50 @@
-// Verification Center — matches dashboard-verification.png UI design
-import { Check, Mail, Smartphone, FileText, User, UploadCloud, File } from "lucide-react";
-import { Card, GhostBtn } from "../ui/DesignSystem";
-
+import React, { useState, useEffect } from "react";
+import { Check, Mail, Smartphone, FileText, User, UploadCloud, File, AlertCircle } from "lucide-react";
+import { Card, GhostBtn, PrimaryBtn, StatusBadge } from "../ui/DesignSystem";
+import { apiClient } from "../../../services/apiClient";
+import { useAuth } from "../../../auth/AuthProvider";
 export function Contracts() {
+  const { user } = useAuth();
+  const [kycDocs, setKycDocs] = useState<any[]>([]);
+  const [businessDocs, setBusinessDocs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user?.companyId) return;
+      try {
+        const [kycRes, docRes] = await Promise.all([
+          apiClient.get<any[]>(`/kyc/company/${user.companyId}`),
+          apiClient.get<any[]>('/documents')
+        ]);
+        setKycDocs(kycRes || []);
+        setBusinessDocs(docRes || []);
+      } catch (err) {
+        console.error("Failed to fetch verification status", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [user]);
+
+  // Derived status
+  const emailVerified = user?.email ? true : false;
+  const phoneVerified = user?.phone ? true : false; // Assuming phone verification uses user.phone
+  
+  // Check if KYC (Gov ID) is uploaded and verified
+  const govIdDoc = kycDocs.find(d => d.documentType === 'GOV_ID');
+  const govIdStatus = govIdDoc ? govIdDoc.status : 'PENDING';
+  
+  // Check if Business documents exist
+  const businessDocStatus = businessDocs.length > 0 ? 'VERIFIED' : 'PENDING';
+
+  let completedSteps = 0;
+  if (emailVerified) completedSteps++;
+  if (phoneVerified) completedSteps++;
+  if (businessDocStatus === 'VERIFIED') completedSteps++;
+  if (govIdStatus === 'VERIFIED') completedSteps++;
+
   return (
     <div style={{ maxWidth: 1000, margin: "0 auto", fontFamily: "Inter, sans-serif" }}>
       {/* Top Stepper */}
@@ -12,52 +54,54 @@ export function Contracts() {
             <h2 style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", margin: "0 0 6px" }}>Verification Progress</h2>
             <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>Complete all required legal steps to unlock high-tier matching priority.</p>
           </div>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "#2563EB" }}>2 of 4 steps completed</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "#2563EB" }}>{completedSteps} of 4 steps completed</span>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
           {/* Step 1 */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, zIndex: 1, background: "#fff", paddingRight: 16 }}>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid #16a34a", display: "flex", alignItems: "center", justifyContent: "center", color: "#16a34a" }}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", border: emailVerified ? "2px solid #16a34a" : "2px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "center", color: emailVerified ? "#16a34a" : "#cbd5e1" }}>
               <Check style={{ width: 16, height: 16 }} />
             </div>
             <div>
-              <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", margin: 0 }}>Email Verified</p>
+              <p style={{ fontSize: 13, fontWeight: 700, color: emailVerified ? "#0f172a" : "#64748b", margin: 0 }}>Email Verified</p>
               <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>Legal Contact</p>
             </div>
           </div>
-          <div style={{ height: 2, background: "#16a34a", flex: 1, margin: "0 16px" }} />
+          <div style={{ height: 2, background: emailVerified ? "#16a34a" : "#e2e8f0", flex: 1, margin: "0 16px" }} />
 
           {/* Step 2 */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, zIndex: 1, background: "#fff", padding: "0 16px" }}>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid #16a34a", display: "flex", alignItems: "center", justifyContent: "center", color: "#16a34a" }}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", border: phoneVerified ? "2px solid #16a34a" : "2px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "center", color: phoneVerified ? "#16a34a" : "#cbd5e1" }}>
               <Check style={{ width: 16, height: 16 }} />
             </div>
             <div>
-              <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", margin: 0 }}>Phone Verified</p>
+              <p style={{ fontSize: 13, fontWeight: 700, color: phoneVerified ? "#0f172a" : "#64748b", margin: 0 }}>Phone Verified</p>
               <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>SMS Alerts</p>
             </div>
           </div>
-          <div style={{ height: 2, borderTop: "2px dashed #2563EB", flex: 1, margin: "0 16px" }} />
+          <div style={{ height: 2, borderTop: businessDocStatus === 'VERIFIED' ? "2px solid #16a34a" : "2px dashed #2563EB", flex: 1, margin: "0 16px" }} />
 
           {/* Step 3 */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, zIndex: 1, background: "#fff", padding: "0 16px" }}>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid #2563EB", display: "flex", alignItems: "center", justifyContent: "center", color: "#2563EB" }}>
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#2563EB" }} />
+            <div style={{ width: 32, height: 32, borderRadius: "50%", border: businessDocStatus === 'VERIFIED' ? "2px solid #16a34a" : "2px solid #2563EB", display: "flex", alignItems: "center", justifyContent: "center", color: businessDocStatus === 'VERIFIED' ? "#16a34a" : "#2563EB" }}>
+              {businessDocStatus === 'VERIFIED' ? <Check style={{ width: 16, height: 16 }} /> : <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#2563EB" }} />}
             </div>
             <div>
-              <p style={{ fontSize: 13, fontWeight: 700, color: "#2563EB", margin: 0 }}>Business Documents</p>
-              <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>In Review</p>
+              <p style={{ fontSize: 13, fontWeight: 700, color: businessDocStatus === 'VERIFIED' ? "#16a34a" : "#2563EB", margin: 0 }}>Business Documents</p>
+              <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>{businessDocStatus === 'VERIFIED' ? 'Verified' : 'Upload Required'}</p>
             </div>
           </div>
-          <div style={{ height: 2, background: "#e2e8f0", flex: 1, margin: "0 16px" }} />
+          <div style={{ height: 2, background: govIdStatus === 'VERIFIED' ? "#16a34a" : "#e2e8f0", flex: 1, margin: "0 16px" }} />
 
           {/* Step 4 */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, zIndex: 1, background: "#fff", paddingLeft: 16 }}>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid #e2e8f0", background: "#f8fafc" }} />
+            <div style={{ width: 32, height: 32, borderRadius: "50%", border: govIdStatus === 'VERIFIED' ? "2px solid #16a34a" : "2px solid #e2e8f0", background: govIdStatus === 'VERIFIED' ? "#fff" : "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", color: "#16a34a" }}>
+              {govIdStatus === 'VERIFIED' ? <Check style={{ width: 16, height: 16 }} /> : null}
+            </div>
             <div>
-              <p style={{ fontSize: 13, fontWeight: 700, color: "#64748b", margin: 0 }}>Government ID</p>
-              <p style={{ fontSize: 11, color: "#94a3b8", margin: 0 }}>Pending</p>
+              <p style={{ fontSize: 13, fontWeight: 700, color: govIdStatus === 'VERIFIED' ? "#16a34a" : "#64748b", margin: 0 }}>Government ID</p>
+              <p style={{ fontSize: 11, color: "#94a3b8", margin: 0 }}>{govIdStatus}</p>
             </div>
           </div>
         </div>

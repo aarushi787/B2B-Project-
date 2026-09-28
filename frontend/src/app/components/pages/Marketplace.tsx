@@ -4,6 +4,7 @@ import { PlusSquare, Tag, PauseCircle, XCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { StatusBadge, Card, SearchInput, FilterPill, PrimaryBtn, Modal, Input, TextArea, GhostBtn } from "../ui/DesignSystem";
 import { apiClient } from "../../../services/apiClient";
+import { socketService } from "../../../services/socketService";
 
 interface ServiceItem {
   id: string;
@@ -27,6 +28,14 @@ export function Marketplace() {
 
   useEffect(() => {
     fetchServices();
+    
+    socketService.connect();
+    // Assuming backend emits 'products:updated' or similar
+    const unsub = socketService.on('products:updated', () => {
+      fetchServices();
+    });
+    
+    return () => unsub();
   }, []);
 
   const fetchServices = async () => {

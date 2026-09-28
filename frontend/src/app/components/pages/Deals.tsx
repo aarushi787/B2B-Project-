@@ -4,6 +4,7 @@ import { FolderPlus, Clock, ExternalLink, Calendar, CheckCircle2 } from "lucide-
 import toast from "react-hot-toast";
 import { StatusBadge, Card, SearchInput, FilterPill, PrimaryBtn, GhostBtn, Modal, Input, TextArea } from "../ui/DesignSystem";
 import { apiClient } from "../../../services/apiClient";
+import { socketService } from "../../../services/socketService";
 
 interface DealItem {
   id: string;
@@ -26,6 +27,13 @@ export function Deals() {
 
   useEffect(() => {
     fetchDeals();
+
+    socketService.connect();
+    const unsub = socketService.on('deals:updated', () => {
+      fetchDeals();
+    });
+
+    return () => unsub();
   }, []);
 
   const fetchDeals = async () => {

@@ -9,6 +9,7 @@ import {
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import { useAuth } from "../../../auth/AuthProvider";
 import { apiClient } from "../../../services/apiClient";
+import { socketService } from "../../../services/socketService";
 
 interface Deal { id: string; title: string; status: string; total_amount: number; buyer_id?: string; seller_id?: string; created_at?: string; category?: string; }
 interface Notification { id: string; title: string; message: string; type: string; created_at: string; read: boolean; source?: string; }
@@ -144,7 +145,26 @@ export function Dashboard() {
     if (isRefresh) setRefreshing(false); else setLoading(false);
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { 
+    fetchData(); 
+    
+    // Wire up real-time WebSockets
+    socketService.connect();
+    
+    const unsubDeals = socketService.on('deals:updated', () => {
+      fetchData(false);
+      toast.success("Deals updated in real-time");
+    });
+    
+    const unsubNotifs = socketService.on('notification', () => {
+      fetchData(false);
+    });
+    
+    return () => {
+      unsubDeals();
+      unsubNotifs();
+    };
+  }, []);
 
   const activeDeals = deals.filter(d => ["pending", "approved", "active"].includes(d.status));
 

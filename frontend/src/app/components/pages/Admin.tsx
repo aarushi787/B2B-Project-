@@ -16,6 +16,7 @@ import {
   AreaChart, Area, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend
 } from "recharts";
+import { apiClient } from "../../../services/apiClient";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type AdminRole = "Admin" | "Moderator" | "Viewer";
@@ -27,19 +28,19 @@ type Section = "overview" | "users" | "companies" | "deals" | "compliance" | "re
 type LogType = "all" | "user" | "company" | "deal" | "security";
 
 interface AdminUser {
-  id: number; name: string; email: string; role: string;
+  id: number | string; name: string; email: string; role: string;
   status: UserStatus; lastActive: string; company: string; joined: string; deals: number;
 }
 interface Company {
-  id: number; name: string; industry: string; status: CompanyStatus;
+  id: number | string; name: string; industry: string; status: CompanyStatus;
   kyc: number; docs: number; submittedBy: string; date: string; revenue: string;
 }
 interface Deal {
-  id: number; name: string; client: string; provider: string;
+  id: number | string; name: string; client: string; provider: string;
   amount: number; status: DealStatus; risk: RiskLevel; date: string; flagged: boolean;
 }
 interface AuditLog {
-  id: number; action: string; user: string; timestamp: string;
+  id: number | string; action: string; user: string; timestamp: string;
   ip: string; result: "success" | "failed" | "warning"; type: LogType;
 }
 interface Notification {
@@ -437,17 +438,75 @@ export function Admin() {
   const [liveTime, setLiveTime] = useState(new Date().toLocaleTimeString());
   const [notifications, setNotifications] = useState<Notification[]>(INIT_NOTIFS);
   const [users, setUsers] = useState<AdminUser[]>(INIT_USERS);
-  const [userStatuses, setUserStatuses] = useState<Record<number, UserStatus>>(
+  const [userStatuses, setUserStatuses] = useState<Record<string | number, UserStatus>>(
     Object.fromEntries(INIT_USERS.map(u => [u.id, u.status]))
   );
-  const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
+  const [selectedUsers, setSelectedUsers] = useState<Set<number | string>>(new Set());
   const [viewUser, setViewUser] = useState<AdminUser | null>(null);
   const [companies, setCompanies] = useState<Company[]>(INIT_COMPANIES);
-  const [companyStatuses, setCompanyStatuses] = useState<Record<number, CompanyStatus>>(
+  const [companyStatuses, setCompanyStatuses] = useState<Record<string | number, CompanyStatus>>(
     Object.fromEntries(INIT_COMPANIES.map(c => [c.id, c.status]))
   );
-  const [rejectModal, setRejectModal] = useState<{ open: boolean; id: number; name: string }>({ open: false, id: 0, name: "" });
+  const [rejectModal, setRejectModal] = useState<{ open: boolean; id: number | string; name: string }>({ open: false, id: 0, name: "" });
   const [deals, setDeals] = useState<Deal[]>(INIT_DEALS);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [usersRes, compsRes, dealsRes] = await Promise.all([
+          apiClient.get('/admin/users').catch(() => []),
+          apiClient.get('/admin/companies').catch(() => []),
+          apiClient.get('/deals').catch(() => ({ data: [] }))
+        ]);
+        
+        if (usersRes?.length) {
+          const mappedUsers = usersRes.map((u: any) => ({
+            id: u.id,
+            name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Unknown User',
+            email: u.email,
+            role: u.role || 'User',
+            status: "Active" as UserStatus,
+            lastActive: "Just now",
+            company: "Platform User",
+            joined: new Date(u.createdAt).toLocaleDateString(),
+            deals: 0
+          }));
+          setUsers(mappedUsers);
+          setUserStatuses(Object.fromEntries(mappedUsers.map((u: any) => [u.id, u.status])));
+        }
+
+        if (compsRes?.length) {
+          const mappedComps = compsRes.map((c: any) => ({
+            id: c.id,
+            name: c.name || c.legalName || 'Unknown Company',
+            industry: c.industry || "General",
+            status: c.kycStatus === 'verified' ? 'Verified' as CompanyStatus : 'Pending' as CompanyStatus,
+            kyc: 100, docs: 3, submittedBy: "Admin", date: new Date(c.createdAt || Date.now()).toLocaleDateString(), revenue: "$0"
+          }));
+          setCompanies(mappedComps);
+          setCompanyStatuses(Object.fromEntries(mappedComps.map((c: any) => [c.id, c.status])));
+        }
+
+        if (dealsRes?.data?.length) {
+          const mappedDeals = dealsRes.data.map((d: any) => ({
+            id: d.id,
+            name: d.notes || `Deal ${d.id.substring(0,8)}`,
+            client: d.buyerId?.substring(0, 8) || "Unknown",
+            provider: d.sellerIds?.[0]?.substring(0,8) || "Unknown",
+            amount: d.amount || 0,
+            status: d.status === 'CONFIRMED' ? 'Completed' : d.status === 'ENQUIRY' ? 'Pending' : 'In Progress',
+            risk: "Low" as RiskLevel,
+            date: new Date(d.createdAt).toLocaleDateString(),
+            flagged: false
+          }));
+          setDeals(mappedDeals);
+        }
+      } catch (e) {
+        console.error("Failed to load admin data", e);
+      }
+    };
+    fetchData();
+  }, []);
   const [viewDeal, setViewDeal] = useState<Deal | null>(null);
   const [fraudAlerts, setFraudAlerts] = useState<FraudAlert[]>(INIT_FRAUD);
   const [auditFilter, setAuditFilter] = useState<LogType>("all");
