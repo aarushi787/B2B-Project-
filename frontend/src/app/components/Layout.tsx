@@ -12,7 +12,6 @@ import { Onboarding } from "./Onboarding";
 import { useAuth } from "../../auth/AuthProvider";
 import { socketService } from "../../services/socketService";
 
-// ─── Nav config ─────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: "Overview",              path: "/app/dashboard",              group: "root" },
 
@@ -30,7 +29,6 @@ const NAV_ITEMS = [
 
   // Lowest Priority: Settings
   { icon: Settings,        label: "Settings",             path: "/app/settings",               group: "settings" },
-  { icon: Shield,          label: "Admin Portal",         path: "/app/admin",                  group: "settings" },
 ];
 
 const GROUPS = [
@@ -71,7 +69,7 @@ function BrandLogo({ small }: { small?: boolean }) {
 }
 
 export function Layout() {
-  const { user, logout: authLogout } = useAuth();
+  const { user, logout: authLogout, isAdmin } = useAuth();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -467,7 +465,7 @@ export function Layout() {
                       ))}
                     </div>
                     <div style={{ padding: "10px 16px", borderTop: "1px solid #f1f5f9", textAlign: "center" }}>
-                      <button style={{ fontSize: 12, fontWeight: 600, color: "#2563EB", background: "none", border: "none", cursor: "pointer" }}>View All Notifications</button>
+                      <Link to="/app/notifications" onClick={() => setNotifOpen(false)} style={{ fontSize: 12, fontWeight: 600, color: "#2563EB", textDecoration: "none" }}>View All Notifications</Link>
                     </div>
                   </motion.div>
                 )}
@@ -525,6 +523,7 @@ export function Layout() {
                       { icon: User, label: "Profile", path: "/app/settings" },
                       { icon: Settings, label: "Settings", path: "/app/settings" },
                       { icon: Sparkles, label: "Platform Tour", action: () => { setShowOnboarding(true); setAvatarOpen(false); } },
+                      ...(isAdmin ? [{ icon: Shield, label: "Super Admin Portal", path: "/app/admin" }] : []),
                     ].map(item => (
                       item.action ? (
                         <button key={item.label} onClick={item.action}

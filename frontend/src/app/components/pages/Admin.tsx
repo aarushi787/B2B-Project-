@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { toast, Toaster } from "sonner";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, Legend
+  Tooltip, ResponsiveContainer, Legend, Cell
 } from "recharts";
 import { apiClient } from "../../../services/apiClient";
 import { socketService } from "../../../services/socketService";
@@ -98,6 +98,23 @@ const INIT_NOTIFS: Notification[] = [
   { id: 4, title: "Monthly Report Ready", message: "April 2026 revenue report generated.", time: "2h ago", read: true, type: "success" },
   { id: 5, title: "Failed Login Attempts", message: "5 failed logins from IP 203.45.67.89.", time: "3h ago", read: true, type: "alert" },
 ];
+
+const REVENUE_DATA = [
+  { name: 'Jan', revenue: 120000, volume: 45 },
+  { name: 'Feb', revenue: 150000, volume: 52 },
+  { name: 'Mar', revenue: 200000, volume: 78 },
+  { name: 'Apr', revenue: 350000, volume: 110 },
+  { name: 'May', revenue: 450000, volume: 135 },
+  { name: 'Jun', revenue: 520000, volume: 160 },
+];
+
+const PLATFORM_USAGE = [
+  { name: 'Buyers', value: 450 },
+  { name: 'Sellers', value: 300 },
+  { name: 'Agencies', value: 150 },
+];
+
+const COLORS = ['#8B5CF6', '#3B82F6', '#10B981', '#F59E0B'];
 
 const INIT_FRAUD: FraudAlert[] = [
   { id: 1, title: "Suspicious User Activity", entity: "Unknown (IP: 203.45.67.89)", riskScore: 87, detected: "Apr 23 · 08:15 AM", type: "user", resolved: false },
@@ -645,90 +662,57 @@ export function Admin() {
         {showNotifs && <NotifPanel notifs={notifications} onMarkRead={id => setNotifications(p => p.map(n => n.id === id ? { ...n, read: true } : n))} onClearAll={() => setNotifications(p => p.map(n => ({ ...n, read: true })))} onClose={() => setShowNotifs(false)} />}
       </AnimatePresence>
 
-      {/* ── Inner Admin Sidebar ─────────────────────────────────── */}
-      <aside className="w-52 bg-white border-r border-slate-200 flex flex-col shrink-0">
-        <div className="p-4 border-b border-slate-100">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#8B5CF6] to-cyan-400 flex items-center justify-center shadow-sm">
-              <Shield className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <p className="text-xs font-black text-slate-900">Admin Panel</p>
-              <p className="text-[9px] text-slate-400">Control Center</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Role switcher */}
-        <div className="px-3 py-3 border-b border-slate-100" ref={roleRef}>
-          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Your Role</p>
-          <button onClick={() => setRoleOpen(o => !o)}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold border transition-all ${
-              adminRole === "Admin" ? "bg-purple-50 text-[#8B5CF6] border-purple-200" :
-              adminRole === "Moderator" ? "bg-purple-50 text-purple-700 border-purple-200" :
-              "bg-slate-100 text-slate-600 border-slate-200"
-            }`}>
-            <div className="flex items-center gap-1.5">
-              {adminRole === "Admin" ? <ShieldCheck className="w-3.5 h-3.5" /> : adminRole === "Moderator" ? <ShieldAlert className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-              {adminRole}
-            </div>
-            <ChevronDown className="w-3 h-3" />
-          </button>
-          <AnimatePresence>
-            {roleOpen && (
-              <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
-                className="mt-1 bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden z-50 relative">
-                {(["Admin", "Moderator", "Viewer"] as AdminRole[]).map(r => (
-                  <button key={r} onClick={() => { setAdminRole(r); setRoleOpen(false); toast.info(`Switched to ${r} role`); }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${adminRole === r ? "bg-purple-50 text-[#8B5CF6] font-bold" : "text-slate-600 hover:bg-slate-50"}`}>
-                    {r === "Admin" ? <ShieldCheck className="w-3.5 h-3.5" /> : r === "Moderator" ? <ShieldAlert className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                    {r}
-                    <span className="ml-auto text-[9px] opacity-60">{r === "Admin" ? "Full" : r === "Moderator" ? "Limited" : "Read-only"}</span>
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
-          {SIDEBAR_ITEMS.map(item => (
-            <motion.button key={item.key} whileHover={{ x: 2 }} onClick={() => setSection(item.key)}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${section === item.key ? "bg-[#8B5CF6] text-white shadow-sm shadow-cyan-500/20" : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"}`}>
-              <div className="flex items-center gap-2.5">
-                <item.icon className="w-4 h-4" />
-                {item.label}
-              </div>
-              {item.badge ? (
-                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${section === item.key ? "bg-white/25 text-white" : "bg-red-500 text-white"}`}>{item.badge}</span>
-              ) : null}
-            </motion.button>
-          ))}
-        </nav>
-
-        {/* Live indicator */}
-        <div className="p-3 border-t border-slate-100">
-          <button onClick={() => setLiveRefresh(r => !r)}
-            className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs transition-all ${liveRefresh ? "bg-green-50 border border-green-200" : "bg-slate-100 border border-slate-200"}`}>
-            <span className={`w-2 h-2 rounded-full ${liveRefresh ? "bg-green-500 animate-pulse" : "bg-slate-400"}`} />
-            <span className={`font-semibold ${liveRefresh ? "text-green-700" : "text-slate-500"}`}>{liveRefresh ? "Live" : "Paused"}</span>
-            <span className="ml-auto text-[9px] text-slate-400">{liveTime}</span>
-          </button>
-        </div>
-      </aside>
-
       {/* ── Main Content ─────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col overflow-hidden">
 
-        {/* Inner Top Header */}
-        <div className="bg-white border-b border-slate-200 px-5 py-3 flex items-center gap-4 shrink-0">
-          {/* Search */}
-          <div className="relative flex-1 max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-            <input type="text" placeholder="Search users, companies, deals..." value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/30 focus:border-[#8B5CF6] transition-all" />
-          </div>
+        {/* ── Admin Top Navigation ────────────────────────────────── */}
+        <div className="bg-white border-b border-slate-200 shrink-0">
+          {/* Top Header */}
+          <div className="px-6 py-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#8B5CF6] to-cyan-400 flex items-center justify-center shadow-sm">
+                <Shield className="w-4.5 h-4.5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-sm font-black text-slate-900 tracking-tight">Admin Control Center</h1>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <div className="relative" ref={roleRef}>
+                    <button onClick={() => setRoleOpen(o => !o)} className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 hover:text-[#8B5CF6] transition-colors">
+                      {adminRole === "Admin" ? <ShieldCheck className="w-3 h-3 text-[#8B5CF6]" /> : adminRole === "Moderator" ? <ShieldAlert className="w-3 h-3 text-purple-500" /> : <Eye className="w-3 h-3 text-slate-400" />}
+                      Role: {adminRole}
+                      <ChevronDown className="w-3 h-3" />
+                    </button>
+                    <AnimatePresence>
+                      {roleOpen && (
+                        <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
+                          className="absolute left-0 mt-2 w-40 bg-white rounded-xl border border-slate-200 shadow-xl overflow-hidden z-50">
+                          {(["Admin", "Moderator", "Viewer"] as AdminRole[]).map(r => (
+                            <button key={r} onClick={() => { setAdminRole(r); setRoleOpen(false); toast.info(`Switched to ${r} role`); }}
+                              className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${adminRole === r ? "bg-purple-50 text-[#8B5CF6] font-bold" : "text-slate-600 hover:bg-slate-50"}`}>
+                              {r === "Admin" ? <ShieldCheck className="w-3.5 h-3.5" /> : r === "Moderator" ? <ShieldAlert className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                              {r}
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  <span className="text-[10px] text-slate-300">•</span>
+                  <button onClick={() => setLiveRefresh(r => !r)} className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500">
+                    <span className={`w-1.5 h-1.5 rounded-full ${liveRefresh ? "bg-green-500 animate-pulse" : "bg-slate-300"}`} />
+                    {liveRefresh ? "Live Sync Active" : "Sync Paused"}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* Search */}
+              <div className="relative w-64 hidden md:block">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                <input type="text" placeholder="Search logs, users, alerts..." value={search} onChange={e => setSearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/30 focus:border-[#8B5CF6] transition-all" />
+              </div>
 
           <div className="ml-auto flex items-center gap-2">
             {/* Role banner */}
@@ -746,16 +730,15 @@ export function Admin() {
             {/* Notif */}
             <button onClick={() => setShowNotifs(o => !o)}
               className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors">
-              <Bell className="w-4 h-4" />
-              {unreadCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[8px] font-black rounded-full flex items-center justify-center">{unreadCount}</span>}
+              <Bell className="w-4.5 h-4.5" />
+              {unreadCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-white">{unreadCount}</span>}
             </button>
 
             {/* Avatar dropdown */}
             <div className="relative" ref={avatarRef}>
-              <button onClick={() => setAvatarOpen(o => !o)} className="flex items-center gap-2 px-2.5 py-1.5 hover:bg-slate-100 rounded-xl transition-colors">
-                <div className="w-7 h-7 bg-gradient-to-br from-[#8B5CF6] to-cyan-400 rounded-xl flex items-center justify-center text-[10px] font-black text-white">A</div>
-                <span className="text-xs font-semibold text-slate-700 hidden sm:block">Admin</span>
-                <ChevronDown className="w-3 h-3 text-slate-400" />
+              <button onClick={() => setAvatarOpen(o => !o)} className="flex items-center gap-2 pl-2 pr-1 py-1 hover:bg-slate-50 border border-transparent hover:border-slate-200 rounded-full transition-all">
+                <div className="w-8 h-8 bg-gradient-to-br from-[#8B5CF6] to-cyan-400 rounded-full flex items-center justify-center text-[11px] font-black text-white shadow-sm">A</div>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 mr-1" />
               </button>
               <AnimatePresence>
                 {avatarOpen && (
@@ -781,6 +764,28 @@ export function Admin() {
               </AnimatePresence>
             </div>
           </div>
+          </div>
+          </div>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="bg-white border-b border-slate-200 px-6">
+          <div className="flex items-center gap-6 overflow-x-auto hide-scrollbar">
+            {SIDEBAR_ITEMS.map(item => (
+              <button key={item.key} onClick={() => setSection(item.key)}
+                className={`relative flex items-center gap-2 py-3.5 text-xs font-semibold whitespace-nowrap transition-colors ${section === item.key ? "text-[#8B5CF6]" : "text-slate-500 hover:text-slate-800"}`}>
+                <item.icon className={`w-4 h-4 ${section === item.key ? "text-[#8B5CF6]" : "text-slate-400"}`} />
+                {item.label}
+                {item.badge ? (
+                  <span className={`ml-1.5 text-[9px] font-black px-1.5 py-0.5 rounded-full ${section === item.key ? "bg-[#8B5CF6] text-white" : "bg-slate-200 text-slate-600"}`}>{item.badge}</span>
+                ) : null}
+                {section === item.key && (
+                  <motion.div layoutId="adminTabLine" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#8B5CF6] rounded-t-full" />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
         </div>
 
         {/* Page body */}
@@ -826,6 +831,75 @@ export function Admin() {
                         <p className="text-[9px] text-slate-400 mt-1">{m.sub}</p>
                       </motion.button>
                     ))}
+                  </div>
+
+                  {/* ── Analytics Charts ── */}
+                  <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+                    
+                    {/* Revenue Growth Chart */}
+                    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden xl:col-span-2">
+                      <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center">
+                            <TrendingUp className="w-4 h-4 text-[#8B5CF6]" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-slate-900">Revenue Growth</p>
+                            <p className="text-[10px] text-slate-400">Total platform volume</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-4 h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={REVENUE_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                            <defs>
+                              <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3}/>
+                                <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} dy={10} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} tickFormatter={(value) => `$${value / 1000}k`} />
+                            <Tooltip 
+                              contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                              formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
+                            />
+                            <Area type="monotone" dataKey="revenue" stroke="#8B5CF6" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+
+                    {/* Platform Demographics */}
+                    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                      <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
+                            <PieChartIcon className="w-4 h-4 text-blue-500" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-slate-900">User Demographics</p>
+                            <p className="text-[10px] text-slate-400">Account distribution</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-4 h-64 flex flex-col justify-center">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={PLATFORM_USAGE} layout="vertical" margin={{ top: 0, right: 30, left: 10, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
+                            <XAxis type="number" hide />
+                            <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }} width={60} />
+                            <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                            <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                              {PLATFORM_USAGE.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Fraud alerts + Recent logs */}
@@ -1515,6 +1589,5 @@ export function Admin() {
           </AnimatePresence>
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }

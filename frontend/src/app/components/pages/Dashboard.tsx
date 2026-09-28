@@ -11,6 +11,8 @@ import { useAuth } from "../../../auth/AuthProvider";
 import { apiClient } from "../../../services/apiClient";
 import { socketService } from "../../../services/socketService";
 
+import { ActivityLogsModal } from "../ActivityLogsModal";
+
 interface Deal { id: string; title: string; status: string; total_amount: number; buyer_id?: string; seller_id?: string; created_at?: string; category?: string; }
 interface Notification { id: string; title: string; message: string; type: string; created_at: string; read: boolean; source?: string; }
 
@@ -125,6 +127,7 @@ export function Dashboard() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showActivityModal, setShowActivityModal] = useState(false);
 
   const fetchData = async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true); else setLoading(true);
@@ -250,7 +253,7 @@ export function Dashboard() {
             <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 24px", borderBottom: "1px solid #f1f5f9" }}>
                 <h2 style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", margin: 0 }}>Recent Activity</h2>
-                <button onClick={() => toast("Activity logs coming soon!", { icon: "📈" })} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#2563EB" }}>See All</button>
+                <button onClick={() => setShowActivityModal(true)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#2563EB" }}>See All</button>
               </div>
               <div>
                 {displayActivity.map((a, i) => (
@@ -356,6 +359,13 @@ export function Dashboard() {
           </div>
         </>
       )}
+
+      {/* Activity Logs Modal Overlay */}
+      <ActivityLogsModal 
+        isOpen={showActivityModal}
+        onClose={() => setShowActivityModal(false)}
+        activities={displayActivity}
+      />
     </motion.div>
   );
 }

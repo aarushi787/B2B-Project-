@@ -45,11 +45,8 @@ const corsOrigin = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') 
 app.set('trust proxy', 1);
 app.use(helmet());
 const corsFunc = function(origin: string | undefined, callback: (err: Error | null, origin?: boolean) => void) {
-  if (!origin) return callback(null, true);
-  if (corsOrigin.includes(origin) || origin.endsWith('.pages.dev')) {
-    return callback(null, true);
-  }
-  return callback(new Error('Not allowed by CORS'));
+  // Allow all origins for development and demo purposes
+  return callback(null, true);
 };
 
 app.use(cors({
