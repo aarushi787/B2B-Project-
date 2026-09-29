@@ -224,7 +224,7 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
 router.post(
   '/',
   authMiddleware,
-  requireCompanyRole(['OPS']),
+  requireCompanyRole(['OPS', 'OWNER', 'ADMIN']),
   withIdempotency({ required: false, ttlHours: 24 }),
   validateRequest(dealCreateSchema),
   async (req: AuthRequest, res: Response) => {
@@ -266,7 +266,7 @@ router.post(
 router.put(
   '/:id',
   authMiddleware,
-  requireCompanyRole(['OPS']),
+  requireCompanyRole(['OPS', 'OWNER', 'ADMIN']),
   withIdempotency({ required: false, ttlHours: 24 }),
   validateRequest(dealUpdateSchema),
   async (req: AuthRequest, res: Response) => {
@@ -307,7 +307,7 @@ router.put(
 router.delete(
   '/:id',
   authMiddleware,
-  requireCompanyRole(['OPS']),
+  requireCompanyRole(['OPS', 'OWNER', 'ADMIN']),
   withIdempotency({ required: false, ttlHours: 24 }),
   async (req: AuthRequest, res: Response) => {
   try {
@@ -335,7 +335,7 @@ router.delete(
 router.put(
   '/:id/status',
   authMiddleware,
-  requireCompanyRole(['OPS']),
+  requireCompanyRole(['OPS', 'OWNER', 'ADMIN']),
   withIdempotency({ required: false, ttlHours: 24 }),
   validateRequest(dealStatusUpdateSchema),
   async (req: AuthRequest, res: Response) => {
@@ -361,7 +361,7 @@ router.put(
 router.put(
   '/:id/approve',
   authMiddleware,
-  requireCompanyRole(['OPS']),
+  requireCompanyRole(['OPS', 'OWNER', 'ADMIN']),
   withIdempotency({ required: false, ttlHours: 24 }),
   validateRequest(emptyBodySchema),
   async (req: AuthRequest, res: Response) => {
@@ -386,7 +386,7 @@ router.put(
 router.put(
   '/:id/reject',
   authMiddleware,
-  requireCompanyRole(['OPS']),
+  requireCompanyRole(['OPS', 'OWNER', 'ADMIN']),
   withIdempotency({ required: false, ttlHours: 24 }),
   validateRequest(emptyBodySchema),
   async (req: AuthRequest, res: Response) => {

@@ -28,7 +28,10 @@ const EnquiriesReceived = React.lazy(() => import("./components/pages/EnquiriesR
 const EnquiriesArchived = React.lazy(() => import("./components/pages/EnquiriesArchived").then(m => ({ default: m.EnquiriesArchived })));
 const ServicesPage = React.lazy(() => import("./components/pages/ServicesPage").then(m => ({ default: m.ServicesPage })));
 const ExploreBusinesses = React.lazy(() => import("./components/pages/ExploreBusinesses").then(m => ({ default: m.ExploreBusinesses })));
+const SendProposal = React.lazy(() => import("./components/pages/SendProposal").then(m => ({ default: m.SendProposal })));
+const PostRequirementPage = React.lazy(() => import("./components/pages/PostRequirementPage").then(m => ({ default: m.PostRequirementPage })));
 const NotificationsPage = React.lazy(() => import("./components/pages/NotificationsPage").then(m => ({ default: m.NotificationsPage })));
+const VerificationPage = React.lazy(() => import("./components/pages/VerificationPage").then(m => ({ default: m.VerificationPage })));
 
 export const router = createBrowserRouter([
   { path: "/",         element: <Navigate to="/landing" replace /> },
@@ -52,13 +55,16 @@ export const router = createBrowserRouter([
       { path: "marketplace",                  Component: Marketplace },
       { path: "investor",                     Component: Investor },
       { path: "settings",                     Component: Settings },
+      { path: "verification",                 Component: VerificationPage },
       { path: "component-map",                Component: ComponentMap },
       // Requirements
       { path: "requirements/active",          Component: ActiveRequirements },
+      { path: "requirements/new",             Component: PostRequirementPage },
       { path: "requirements/closed",          Component: ClosedRequirements },
       { path: "requirements/details",         Component: RequirementDetails },
       // Opportunities
       { path: "opportunities/matching",       Component: MatchingRequirements },
+      { path: "opportunities/send",           Component: SendProposal },
       { path: "opportunities/sent",           Component: SentProposals },
       { path: "opportunities/received",       Component: ReceivedProposals },
       // Enquiries

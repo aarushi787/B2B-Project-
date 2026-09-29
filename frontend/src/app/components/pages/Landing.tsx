@@ -100,17 +100,18 @@ function Navbar() {
 
         {/* Links */}
         <div style={{ display: "flex", alignItems: "center", gap: 24, flex: 1 }}>
-          <a href="/landing" style={{ fontSize: 14, fontWeight: 500, color: "#0f172a", textDecoration: "none" }}>Home</a>
+          <a href="/landing" style={{ fontSize: 14, fontWeight: 500, color: "#2563EB", textDecoration: "none" }}>Home</a>
           <a href="/services" style={{ fontSize: 14, fontWeight: 500, color: "#64748b", textDecoration: "none" }}>Services</a>
           <a href="/explore" style={{ fontSize: 14, fontWeight: 500, color: "#64748b", textDecoration: "none" }}>Explore Businesses</a>
           <a href="#help" style={{ fontSize: 14, fontWeight: 500, color: "#64748b", textDecoration: "none" }}>Help</a>
+          <a href="#search" style={{ fontSize: 14, fontWeight: 600, background: "#3b82f6", color: "#fff", padding: "4px 16px", borderRadius: 16, textDecoration: "none" }}>Search</a>
           <div style={{ flex: 1 }} />
           <Link to="/auth" style={{ fontSize: 14, fontWeight: 500, color: "#0f172a", textDecoration: "none" }}>Sign In</Link>
           <Link to="/auth"
             style={{
               fontSize: 14,
               fontWeight: 600,
-              background: "#2563EB",
+              background: "#4f46e5",
               color: "#fff",
               padding: "8px 20px",
               borderRadius: 8,
@@ -120,7 +121,7 @@ function Navbar() {
               gap: 6,
             }}
           >
-            Post a Requirement <span style={{ fontSize: 12 }}>✕</span>
+            Create Account <span style={{ fontSize: 14 }}>↗</span>
           </Link>
         </div>
       </div>

@@ -30,14 +30,14 @@ function Navbar() {
             </a>
           ))}
           <div style={{ flex: 1 }} />
-          <a href="/auth" style={{ fontSize: 14, fontWeight: 500, color: "#0f172a", textDecoration: "none" }}>Sign In</a>
-          <a href="/auth" style={{ fontSize: 14, fontWeight: 600, background: "#2563EB", color: "#fff", padding: "8px 20px", borderRadius: 8, textDecoration: "none" }}>Post a Requirement</a>
+          <UserProfileDropdown />
         </div>
       </div>
     </nav>
   );
 }
 
+import { UserProfileDropdown } from "../UserProfileDropdown";
 import { BusinessProfileModal } from "../BusinessProfileModal";
 
 export function ExploreBusinesses() {

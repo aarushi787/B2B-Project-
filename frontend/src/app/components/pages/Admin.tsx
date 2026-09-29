@@ -53,23 +53,9 @@ interface FraudAlert {
   detected: string; type: "user" | "deal" | "transaction"; resolved: boolean;
 }
 
-// ─── Seed Data ────────────────────────────────────────────────────────────────
-const INIT_USERS: AdminUser[] = [
-  { id: 1, name: "John Doe", email: "john@techcorp.com", role: "Admin", status: "Active", lastActive: "Apr 23, 2026", company: "TechCorp Solutions", joined: "Jan 2025", deals: 14 },
-  { id: 2, name: "Jane Smith", email: "jane@greenenergy.com", role: "User", status: "Active", lastActive: "Apr 22, 2026", company: "Green Energy Ltd", joined: "Mar 2025", deals: 8 },
-  { id: 3, name: "Michael Chen", email: "michael@financehub.com", role: "User", status: "Suspended", lastActive: "Apr 10, 2026", company: "FinanceHub Inc", joined: "Feb 2025", deals: 3 },
-  { id: 4, name: "Sarah Johnson", email: "sarah@healthfirst.com", role: "Admin", status: "Active", lastActive: "Apr 23, 2026", company: "HealthFirst Medical", joined: "Nov 2024", deals: 21 },
-  { id: 5, name: "David Park", email: "david@retailpro.com", role: "User", status: "Pending", lastActive: "Apr 21, 2026", company: "RetailPro Solutions", joined: "Apr 2026", deals: 0 },
-  { id: 6, name: "Emma Wilson", email: "emma@acmecorp.com", role: "Manager", status: "Active", lastActive: "Apr 23, 2026", company: "Acme Corp", joined: "Jun 2025", deals: 7 },
-];
+const INIT_USERS: AdminUser[] = [];
 
-const INIT_COMPANIES: Company[] = [
-  { id: 1, name: "NewTech Industries", industry: "Technology", status: "Pending", kyc: 72, docs: 5, submittedBy: "Alice Cooper", date: "Apr 16, 2026", revenue: "$1.2M" },
-  { id: 2, name: "Global Retail Corp", industry: "Retail", status: "Pending", kyc: 88, docs: 4, submittedBy: "Bob Martinez", date: "Apr 15, 2026", revenue: "$3.8M" },
-  { id: 3, name: "Smart Manufacturing", industry: "Manufacturing", status: "Verified", kyc: 95, docs: 6, submittedBy: "Carol White", date: "Apr 12, 2026", revenue: "$6.4M" },
-  { id: 4, name: "DataStream Analytics", industry: "SaaS", status: "Rejected", kyc: 41, docs: 2, submittedBy: "Tom Harris", date: "Apr 10, 2026", revenue: "$540K" },
-  { id: 5, name: "EnergyTech Inc", industry: "Energy", status: "Pending", kyc: 63, docs: 3, submittedBy: "Lisa Ray", date: "Apr 18, 2026", revenue: "$2.1M" },
-];
+const INIT_COMPANIES: Company[] = [];
 
 const INIT_DEALS: Deal[] = [
   { id: 1, name: "TechCorp Equipment Purchase", client: "FinanceHub Inc", provider: "TechCorp Solutions", amount: 250000, status: "In Progress", risk: "Low", date: "Apr 20, 2026", flagged: false },
