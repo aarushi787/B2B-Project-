@@ -16,12 +16,10 @@ import {
   AreaChart, Area, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend, Cell
 } from "recharts";
-import { apiClient } from "../../../services/apiClient";
-import { socketService } from "../../../services/socketService";
+import { apiClient } from "./services/apiClient";
+import { socketService } from "./services/socketService";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-type AdminRole = "Admin" | "Moderator" | "Viewer";
-type UserStatus = "Active" | "Suspended" | "Pending";
+export default function Admin() {
 type CompanyStatus = "Pending" | "Verified" | "Rejected";
 type DealStatus = "In Progress" | "Pending" | "Under Review" | "Completed" | "Flagged";
 type RiskLevel = "Low" | "Medium" | "High" | "Critical";
