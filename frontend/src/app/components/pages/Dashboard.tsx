@@ -11,7 +11,7 @@ import { apiClient } from "../../../services/apiClient";
 import { socketService } from "../../../services/socketService";
 import { ActivityLogsModal } from "../ActivityLogsModal";
 
-interface Deal { id: string; title: string; status: string; total_amount: number; buyer_id?: string; seller_id?: string; created_at?: string; category?: string; }
+interface Deal { id: string; title: string; status: string; totalAmount: number; buyerId?: string; sellerId?: string; createdAt?: string; category?: string; }
 interface Notification { id: string; title: string; message: string; type: string; created_at: string; read: boolean; source?: string; }
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; label: string }> = {
@@ -23,7 +23,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string; label: string }>
 };
 
 function StatusBadge({ status }: { status: string }) {
-  const s = STATUS_COLORS[status.toLowerCase().replace(" ", "_")] ?? { bg: "#f1f5f9", text: "#64748b", label: status };
+  const s = STATUS_COLORS[status?.toLowerCase().replace(" ", "_")] ?? { bg: "#f1f5f9", text: "#64748b", label: status || "Unknown" };
   return (
     <span style={{
       background: s.bg,
@@ -78,13 +78,29 @@ function KPICard({
 }
 
 export function Dashboard() {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [showActivityModal, setShowActivityModal] = useState(false);
+  
+  const [deals, setDeals] = useState<Deal[]>([]);
 
   useEffect(() => { 
-    // Simulate loading
-    setTimeout(() => setLoading(false), 500);
-  }, []);
+    if (user) {
+      fetchDashboardData();
+    }
+  }, [user]);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const dealsRes = await apiClient.get<Deal[]>('/deals');
+      setDeals(Array.isArray(dealsRes) ? dealsRes : []);
+    } catch (error) {
+      toast.error("Failed to load dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const staticActivities = [
     { icon: Inbox, title: "New Proposal received for 'Web Application Redesign'", source: "Nexis Digital Logistics • 2 hours ago" },
@@ -106,6 +122,14 @@ export function Dashboard() {
     { title: "Corporate Website UI/UX Design System", category: "UI/UX Design", date: "Jan 02, 2026", bids: "8 bids", status: "Closed" },
   ];
 
+  const displayRequirements = deals.length > 0 ? deals.slice(0, 4).map(d => ({
+    title: d.title || "Untitled",
+    category: d.category || "General",
+    date: d.createdAt ? new Date(d.createdAt).toLocaleDateString() : "Today",
+    bids: "0 bids",
+    status: d.status || "Active"
+  })) : staticRequirements;
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }} 
@@ -121,7 +145,7 @@ export function Dashboard() {
         <>
           {/* KPI Cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 20, marginBottom: 28 }}>
-            <KPICard label="Active Requirements" value="12" change="+8.4%" positive={true}  iconBg="#eff6ff" iconColor="#2563EB" icon={FileText} />
+            <KPICard label="Active Requirements" value={deals.length || "12"} change="+8.4%" positive={true}  iconBg="#eff6ff" iconColor="#2563EB" icon={FileText} />
             <KPICard label="Received Proposals"  value="34" change="+14.2%" positive={true}  iconBg="#dcfce7" iconColor="#16a34a" icon={Inbox} />
             <KPICard label="Pending Enquiries"   value="8" change="-2.1%"  positive={false} iconBg="#fef3c7" iconColor="#d97706" icon={Search} />
             <KPICard label="Profile Views"       value="1,247" change="+24.8%" positive={true}  iconBg="#f5f3ff" iconColor="#8b5cf6" icon={Eye} />
@@ -213,13 +237,13 @@ export function Dashboard() {
             </div>
 
             {/* Rows */}
-            {staticRequirements.map((r, i) => (
+            {displayRequirements.map((r, i) => (
               <div key={i} style={{
                 display: "grid",
                 gridTemplateColumns: "3fr 1.5fr 1fr 1fr 1fr",
                 padding: "16px 24px",
                 alignItems: "center",
-                borderBottom: i < staticRequirements.length - 1 ? "1px solid #f8fafc" : "none",
+                borderBottom: i < displayRequirements.length - 1 ? "1px solid #f8fafc" : "none",
               }}>
                 <span style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>{r.title}</span>
                 <span style={{ fontSize: 13, color: "#64748b" }}>{r.category}</span>

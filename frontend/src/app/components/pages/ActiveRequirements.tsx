@@ -1,136 +1,169 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
-import { Eye, Edit2, Plus, FileText, Inbox, Clock, Search, ChevronDown, ChevronRight, ChevronLeft } from "lucide-react";
+import { 
+  FileText, CheckCircle, Clock, CheckSquare, Search,
+  ChevronDown, Filter, LayoutGrid, List as ListIcon, MoreHorizontal, Edit2
+} from "lucide-react";
 import { motion } from "motion/react";
 import { apiClient } from "../../../services/apiClient";
+import { StatusBadge } from "../ui/DesignSystem";
+import toast from "react-hot-toast";
 
-const STATUS_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-  active:       { bg: "#dcfce7", text: "#16a34a", label: "Active" },
-  under_review: { bg: "#fef3c7", text: "#d97706", label: "Under Review" },
-  shortlisted:  { bg: "#eff6ff", text: "#2563eb", label: "Shortlisted" },
-};
-
-function StatusBadge({ status }: { status: string }) {
-  const s = STATUS_COLORS[status.toLowerCase().replace(" ", "_")] ?? { bg: "#f1f5f9", text: "#64748b", label: status };
+function MetricCard({ label, value, active }: { label: string, value: string, active?: boolean }) {
   return (
-    <span style={{
-      background: s.bg, color: s.text, fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 20, whiteSpace: "nowrap",
+    <div style={{
+      background: active ? "#eff6ff" : "#ffffff",
+      border: `1px solid ${active ? "#bfdbfe" : "#e2e8f0"}`,
+      borderRadius: 12,
+      padding: "24px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 12
     }}>
-      {s.label}
-    </span>
-  );
-}
-
-function MetricCard({ label, value, icon: Icon, iconBg, iconColor }: any) {
-  return (
-    <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, padding: "24px", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-      <div>
-        <p style={{ fontSize: 13, fontWeight: 600, color: "#64748b", margin: "0 0 12px" }}>{label}</p>
-        <p style={{ fontSize: 28, fontWeight: 800, color: "#0f172a", margin: 0, lineHeight: 1.1 }}>{value}</p>
-      </div>
-      <div style={{ width: 40, height: 40, background: iconBg, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Icon style={{ width: 20, height: 20, color: iconColor }} />
-      </div>
+      <p style={{ fontSize: 13, fontWeight: 600, color: active ? "#1e3a8a" : "#64748b", margin: 0 }}>{label}</p>
+      <p style={{ fontSize: 32, fontWeight: 800, color: active ? "#1e40af" : "#0f172a", margin: 0, lineHeight: 1.1 }}>{value}</p>
     </div>
   );
 }
 
 export function ActiveRequirements() {
   const [loading, setLoading] = useState(true);
+  const [deals, setDeals] = useState<any[]>([]);
 
   useEffect(() => {
-    // Simulate loading
-    setTimeout(() => setLoading(false), 500);
+    fetchDeals();
   }, []);
 
+  const fetchDeals = async () => {
+    try {
+      const res = await apiClient.get<any>('/deals');
+      const data = Array.isArray(res) ? res : (res.data || []);
+      setDeals(data);
+    } catch (error) {
+      toast.error("Failed to load active requirements");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDemoAction = (msg: string) => {
+    toast(msg, { icon: "🚧" });
+  };
+
   const staticRequirements = [
-    { title: "Enterprise CRM Development", category: "Software Dev", budget: "$25,000-$50,000", date: "Sep 15, 2026", proposals: "8 proposals", status: "Active" },
-    { title: "Cloud Migration AWS Infrastructure", category: "Cloud & DevOps", budget: "$15,000-$30,000", date: "Sep 12, 2026", proposals: "12 proposals", status: "Active" },
-    { title: "Mobile Banking App Redesign", category: "UI/UX Design", budget: "$10,000-$20,000", date: "Sep 10, 2026", proposals: "6 proposals", status: "Under Review" },
-    { title: "Cybersecurity Audit & Compliance", category: "Cybersecurity", budget: "$8,000-$15,000", date: "Sep 08, 2026", proposals: "4 proposals", status: "Active" },
-    { title: "SEO & Content Marketing Strategy", category: "Digital Marketing", budget: "$5,000-$10,000", date: "Sep 05, 2026", proposals: "15 proposals", status: "Shortlisted" },
-    { title: "AI Chatbot Integration", category: "Data & AI", budget: "$20,000-$40,000", date: "Sep 03, 2026", proposals: "9 proposals", status: "Active" },
+    { title: "Enterprise CRM Development", category: "Software Development", amount: "$25,000 - $50,000", posted: "Sep 15, 2026", proposals: 4, status: "Active" },
+    { title: "Cloud Infrastructure Migration", category: "Cloud & DevOps", amount: "$15,000 - $30,000", posted: "Sep 12, 2026", proposals: 12, status: "Under Review" },
+    { title: "Mobile App UI/UX Redesign", category: "Design", amount: "$8,000 - $12,000", posted: "Sep 10, 2026", proposals: 28, status: "Pending" },
+    { title: "SOC 2 Compliance Audit", category: "Security", amount: "$10,000 - $20,000", posted: "Sep 08, 2026", proposals: 3, status: "Active" },
+    { title: "Data Warehouse Implementation", category: "Data Engineering", amount: "$40,000 - $70,000", posted: "Sep 05, 2026", proposals: 8, status: "Active" },
+    { title: "Marketing Automation Setup", category: "Marketing Tech", amount: "$5,000 - $10,000", posted: "Sep 01, 2026", proposals: 15, status: "Closed" },
   ];
+
+  const displayRequirements = deals.length > 0 ? deals.map(d => ({
+    id: d.id,
+    title: d.title || "Untitled",
+    category: d.category || "General",
+    amount: d.totalAmount ? `$${d.totalAmount}` : "Open Budget",
+    posted: d.createdAt ? new Date(d.createdAt).toLocaleDateString() : "Today",
+    proposals: 0,
+    status: d.status || "Active"
+  })) : staticRequirements;
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} style={{ maxWidth: 1200, margin: "0 auto", fontFamily: "Inter, sans-serif" }}>
       
-      {/* Header + Filters */}
+      {/* Metric Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 24, marginBottom: 32 }}>
+        <MetricCard label="Total Requirements" value={displayRequirements.length.toString()} active />
+        <MetricCard label="Active Now" value={displayRequirements.filter(d => d.status.toLowerCase() === 'active').length.toString() || "3"} />
+        <MetricCard label="Under Review" value="2" />
+        <MetricCard label="Closed" value="1" />
+      </div>
+
+      {/* Toolbar */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 16 }}>
-        <div style={{ position: "relative", width: 280 }}>
-          <Search style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", width: 16, height: 16, color: "#94a3b8" }} />
-          <input
-            placeholder="Search requirements..."
-            style={{ width: "100%", padding: "10px 16px 10px 40px", fontSize: 13, border: "1px solid #e2e8f0", borderRadius: 8, outline: "none" }}
-          />
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, maxWidth: 500 }}>
+          <div style={{ position: "relative", flex: 1 }}>
+            <Search style={{ position: "absolute", left: 16, top: 10, width: 18, height: 18, color: "#94a3b8" }} />
+            <input 
+              type="text" 
+              placeholder="Search requirements..." 
+              style={{ width: "100%", padding: "10px 16px 10px 44px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 14, outline: "none" }}
+            />
+          </div>
+          <button onClick={() => handleDemoAction("Filters coming soon!")} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#0f172a", cursor: "pointer" }}>
+            <Filter style={{ width: 14, height: 14 }} /> Filter
+          </button>
         </div>
         
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {["Category", "Budget Range", "Date Posted"].map(label => (
-            <button key={label} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#334155", cursor: "pointer" }}>
-              {label} <ChevronDown style={{ width: 14, height: 14, color: "#94a3b8" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {["All", "Active", "Reviewing", "Closed"].map((label, i) => (
+              <button onClick={() => handleDemoAction("Tab coming soon!")} key={label} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#334155", cursor: "pointer" }}>
+                {label}
+              </button>
+            ))}
+          </div>
+          
+          <div style={{ display: "flex", alignItems: "center", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: 4 }}>
+            <button onClick={() => handleDemoAction("View toggle coming soon!")} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 6, fontSize: 13, fontWeight: 600, color: "#334155", cursor: "pointer" }}>
+              <ListIcon style={{ width: 16, height: 16 }} />
             </button>
-          ))}
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginLeft: "auto" }}>
-          <button style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#334155", cursor: "pointer" }}>
-            Sort: Newest <ChevronDown style={{ width: 14, height: 14, color: "#94a3b8" }} />
-          </button>
-          <Link to="/app/requirements/new" style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", background: "#2563EB", border: "1px solid #2563EB", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#ffffff", cursor: "pointer", textDecoration: "none" }}>
-            Post New Requirement <Plus style={{ width: 16, height: 16 }} />
-          </Link>
+            <button onClick={() => handleDemoAction("View toggle coming soon!")} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", background: "transparent", border: "none", borderRadius: 6, color: "#94a3b8", cursor: "pointer" }}>
+              <LayoutGrid style={{ width: 16, height: 16 }} />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Metric Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 24, marginBottom: 32 }}>
-        <MetricCard label="Total Active" value="12" icon={FileText} iconBg="#eff6ff" iconColor="#2563EB" />
-        <MetricCard label="Proposals Received" value="34" icon={Inbox} iconBg="#dcfce7" iconColor="#16a34a" />
-        <MetricCard label="Avg. Response Time" value="2.4 days" icon={Clock} iconBg="#f5f3ff" iconColor="#8B5CF6" />
-      </div>
+      {loading ? <div style={{ padding: 24, textAlign: "center" }}>Loading requirements...</div> : null}
 
       {/* Main Table */}
-      <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden", marginBottom: 24 }}>
-        {/* Table header */}
-        <div style={{ display: "grid", gridTemplateColumns: "2.5fr 1.5fr 1.5fr 1fr 1fr 1fr 80px", padding: "16px 24px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9" }}>
-          {["Requirement Title", "Category", "Budget", "Posted Date", "Proposals", "Status", "Actions"].map(h => (
-            <span key={h} style={{ fontSize: 13, fontWeight: 700, color: "#64748b" }}>{h}</span>
+      {!loading && (
+        <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden", marginBottom: 24 }}>
+          {/* Table header */}
+          <div style={{ display: "grid", gridTemplateColumns: "3fr 1.5fr 1.5fr 1fr 1fr 1fr 80px", padding: "16px 24px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9" }}>
+            {["Requirement Title", "Category", "Budget", "Posted", "Proposals", "Status", ""].map((h, i) => (
+              <span key={i} style={{ fontSize: 13, fontWeight: 700, color: "#64748b" }}>{h}</span>
+            ))}
+          </div>
+
+          {/* Rows */}
+          {displayRequirements.map((r, i) => (
+            <div key={i} style={{
+              display: "grid",
+              gridTemplateColumns: "3fr 1.5fr 1.5fr 1fr 1fr 1fr 80px",
+              padding: "20px 24px",
+              alignItems: "center",
+              borderBottom: i < displayRequirements.length - 1 ? "1px solid #f1f5f9" : "none",
+            }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>{r.title}</span>
+              <span style={{ fontSize: 13, color: "#64748b" }}>{r.category}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>{r.amount}</span>
+              <span style={{ fontSize: 13, color: "#64748b" }}>{r.posted}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#2563EB" }}>
+                <Link to="/app/opportunities/received" style={{ color: "inherit", textDecoration: "none" }}>{r.proposals} received</Link>
+              </span>
+              <div><StatusBadge status={r.status} /></div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 12 }}>
+                <Link to={`/app/requirements/details${(r as any).id ? `/${(r as any).id}` : ''}`} style={{ color: "#64748b" }}><Edit2 style={{ width: 16, height: 16 }} /></Link>
+              </div>
+            </div>
           ))}
         </div>
-
-        {/* Rows */}
-        {staticRequirements.map((r, i) => (
-          <div key={i} style={{
-            display: "grid",
-            gridTemplateColumns: "2.5fr 1.5fr 1.5fr 1fr 1fr 1fr 80px",
-            padding: "20px 24px",
-            alignItems: "center",
-            borderBottom: i < staticRequirements.length - 1 ? "1px solid #f1f5f9" : "none",
-          }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{r.title}</span>
-            <span style={{ fontSize: 13, color: "#64748b" }}>{r.category}</span>
-            <span style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>{r.budget}</span>
-            <span style={{ fontSize: 13, color: "#64748b" }}>{r.date}</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{r.proposals}</span>
-            <div><StatusBadge status={r.status} /></div>
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <Link to="/app/requirements/details" style={{ color: "#64748b" }}><Eye style={{ width: 16, height: 16 }} /></Link>
-              <button style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "#64748b" }}><Edit2 style={{ width: 16, height: 16 }} /></button>
-            </div>
-          </div>
-        ))}
-      </div>
+      )}
 
       {/* Pagination */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 8px" }}>
-        <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>Showing 1-6 of 12 requirements</p>
+        <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>Showing 1-{displayRequirements.length} of {displayRequirements.length} requirements</p>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button style={{ width: 36, height: 36, background: "#eff6ff", border: "1px solid #eff6ff", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "#2563EB", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>1</button>
-          <button style={{ width: 36, height: 36, background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>2</button>
-          <button style={{ width: 36, height: 36, background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", cursor: "pointer" }}>
-            <ChevronRight style={{ width: 16, height: 16 }} />
+          <button onClick={() => handleDemoAction("Pagination coming soon")} style={{ padding: "8px 16px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#334155", cursor: "pointer" }}>Previous</button>
+          <button onClick={() => handleDemoAction("Pagination coming soon")} style={{ width: 36, height: 36, background: "#eff6ff", border: "1px solid #eff6ff", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "#2563EB", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>1</button>
+          <button onClick={() => handleDemoAction("Pagination coming soon")} style={{ width: 36, height: 36, background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>2</button>
+          <button onClick={() => handleDemoAction("Pagination coming soon")} style={{ width: 36, height: 36, background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", cursor: "pointer" }}>
+            <MoreHorizontal style={{ width: 16, height: 16 }} />
           </button>
+          <button onClick={() => handleDemoAction("Pagination coming soon")} style={{ padding: "8px 16px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#334155", cursor: "pointer" }}>Next</button>
         </div>
       </div>
 

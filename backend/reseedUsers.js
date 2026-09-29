@@ -7,28 +7,30 @@ async function main() {
   try {
     const password = await bcrypt.hash('password123', 10);
     
+    // Cleanup first to avoid constraint issues with new IDs
+    await conn.query(`DELETE FROM company_members WHERE userId IN ('admin-uuid', 'buyer-uuid', 'seller-uuid')`);
+    await conn.query(`DELETE FROM companies WHERE userId IN ('admin-uuid', 'buyer-uuid', 'seller-uuid')`);
+    await conn.query(`DELETE FROM users WHERE email IN ('admin@example.com', 'rahul@example.com', 'maya@example.com')`);
+
     // Create users
     await conn.query(
       `INSERT INTO users (id, email, password, phone, firstName, lastName, role) VALUES 
        ('admin-uuid', 'admin@example.com', ?, '+919800000001', 'System', 'Admin', 'admin'),
        ('buyer-uuid', 'rahul@example.com', ?, '+919800000003', 'Rahul', 'Buyer', 'buyer'),
-       ('seller-uuid', 'maya@example.com', ?, '+919800000002', 'Maya', 'Sellers', 'seller')
-       ON DUPLICATE KEY UPDATE password=VALUES(password)`,
+       ('seller-uuid', 'maya@example.com', ?, '+919800000002', 'Maya', 'Sellers', 'seller')`,
       [password, password, password]
     );
 
     // Create companies
     await conn.query(
       `INSERT INTO companies (id, name, email, gst, phone, address, website, domain, industry, description, userId, verified) VALUES
-       ('acme-corp-id', 'Acme Corp', 'hello@acmecorp.com', '27BBBBB2222B2Z2', '+919800001002', 'India', 'https://acme.com', 'acme.com', 'Logistics', 'Desc', 'buyer-uuid', 1)
-       ON DUPLICATE KEY UPDATE name=VALUES(name)`
+       ('acme-corp-id', 'Acme Corp', 'hello@acmecorp.com', '27BBBBB2222B2Z2', '+919800001002', 'India', 'https://acme.com', 'acme.com', 'Logistics', 'Desc', 'buyer-uuid', 1)`
     );
 
     // Create company_members
     await conn.query(
       `INSERT INTO company_members (id, companyId, userId, role) VALUES
-       ('member-1', 'acme-corp-id', 'buyer-uuid', 'OWNER')
-       ON DUPLICATE KEY UPDATE role=VALUES(role)`
+       ('member-1', 'acme-corp-id', 'buyer-uuid', 'OWNER')`
     );
 
     console.log('Successfully re-seeded minimal users.');
