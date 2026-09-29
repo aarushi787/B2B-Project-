@@ -44,9 +44,10 @@ const corsOrigin = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') 
 // Middleware
 app.set('trust proxy', 1);
 app.use(helmet());
-const corsFunc = function(origin: string | undefined, callback: (err: Error | null, origin?: boolean) => void) {
-  // Allow all origins for development and demo purposes
-  return callback(null, true);
+const corsFunc = function(origin: string | undefined, callback: (err: Error | null, origin?: string) => void) {
+  // Allow the request's origin dynamically. If none is provided (e.g., direct API calls), 
+  // fallback to the configured CORS_ORIGIN or localhost to prevent wildcard '*' with credentials:true
+  return callback(null, origin || (process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',')[0] : 'http://localhost:5173'));
 };
 
 app.use(cors({
