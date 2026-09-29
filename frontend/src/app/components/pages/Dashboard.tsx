@@ -10,8 +10,7 @@ import { useAuth } from "../../../auth/AuthProvider";
 import { apiClient } from "../../../services/apiClient";
 import { socketService } from "../../../services/socketService";
 import { ActivityLogsModal } from "../ActivityLogsModal";
-
-interface Deal { id: string; title: string; status: string; totalAmount: number; buyerId?: string; sellerId?: string; createdAt?: string; category?: string; }
+import { Deal } from "../../../types";
 interface Notification { id: string; title: string; message: string; type: string; created_at: string; read: boolean; source?: string; }
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; label: string }> = {
@@ -93,8 +92,8 @@ export function Dashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const dealsRes = await apiClient.get<Deal[]>('/deals');
-      setDeals(Array.isArray(dealsRes) ? dealsRes : []);
+      const dealsRes = await apiClient.get<Deal[] | {data: Deal[]}>('/deals');
+      setDeals(Array.isArray(dealsRes) ? dealsRes : (dealsRes.data || []));
     } catch (error) {
       toast.error("Failed to load dashboard data");
     } finally {
@@ -102,14 +101,24 @@ export function Dashboard() {
     }
   };
 
-  const staticActivities = [
+  const recentDeals = deals.slice(0, 4);
+  const staticActivities = recentDeals.length > 0 ? recentDeals.map(d => ({
+    icon: d.status === 'active' ? FileText : Inbox,
+    title: `${d.status === 'active' ? 'Requirement posted' : 'Proposal updated'} for '${d.title}'`,
+    source: `Recent update • ${d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'Today'}`,
+  })) : [
     { icon: Inbox, title: "New Proposal received for 'Web Application Redesign'", source: "Nexis Digital Logistics • 2 hours ago" },
     { icon: FileText, title: "Requirement posted for 'DevOps Infrastructure setup'", source: "Umbrella Group • 4 hours ago" },
     { icon: Search, title: "Enquiry sent regarding 'Database audit Services'", source: "TechVista Solutions • 1 day ago" },
     { icon: TrendingUp, title: "Profile updated with 2 new portfolio entries", source: "TechVista Administrator • 3 days ago" },
   ];
 
-  const staticDeadlines = [
+  const upcomingDeals = deals.filter(d => d.status !== 'closed' && d.status !== 'rejected').slice(0, 3);
+  const staticDeadlines = upcomingDeals.length > 0 ? upcomingDeals.map(d => ({
+    title: d.title,
+    due: "Pending Action",
+    status: d.status || "Active"
+  })) : [
     { title: "Security Audit RFI", due: "Due Jan 28", status: "Urgent" },
     { title: "Cloud Migration RFP Proposal", due: "Due Feb 02", status: "Active" },
     { title: "Mobile App Wireframes Feedback", due: "Due Feb 10", status: "Pending" },

@@ -7,6 +7,7 @@ import {
 import { motion } from "motion/react";
 import { apiClient } from "../../../services/apiClient";
 import { StatusBadge } from "../ui/DesignSystem";
+import { Deal } from "../../../types";
 import toast from "react-hot-toast";
 
 function MetricCard({ label, value, active }: { label: string, value: string, active?: boolean }) {
@@ -28,7 +29,7 @@ function MetricCard({ label, value, active }: { label: string, value: string, ac
 
 export function ActiveRequirements() {
   const [loading, setLoading] = useState(true);
-  const [deals, setDeals] = useState<any[]>([]);
+  const [deals, setDeals] = useState<Deal[]>([]);
 
   useEffect(() => {
     fetchDeals();
@@ -36,7 +37,7 @@ export function ActiveRequirements() {
 
   const fetchDeals = async () => {
     try {
-      const res = await apiClient.get<any>('/deals');
+      const res = await apiClient.get<{data: Deal[]} | Deal[]>('/deals');
       const data = Array.isArray(res) ? res : (res.data || []);
       setDeals(data);
     } catch (error) {

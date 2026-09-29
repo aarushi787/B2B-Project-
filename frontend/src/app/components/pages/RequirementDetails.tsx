@@ -5,11 +5,12 @@ import { Link, useParams } from "react-router";
 import { motion } from "motion/react";
 import { apiClient } from "../../../services/apiClient";
 import toast from "react-hot-toast";
+import { Deal } from "../../../types";
 
 export function RequirementDetails() {
   const { id } = useParams();
   const [loading, setLoading] = useState(true);
-  const [deal, setDeal] = useState<any>(null);
+  const [deal, setDeal] = useState<Deal | null>(null);
 
   useEffect(() => {
     fetchDeal();
@@ -18,11 +19,11 @@ export function RequirementDetails() {
   const fetchDeal = async () => {
     try {
       if (id) {
-        const res = await apiClient.get<any>(`/deals/${id}`);
-        setDeal(res);
+        const res = await apiClient.get<Deal | {data: Deal}>(`/deals/${id}`);
+        setDeal('data' in res ? res.data : res);
       } else {
         // Fallback to latest deal for demo if no ID is provided
-        const res = await apiClient.get<any>('/deals');
+        const res = await apiClient.get<Deal[] | {data: Deal[]}>('/deals');
         const data = Array.isArray(res) ? res : (res.data || []);
         if (data.length > 0) setDeal(data[0]);
       }

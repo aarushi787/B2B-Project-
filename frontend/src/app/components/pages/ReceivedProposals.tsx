@@ -4,6 +4,7 @@ import { ChevronDown, Building2, ShieldCheck, Star } from "lucide-react";
 import { motion } from "motion/react";
 import { apiClient } from "../../../services/apiClient";
 import toast from "react-hot-toast";
+import { Deal } from "../../../types";
 
 function MetricCard({ label, value }: { label: string, value: string }) {
   return (
@@ -16,7 +17,7 @@ function MetricCard({ label, value }: { label: string, value: string }) {
 
 export function ReceivedProposals() {
   const [loading, setLoading] = useState(true);
-  const [proposals, setProposals] = useState<any[]>([]);
+  const [proposals, setProposals] = useState<Deal[]>([]);
 
   useEffect(() => {
     fetchProposals();
@@ -24,7 +25,7 @@ export function ReceivedProposals() {
 
   const fetchProposals = async () => {
     try {
-      const res = await apiClient.get<any>('/deals?status=pending');
+      const res = await apiClient.get<Deal[] | {data: Deal[]}>('/deals?status=pending');
       const data = Array.isArray(res) ? res : (res.data || []);
       setProposals(data);
     } catch (error) {
@@ -112,10 +113,10 @@ export function ReceivedProposals() {
 
   const displayProposals = proposals.length > 0 ? proposals.map(p => ({
     id: p.id,
-    provider: p.seller?.name || "Unknown Provider",
+    provider: (p as any).seller?.name || "Unknown Provider",
     rating: "4.5 ★",
     projects: "12 projects completed",
-    time: new Date(p.createdAt).toLocaleDateString(),
+    time: p.createdAt ? new Date(p.createdAt).toLocaleDateString() : 'Today',
     requirement: p.title || "Untitled Requirement",
     amount: `$${p.totalAmount || 0}`,
     timeline: "2 months",

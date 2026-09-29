@@ -81,17 +81,18 @@ export function refreshTokenExpiryDate(): Date {
 
 export function setAuthCookies(res: Response, accessToken: string, refreshToken: string): void {
   const secure = process.env.NODE_ENV === 'production';
+  const sameSite = secure ? 'none' : 'lax';
   res.cookie(ACCESS_COOKIE_NAME, accessToken, {
     httpOnly: true,
     secure,
-    sameSite: 'lax',
+    sameSite,
     maxAge: ACCESS_TOKEN_MAX_AGE_MS,
     path: '/',
   });
   res.cookie(REFRESH_COOKIE_NAME, refreshToken, {
     httpOnly: true,
     secure,
-    sameSite: 'lax',
+    sameSite,
     maxAge: REFRESH_TOKEN_MAX_AGE_MS,
     path: '/',
   });
@@ -99,16 +100,17 @@ export function setAuthCookies(res: Response, accessToken: string, refreshToken:
 
 export function clearAuthCookies(res: Response): void {
   const secure = process.env.NODE_ENV === 'production';
+  const sameSite = secure ? 'none' : 'lax';
   res.clearCookie(ACCESS_COOKIE_NAME, {
     httpOnly: true,
     secure,
-    sameSite: 'lax',
+    sameSite,
     path: '/',
   });
   res.clearCookie(REFRESH_COOKIE_NAME, {
     httpOnly: true,
     secure,
-    sameSite: 'lax',
+    sameSite,
     path: '/',
   });
 }

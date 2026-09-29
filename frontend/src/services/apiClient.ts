@@ -33,7 +33,7 @@ export const apiClient = {
 
   async request<T>(endpoint: string, init: RequestInit = {}): Promise<T> {
     const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
-    const response = await fetch(url, init);
+    const response = await fetch(url, { ...init, credentials: 'include' });
     if (response.status === 401) {
       apiClient.clearToken();
       if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth')) {

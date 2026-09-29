@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { useAuth } from "../../../auth/AuthProvider";
 import { apiClient } from "../../../services/apiClient";
 import toast from "react-hot-toast";
+import { Deal } from "../../../types";
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; label: string }> = {
   accepted:     { bg: "#dcfce7", text: "#16a34a", label: "Accepted" },
@@ -37,7 +38,7 @@ function MetricCard({ label, value }: { label: string, value: string }) {
 export function SentProposals() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [proposals, setProposals] = useState<any[]>([]);
+  const [proposals, setProposals] = useState<Deal[]>([]);
 
   useEffect(() => {
     if (user?.companyId) {
@@ -49,7 +50,7 @@ export function SentProposals() {
 
   const fetchProposals = async (companyId: string) => {
     try {
-      const res = await apiClient.get<any>(`/deals/seller/${companyId}`);
+      const res = await apiClient.get<Deal[] | {data: Deal[]}>(`/deals/seller/${companyId}`);
       const data = Array.isArray(res) ? res : (res.data || []);
       setProposals(data);
     } catch (error) {
@@ -87,7 +88,7 @@ export function SentProposals() {
   const displayProposals = proposals.length > 0 ? proposals.map(p => ({
     id: p.id,
     req: p.title || "Untitled Deal",
-    client: p.buyer?.name || "Unknown Client",
+    client: (p as any).buyer?.name || "Unknown Client",
     amount: `$${p.totalAmount || 0}`,
     date: new Date(p.createdAt).toLocaleDateString(),
     status: p.status || "Pending",

@@ -65,6 +65,7 @@ export const router = createBrowserRouter([
       // Opportunities
       { path: "opportunities/matching",       Component: MatchingRequirements },
       { path: "opportunities/send",           Component: SendProposal },
+      { path: "opportunities/send/:id",       Component: SendProposal },
       { path: "opportunities/sent",           Component: SentProposals },
       { path: "opportunities/received",       Component: ReceivedProposals },
       // Enquiries
