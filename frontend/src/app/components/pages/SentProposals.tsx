@@ -1,98 +1,108 @@
 import { useState, useEffect } from "react";
-import { StatusBadge, Card, SearchInput, FilterPill, Skeleton, EmptyState, Pagination } from "../ui/DesignSystem";
-import { Eye, Loader2, Send } from "lucide-react";
-import { apiClient } from "../../../services/apiClient";
-import { useAuth } from "../../../auth/AuthProvider";
-import toast from "react-hot-toast";
-import { ProposalModal, Proposal } from "../ProposalModal";
+import { Link } from "react-router";
+import { ChevronRight, Search } from "lucide-react";
+import { motion } from "motion/react";
+
+const STATUS_COLORS: Record<string, { bg: string; text: string; label: string }> = {
+  accepted:     { bg: "#dcfce7", text: "#16a34a", label: "Accepted" },
+  under_review: { bg: "#fef3c7", text: "#d97706", label: "Under Review" },
+  pending:      { bg: "#eff6ff", text: "#2563EB", label: "Pending" },
+  declined:     { bg: "#fee2e2", text: "#dc2626", label: "Declined" },
+};
+
+function StatusBadge({ status }: { status: string }) {
+  const s = STATUS_COLORS[status.toLowerCase().replace(" ", "_")] ?? { bg: "#f1f5f9", text: "#64748b", label: status };
+  return (
+    <span style={{
+      background: s.bg, color: s.text, fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 20, whiteSpace: "nowrap",
+    }}>
+      {s.label}
+    </span>
+  );
+}
+
+function MetricCard({ label, value }: { label: string, value: string }) {
+  return (
+    <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, padding: "24px", display: "flex", flexDirection: "column", gap: 12 }}>
+      <p style={{ fontSize: 13, fontWeight: 600, color: "#64748b", margin: 0 }}>{label}</p>
+      <p style={{ fontSize: 32, fontWeight: 800, color: "#0f172a", margin: 0, lineHeight: 1.1 }}>{value}</p>
+    </div>
+  );
+}
 
 export function SentProposals() {
-  const { user } = useAuth();
-  const [proposals, setProposals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
 
   useEffect(() => {
-    async function loadProposals() {
-      if (!user?.companyId) return;
-      setLoading(true);
-      try {
-        const res = await apiClient.get<any>(`/deals/seller/${user.companyId}?page=${page}&limit=5`);
-        if (Array.isArray(res)) {
-          setProposals(res);
-        } else {
-          setProposals(res.data || []);
-          setTotalPages(res.totalPages || 1);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadProposals();
-  }, [user, page]);
+    // Simulate loading
+    setTimeout(() => setLoading(false), 500);
+  }, []);
+
+  const proposals = [
+    { req: "E-commerce Platform Rebuild", client: "RetailMax Corp", amount: "$32,000", date: "Sep 18, 2026", status: "Accepted" },
+    { req: "Data Analytics Dashboard", client: "DataFlow Inc", amount: "$18,500", date: "Sep 15, 2026", status: "Under Review" },
+    { req: "Mobile App Development", client: "HealthFirst", amount: "$45,000", date: "Sep 12, 2026", status: "Pending" },
+    { req: "API Integration Suite", client: "LogiTech Solutions", amount: "$12,000", date: "Sep 10, 2026", status: "Declined" },
+    { req: "Website Redesign", client: "GreenLeaf Organics", amount: "$8,500", date: "Sep 08, 2026", status: "Accepted" },
+    { req: "Cloud Infrastructure Setup", client: "FinServ Global", amount: "$28,000", date: "Sep 05, 2026", status: "Pending" },
+  ];
 
   return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", fontFamily: "Inter, sans-serif" }}>
-      <ProposalModal proposal={selectedProposal} onClose={() => setSelectedProposal(null)} isReceived={false} />
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
-        <SearchInput placeholder="Search proposals..." />
-        <FilterPill label="Status" />
-        <FilterPill label="Date" />
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} style={{ maxWidth: 1200, margin: "0 auto", fontFamily: "Inter, sans-serif" }}>
+      
+      {/* Metric Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24, marginBottom: 32 }}>
+        <MetricCard label="Total Sent" value="18" />
+        <MetricCard label="Accepted" value="5" />
+        <MetricCard label="Pending" value="8" />
+        <MetricCard label="Declined" value="5" />
       </div>
-      <Card style={{ overflowX: "auto" }}>
-        <div style={{ minWidth: 800 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1.5fr 2fr 1fr 1fr 100px 40px", padding: "10px 24px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9" }}>
-            {["Sent To", "Requirement", "Bid Amount", "Submitted", "Status", ""].map(h => (
-              <span key={h} style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</span>
-            ))}
-          </div>
 
-        {loading ? (
-          <div>
-            {[1, 2, 3].map(i => (
-              <div key={i} style={{ display: "grid", gridTemplateColumns: "1.5fr 2fr 1fr 1fr 100px 40px", padding: "16px 24px", alignItems: "center", borderBottom: "1px solid #f8fafc" }}>
-                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                  <Skeleton width="32px" height="32px" borderRadius="8px" />
-                  <Skeleton width="120px" height="16px" />
-                </div>
-                <Skeleton width="80%" height="16px" />
-                <Skeleton width="60px" height="16px" />
-                <Skeleton width="70px" height="16px" />
-                <Skeleton width="70px" height="24px" borderRadius="12px" />
-              </div>
-            ))}
-          </div>
-        ) : proposals.length === 0 ? (
-          <EmptyState
-            icon={Send}
-            title="No Proposals Sent"
-            desc="You haven't submitted any bids yet. Head over to the Discover Leads page to find active requirements matching your services."
-            action={<a href="/app/opportunities/matching" style={{ background: "#2563EB", color: "#fff", padding: "8px 16px", borderRadius: 8, textDecoration: "none", fontSize: 13, fontWeight: 600 }}>Discover Leads</a>}
-          />
-        ) : proposals.map((s, i) => (
-          <div key={i} style={{ display: "grid", gridTemplateColumns: "1.5fr 2fr 1fr 1fr 100px 40px", padding: "16px 24px", alignItems: "center", borderBottom: i < proposals.length - 1 ? "1px solid #f8fafc" : "none" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 32, height: 32, background: "#eff6ff", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#2563EB" }}>
-                🏢
-              </div>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>Client #{s.buyerId?.slice(0, 4)}</span>
+      {/* Main Table */}
+      <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden", marginBottom: 24 }}>
+        {/* Table header */}
+        <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr 1.5fr 1.5fr 1.5fr 120px", padding: "16px 24px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9" }}>
+          {["Requirement", "Client", "Proposed Amount", "Sent Date", "Status", "Actions"].map((h, i) => (
+            <span key={h} style={{ fontSize: 13, fontWeight: 700, color: "#64748b", textAlign: i === 5 ? "right" : "left" }}>{h}</span>
+          ))}
+        </div>
+
+        {/* Rows */}
+        {proposals.map((p, i) => (
+          <div key={i} style={{
+            display: "grid",
+            gridTemplateColumns: "3fr 2fr 1.5fr 1.5fr 1.5fr 120px",
+            padding: "20px 24px",
+            alignItems: "center",
+            borderBottom: i < proposals.length - 1 ? "1px solid #f1f5f9" : "none",
+          }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>{p.req}</span>
+            <span style={{ fontSize: 13, color: "#64748b" }}>{p.client}</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{p.amount}</span>
+            <span style={{ fontSize: 13, color: "#64748b" }}>{p.date}</span>
+            <div><StatusBadge status={p.status} /></div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 12 }}>
+              <Link to="/app/requirements/details" style={{ fontSize: 13, fontWeight: 600, color: "#2563EB", textDecoration: "none" }}>View</Link>
+              {p.status !== "Accepted" && p.status !== "Declined" && (
+                <button style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#ef4444" }}>Withdraw</button>
+              )}
             </div>
-            <span style={{ fontSize: 12, color: "#64748b", paddingRight: 8 }}>{s.notes || s.title || "Proposal Details"}</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>${s.amount || s.totalAmount || 0}</span>
-            <span style={{ fontSize: 12, color: "#64748b" }}>{new Date(s.createdAt).toLocaleDateString()}</span>
-            <StatusBadge status={s.status} />
-            <button onClick={() => setSelectedProposal(s)} style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b" }}><Eye style={{ width: 15, height: 15 }} /></button>
           </div>
         ))}
+      </div>
+
+      {/* Pagination */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 8px" }}>
+        <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>Showing 1-5 of 12 opportunities</p>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button style={{ padding: "8px 16px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#334155", cursor: "pointer" }}>Previous</button>
+          <button style={{ width: 36, height: 36, background: "#2563EB", border: "1px solid #2563EB", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>1</button>
+          <button style={{ width: 36, height: 36, background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>2</button>
+          <button style={{ width: 36, height: 36, background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>3</button>
+          <button style={{ padding: "8px 16px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#334155", cursor: "pointer" }}>Next</button>
         </div>
-        {!loading && proposals.length > 0 && (
-          <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
-        )}
-      </Card>
-    </div>
+      </div>
+
+    </motion.div>
   );
 }
