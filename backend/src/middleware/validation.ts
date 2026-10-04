@@ -7,6 +7,8 @@ const uuidSchema = z.string().uuid('Invalid UUID');
 const phoneSchema = z.string().regex(/^\+?[\d\s\-\(\)]+$/, 'Invalid phone format');
 const gstSchema = z.string().min(1, 'Invalid GST format');
 const panSchema = z.string().min(1, 'Invalid PAN format');
+// A blank optional text field means "not provided", not "invalid".
+const blankToUndefined = (value: unknown) => (typeof value === 'string' && value.trim() === '' ? undefined : value);
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
 
 const parseNumber = (value: unknown) => {
@@ -45,8 +47,8 @@ export const userRegisterSchema = z.object({
   phone: phoneSchema,
   companyName: z.string().min(1, 'Company name is required').max(255),
   companyId: uuidSchema.optional(),
-  gstNumber: gstSchema.optional(),
-  panNumber: panSchema.optional(),
+  gstNumber: z.preprocess(blankToUndefined, gstSchema.optional()),
+  panNumber: z.preprocess(blankToUndefined, panSchema.optional()),
   industry: z.string().max(100).optional(),
   companyDomain: z.string().max(255).optional(),
   website: z.string().url('Invalid website URL').optional(),

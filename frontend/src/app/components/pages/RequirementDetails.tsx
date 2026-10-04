@@ -1,224 +1,209 @@
-import { useState, useEffect } from "react";
-import { StatusBadge } from "../ui/DesignSystem";
-import { Download, CheckCircle, Clock } from "lucide-react";
+import { useState } from "react";
 import { Link, useParams } from "react-router";
-import { motion } from "motion/react";
-import { apiClient } from "../../../services/apiClient";
 import toast from "react-hot-toast";
-import { Deal } from "../../../types";
+import { ArrowLeft, Inbox } from "lucide-react";
+import { Card, EmptyState } from "../ui/DesignSystem";
+import { requirementsService } from "../../../services/requirementsService";
+import { friendlyError, useLoad } from "../../../lib/useLoad";
+import { budgetLabel, formatDate, formatINR } from "../../../lib/format";
+import type { MarketProposal } from "../../../types";
+import { AcceptDialog, ProposalActionButtons, useProposalActions } from "../marketplace/actions";
+import {
+  ListSkeleton, LoadError, PageHeader, ProposalStatusBadge, RequirementStatusBadge, VerifiedMark, YourTurnTag, pageStyle,
+} from "../marketplace/parts";
+
+type Sort = "amount" | "date" | "timeline";
 
 export function RequirementDetails() {
-  const { id } = useParams();
-  const [loading, setLoading] = useState(true);
-  const [deal, setDeal] = useState<Deal | null>(null);
+  const { id = "" } = useParams<{ id: string }>();
+  const [sort, setSort] = useState<Sort>("amount");
+  const [accepting, setAccepting] = useState<MarketProposal | null>(null);
+  const [closing, setClosing] = useState(false);
 
-  useEffect(() => {
-    fetchDeal();
-  }, [id]);
+  const requirement = useLoad(() => requirementsService.get(id), [id]);
+  const req = requirement.data;
+  const isMine = !!req?.isMine;
 
-  const fetchDeal = async () => {
+  const proposals = useLoad<MarketProposal[]>(
+    async () => (isMine ? (await requirementsService.proposals(id, sort)).data : []),
+    [id, isMine, sort]
+  );
+
+  const refresh = () => { void requirement.reload(); void proposals.reload(); };
+  const { run, busyId } = useProposalActions(refresh);
+
+  const close = async () => {
+    if (!window.confirm("Close this requirement? Open proposals will be rejected.")) return;
+    setClosing(true);
     try {
-      if (id) {
-        const res = await apiClient.get<Deal | {data: Deal}>(`/deals/${id}`);
-        setDeal('data' in res ? res.data : res);
-      } else {
-        // Fallback to latest deal for demo if no ID is provided
-        const res = await apiClient.get<Deal[] | {data: Deal[]}>('/deals');
-        const data = Array.isArray(res) ? res : (res.data || []);
-        if (data.length > 0) setDeal(data[0]);
-      }
-    } catch (error) {
-      toast.error("Failed to load requirement details");
+      await requirementsService.close(id);
+      toast.success("Requirement closed.");
+      refresh();
+    } catch (e) {
+      toast.error(friendlyError(e));
     } finally {
-      setLoading(false);
+      setClosing(false);
     }
   };
 
-  const handleAction = async (action: string) => {
-    try {
-      if (!deal?.id) {
-        toast.success(`Demo action: ${action} triggered!`);
-        return;
-      }
-      
-      if (action === 'Close Requirement') {
-        await apiClient.put(`/deals/${deal.id}/status`, { status: 'closed' });
-        toast.success("Requirement closed");
-        fetchDeal();
-      } else if (action === 'Accept Proposal') {
-        await apiClient.put(`/deals/${deal.id}/status`, { status: 'accepted' });
-        toast.success("Proposal accepted!");
-        fetchDeal();
-      } else if (action === 'Decline') {
-        await apiClient.put(`/deals/${deal.id}/status`, { status: 'rejected' });
-        toast.success("Proposal declined");
-        fetchDeal();
-      } else {
-        toast("Feature coming soon: " + action, { icon: "🚧" });
-      }
-    } catch (error) {
-      toast.error(`Failed to ${action.toLowerCase()}`);
-    }
-  };
+  if (requirement.error) {
+    return <div style={pageStyle}><LoadError message={requirement.error} onRetry={requirement.reload} /></div>;
+  }
+  if (!req) return <div style={pageStyle}><ListSkeleton rows={3} /></div>;
 
-  const title = deal?.title || "Enterprise CRM Development";
-  const status = deal?.status || "Active";
-  const amount = deal?.totalAmount ? `$${deal.totalAmount}` : "$25,000 - $50,000";
-  const dateStr = deal?.createdAt ? new Date(deal.createdAt).toLocaleDateString() : "Sep 15, 2026";
-  const description = deal?.description || "We are seeking a highly experienced software development provider to construct a fully customized Enterprise Customer Relationship Management (CRM) system. The baseline target platform must integrate seamlessly with our legacy database layers and support deep operational data flow mapping. The application needs specialized components including custom workflow triggers, robust role-based access controls, and dynamic analytical widgets.\n\nSecurity compliance is paramount; the architecture must natively support modern standards like SAML/OIDC and offer secure milestone-protected auditing capabilities. Real-time logging of user activity and comprehensive API governance are essential deliverables. Suppliers should present clear architectural proposals detailing structural data safety benchmarks.";
+  const list = proposals.data ?? [];
+  const lowest = list.filter((p) => p.status !== "rejected" && p.status !== "withdrawn").reduce<number | null>(
+    (min, p) => (min === null || p.amount < min ? p.amount : min), null
+  );
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} style={{ maxWidth: 1200, margin: "0 auto", fontFamily: "Inter, sans-serif" }}>
-      
-      {/* Top Banner */}
-      <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, padding: "24px 32px", marginBottom: 24, display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-            <h1 style={{ fontSize: 24, fontWeight: 800, color: "#0f172a", margin: 0 }}>{title}</h1>
-            <span style={{ background: "#dcfce7", color: "#16a34a", fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 20 }}>{status}</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 13, color: "#64748b" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>📅 Posted {dateStr}</span>
-            <span style={{ color: "#e2e8f0" }}>|</span>
-            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>💰 {amount}</span>
-            <span style={{ color: "#e2e8f0" }}>|</span>
-            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>⏱️ 3-6 months</span>
-          </div>
+    <div style={pageStyle}>
+      <Link to={isMine ? "/app/requirements/active" : "/app/opportunities/matching"} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "#475569", textDecoration: "none", marginBottom: 12 }}>
+        <ArrowLeft size={14} aria-hidden="true" /> {isMine ? "My requirements" : "Find work"}
+      </Link>
+
+      <PageHeader
+        title={req.title}
+        subtitle={`${isMine ? "Posted by you" : req.companyName ?? "A company"} · ${req.category ?? "General"} · Posted ${formatDate(req.createdAt)}`}
+        actions={
+          <>
+            <RequirementStatusBadge status={req.status} />
+            {isMine && req.status === "open" && (
+              <button type="button" onClick={close} disabled={closing} style={{ background: "#fff", border: "1px solid #cbd5e1", color: "#334155", fontSize: 13, fontWeight: 600, padding: "8px 14px", borderRadius: 8, cursor: "pointer" }}>
+                Close requirement
+              </button>
+            )}
+            {isMine && req.status === "awarded" && req.dealId && (
+              <Link to={`/app/deals/${req.dealId}`} style={{ background: "#2563EB", color: "#fff", fontSize: 13, fontWeight: 600, padding: "8px 14px", borderRadius: 8, textDecoration: "none" }}>
+                Open deal
+              </Link>
+            )}
+          </>
+        }
+      />
+
+      <Card style={{ padding: 24, marginBottom: 24 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "16px 40px", marginBottom: 16 }}>
+          <Fact label="Budget" value={budgetLabel(req.budgetMin, req.budgetMax)} />
+          <Fact label="Timeline" value={req.timeline ?? "Flexible"} />
+          <Fact label="Posted by" value={<>{req.companyName ?? "—"}<VerifiedMark verified={req.companyVerified} /></>} />
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button onClick={() => handleAction("Edit Requirement")} style={{ background: "#ffffff", border: "1px solid #e2e8f0", color: "#0f172a", fontSize: 13, fontWeight: 600, padding: "10px 20px", borderRadius: 8, cursor: "pointer" }}>
-            Edit Requirement
-          </button>
-          <button onClick={() => handleAction("Close Requirement")} style={{ background: "#ffffff", border: "1px solid #ef4444", color: "#ef4444", fontSize: 13, fontWeight: 600, padding: "10px 20px", borderRadius: 8, cursor: "pointer" }}>
-            Close Requirement
-          </button>
-        </div>
-      </div>
+        <p style={{ margin: 0, fontSize: 14, color: "#334155", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{req.description}</p>
+      </Card>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 24 }}>
-        
-        {/* Left Column */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-          
-          {/* Requirement Description */}
-          <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, padding: "28px 32px" }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", margin: "0 0 16px" }}>Requirement Description</h2>
-            <p style={{ fontSize: 14, color: "#475569", lineHeight: 1.7, margin: "0 0 16px", whiteSpace: "pre-wrap" }}>
-              {description}
-            </p>
+      {!isMine && (
+        <Card style={{ padding: 20, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+          {req.myProposalId ? (
+            <>
+              <span style={{ fontSize: 14, color: "#334155" }}>You have already sent a proposal for this requirement.</span>
+              <Link to={`/app/opportunities/proposals/${req.myProposalId}`} style={{ fontSize: 14, fontWeight: 600, color: "#1d4ed8" }}>View your proposal</Link>
+            </>
+          ) : req.status === "open" ? (
+            <>
+              <span style={{ fontSize: 14, color: "#334155" }}>Interested? Send your price, timeline and approach.</span>
+              <Link to={`/app/opportunities/send/${req.id}`} style={{ background: "#2563EB", color: "#fff", fontSize: 14, fontWeight: 600, padding: "10px 18px", borderRadius: 8, textDecoration: "none" }}>
+                Send proposal
+              </Link>
+            </>
+          ) : (
+            <span style={{ fontSize: 14, color: "#475569" }}>This requirement is no longer accepting proposals.</span>
+          )}
+        </Card>
+      )}
+
+      {isMine && (
+        <section aria-labelledby="proposals-heading">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
+            <h2 id="proposals-heading" style={{ fontSize: 17, fontWeight: 800, color: "#0f172a", margin: 0 }}>
+              Proposals {list.length > 0 && <span style={{ color: "#475569", fontWeight: 600 }}>({list.length})</span>}
+            </h2>
+            <label style={{ fontSize: 13, color: "#475569", display: "flex", alignItems: "center", gap: 8 }}>
+              Sort by
+              <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} style={{ padding: "6px 10px", border: "1px solid #cbd5e1", borderRadius: 8, fontSize: 13, background: "#fff" }}>
+                <option value="amount">Lowest price</option>
+                <option value="date">Newest</option>
+                <option value="timeline">Timeline</option>
+              </select>
+            </label>
           </div>
 
-          {/* Attachments */}
-          <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, padding: "28px 32px" }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", margin: "0 0 16px" }}>Attachments</h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: "12px 16px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ color: "#2563EB" }}>📄</div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>Requirements_Spec.pdf</span>
-                  <span style={{ fontSize: 11, color: "#94a3b8" }}>1.8 MB</span>
-                </div>
-                <button onClick={() => handleAction("Download Attachment")} style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b" }}><Download style={{ width: 16, height: 16 }} /></button>
+          {proposals.error ? (
+            <LoadError message={proposals.error} onRetry={proposals.reload} />
+          ) : proposals.loading && !proposals.data ? (
+            <ListSkeleton rows={3} />
+          ) : list.length === 0 ? (
+            <Card>
+              <EmptyState icon={Inbox} title="No proposals yet" desc="Companies that match your requirement can send proposals. You will see them here to compare." />
+            </Card>
+          ) : (
+            <Card>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 760 }}>
+                  <caption style={{ position: "absolute", left: -9999 }}>Proposals for this requirement, side by side</caption>
+                  <thead>
+                    <tr style={{ background: "#f8fafc", textAlign: "left" }}>
+                      {["Company", "Offer", "Timeline", "Status", "Round", ""].map((h) => (
+                        <th key={h} scope="col" style={{ padding: "12px 16px", fontSize: 12, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.04em" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {list.map((p) => (
+                      <tr key={p.id} style={{ borderTop: "1px solid #f1f5f9", verticalAlign: "top" }}>
+                        <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 600, color: "#0f172a" }}>
+                          {p.proposerName ?? "—"}<VerifiedMark verified={p.proposerVerified} />
+                        </td>
+                        <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 700, color: "#0f172a", whiteSpace: "nowrap" }}>
+                          {formatINR(p.amount)}
+                          {lowest !== null && p.amount === lowest && p.allowedActions.length > 0 && (
+                            <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 700, color: "#166534", background: "#dcfce7", padding: "2px 8px", borderRadius: 20 }}>Lowest</span>
+                          )}
+                        </td>
+                        <td style={{ padding: "14px 16px", fontSize: 14, color: "#334155" }}>{p.timeline ?? "—"}</td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                            <ProposalStatusBadge status={p.status} />
+                            {p.allowedActions.includes("accept") && <YourTurnTag />}
+                          </div>
+                        </td>
+                        <td style={{ padding: "14px 16px", fontSize: 13, color: "#475569" }}>v{p.version}</td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" }}>
+                            <Link to={`/app/opportunities/proposals/${p.id}`} style={{ fontSize: 13, fontWeight: 600, color: "#1d4ed8" }}>
+                              Review and negotiate
+                            </Link>
+                            <ProposalActionButtons
+                              proposal={{ ...p, allowedActions: p.allowedActions.filter((a) => a === "accept" || a === "shortlist") }}
+                              busy={busyId === p.id}
+                              onAction={(a) => (a === "accept" ? setAccepting(p) : void run(p, a))}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: "12px 16px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ color: "#2563EB" }}>📄</div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>Wireframes.zip</span>
-                  <span style={{ fontSize: 11, color: "#94a3b8" }}>14.5 MB</span>
-                </div>
-                <button onClick={() => handleAction("Download Attachment")} style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b" }}><Download style={{ width: 16, height: 16 }} /></button>
-              </div>
-            </div>
-          </div>
+            </Card>
+          )}
+        </section>
+      )}
 
-          {/* Proposals Received */}
-          <div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "8px 0 16px" }}>
-              <h2 style={{ fontSize: 16, fontWeight: 800, color: "#0f172a", margin: 0 }}>Proposals Received</h2>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#2563EB" }}>1 proposal</span>
-            </div>
-            
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {/* Proposal 1 */}
-              <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, padding: "24px" }}>
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div style={{ width: 32, height: 32, background: "#eff6ff", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", color: "#2563EB", fontWeight: 700, fontSize: 14 }}>N</div>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>Nexis Digital Logistics</span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#64748b" }}>
-                    <span style={{ color: "#10b981", fontWeight: 600 }}>4.8 ★</span>
-                    <span>|</span>
-                    <span>Proposed: <strong style={{ color: "#0f172a" }}>$35,000</strong> in 4 months</span>
-                  </div>
-                </div>
-                <p style={{ fontSize: 13, color: "#475569", lineHeight: 1.6, margin: "0 0 20px" }}>
-                  Full enterprise-scale integration with Salesforce, complete with robust custom reporting modules and data validation structures.
-                </p>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <Link to="#" onClick={() => handleAction("View Full Proposal")} style={{ fontSize: 13, fontWeight: 600, color: "#2563EB", textDecoration: "none" }}>View Full Proposal</Link>
-                  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                    <button onClick={() => handleAction("Decline")} style={{ background: "none", border: "none", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Decline</button>
-                    <button onClick={() => handleAction("Accept Proposal")} style={{ background: "#10b981", border: "none", color: "#fff", fontSize: 13, fontWeight: 600, padding: "8px 16px", borderRadius: 6, cursor: "pointer" }}>Accept Proposal</button>
-                  </div>
-                </div>
-              </div>
+      <AcceptDialog
+        proposal={accepting}
+        busy={!!accepting && busyId === accepting.id}
+        onCancel={() => setAccepting(null)}
+        onConfirm={() => { if (accepting) void run(accepting, "accept").then(() => setAccepting(null)); }}
+      />
+    </div>
+  );
+}
 
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-          
-          {/* Requirement Summary */}
-          <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, padding: "24px" }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", margin: "0 0 16px" }}>Requirement Summary</h2>
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              {[
-                { label: "Category", value: "Software Development" },
-                { label: "Budget Range", value: amount },
-                { label: "Timeline", value: "3 - 6 months" },
-                { label: "Location", value: "Remote" },
-                { label: "Posted By", value: "TechVista Solutions" },
-                { label: "Deadline", value: "Oct 15, 2026" },
-              ].map((item, i, arr) => (
-                <div key={item.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: i < arr.length - 1 ? "1px solid #f1f5f9" : "none" }}>
-                  <span style={{ fontSize: 13, color: "#64748b" }}>{item.label}</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{item.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Activity Timeline */}
-          <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, padding: "24px" }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", margin: "0 0 24px" }}>Activity Timeline</h2>
-            <div style={{ position: "relative", paddingLeft: 12 }}>
-              <div style={{ position: "absolute", left: 16, top: 8, bottom: 24, width: 2, background: "#2563EB" }} />
-              
-              <div style={{ position: "relative", paddingLeft: 24, marginBottom: 24 }}>
-                <div style={{ position: "absolute", left: -2, top: 4, width: 10, height: 10, borderRadius: "50%", background: "#2563EB" }} />
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", margin: 0 }}>Requirement Posted</p>
-                  <span style={{ fontSize: 11, color: "#94a3b8" }}>{dateStr}</span>
-                </div>
-                <p style={{ fontSize: 12, color: "#64748b", margin: 0 }}>Project specs uploaded by Admin</p>
-              </div>
-              
-              <div style={{ position: "relative", paddingLeft: 24 }}>
-                <div style={{ position: "absolute", left: -2, top: 4, width: 10, height: 10, borderRadius: "50%", background: "#e2e8f0" }} />
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", margin: 0 }}>Awaiting final decision</p>
-                  <span style={{ fontSize: 11, color: "#94a3b8" }}>Pending</span>
-                </div>
-                <p style={{ fontSize: 12, color: "#64748b", margin: 0 }}>Evaluating stakeholder commercial feedback</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </motion.div>
+function Fact({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</p>
+      <p style={{ margin: "4px 0 0", fontSize: 15, fontWeight: 600, color: "#0f172a" }}>{value}</p>
+    </div>
   );
 }

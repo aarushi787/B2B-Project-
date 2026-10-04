@@ -225,10 +225,14 @@ requirementsRouter.get('/', authMiddleware, handle(async (req, res) => {
     whereParams.push(companyId);
   }
 
-  const status = req.query.status ? String(req.query.status) : '';
-  if (status && ['open', 'closed', 'awarded', 'cancelled'].includes(status)) {
-    where.push('r.status = ?');
-    whereParams.push(status);
+  // status accepts one value or a comma-separated list, e.g. status=closed,awarded,cancelled
+  const statuses = String(req.query.status ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => ['open', 'closed', 'awarded', 'cancelled'].includes(s));
+  if (statuses.length) {
+    where.push(`r.status IN (${statuses.map(() => '?').join(', ')})`);
+    whereParams.push(...statuses);
   }
   const category = req.query.category ? String(req.query.category) : '';
   if (category) {

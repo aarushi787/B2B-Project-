@@ -19,7 +19,7 @@ export interface RegisterRequest {
   phone: string;
   password: string;
   companyName: string;
-  gstNumber: string;
+  gstNumber?: string;
   industry?: string;
   companyDomain?: string;
   website?: string;

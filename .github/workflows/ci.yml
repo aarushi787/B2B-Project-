@@ -66,6 +66,7 @@ jobs:
       CORS_ORIGIN: http://localhost:5173
       NODE_ENV: test
       PORT: 5000
+      AUTH_RATE_LIMIT_MAX: 10000
       E2E_BASE_URL: http://localhost:5173
       E2E_API_URL: http://localhost:5000/api
     steps:
