@@ -12,6 +12,11 @@ import { useParams } from "react-router";
 import { socketService } from "../../../services/socketService";
 import { motion } from "motion/react";
 import { ShieldCheck } from "lucide-react";
+import { useAuth } from "../../../auth/AuthProvider";
+import { dealsService } from "../../../services/dealsService";
+import type { Deal } from "../../../types";
+import { getDealSide, getNextStep } from "../../../lib/dealRole";
+import { DealRoleBadge, NextStepCard } from "../DealNextStep";
 
 export type Role = "Client" | "Provider" | "Admin";
 export type DealStatus = "Pending" | "Approved" | "Rejected" | "Completed";
@@ -36,10 +41,27 @@ export interface ChatMessage {
 
 export function DealWorkspace() {
   const { id = "DW-2024-001" } = useParams<{ id: string }>();
-  const [role, setRole] = useState<Role>("Admin");
+  const { user, isAdmin } = useAuth();
+  const [deal, setDeal] = useState<Deal | null>(null);
+  const [dealLoadFailed, setDealLoadFailed] = useState(false);
   const [dealStatus, setDealStatus] = useState<DealStatus>("Pending");
   const [escrowStatus, setEscrowStatus] = useState<EscrowStatus>("Not Funded");
   const [milestone, setMilestone] = useState<number>(1);
+
+  // Load the real deal. The API only returns deals the viewer's company is a party to (or any deal for admins).
+  useEffect(() => {
+    let alive = true;
+    setDeal(null);
+    setDealLoadFailed(false);
+    dealsService.getDealById(id)
+      .then(d => { if (alive) setDeal(d); })
+      .catch(() => { if (alive) setDealLoadFailed(true); });
+    return () => { alive = false; };
+  }, [id]);
+
+  // Which side of THIS deal the viewer is on comes from the deal itself, never from a user-selectable toggle.
+  const side = getDealSide(deal, user?.companyId, isAdmin);
+  const role: Role = side === "buyer" ? "Client" : side === "seller" ? "Provider" : side === "admin" ? "Admin" : "Client";
 
   // Hook up WebSockets for real-time updates
   useEffect(() => {
@@ -92,6 +114,7 @@ export function DealWorkspace() {
 
   // Actions
   const handleApprove = () => {
+    if (side === "observer") { toast.error("You have view-only access to this deal."); return; }
     setDealStatus("Approved");
     setChat(c => [...c, { id: Date.now().toString(), sender: "System", role: "Admin", text: "Deal approved by Admin.", timestamp: new Date() }]);
     toast.success("✅ Deal Approved successfully!", { description: "All parties have been notified." });
@@ -101,12 +124,14 @@ export function DealWorkspace() {
   };
 
   const handleReject = () => {
+    if (side === "observer") { toast.error("You have view-only access to this deal."); return; }
     setDealStatus("Rejected");
     setChat(c => [...c, { id: Date.now().toString(), sender: "System", role: "Admin", text: "Deal rejected by Admin.", timestamp: new Date() }]);
     toast.error("Deal Rejected", { description: "Reason logged and parties notified." });
   };
 
   const handleFundEscrow = () => {
+    if (side === "observer") { toast.error("You have view-only access to this deal."); return; }
     setEscrowStatus("Funded");
     setChat(c => [...c, { id: Date.now().toString(), sender: "System", role: "Admin", text: "Escrow funded — $1,50,000 secured.", timestamp: new Date() }]);
     if (milestone < 2) setMilestone(2);
@@ -114,6 +139,7 @@ export function DealWorkspace() {
   };
 
   const handleReleaseEscrow = () => {
+    if (side === "observer") { toast.error("You have view-only access to this deal."); return; }
     setEscrowStatus("Released");
     setDealStatus("Completed");
     setMilestone(3);
@@ -201,9 +227,21 @@ export function DealWorkspace() {
         <div className="flex items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
           <div className="flex items-center gap-2 text-xs text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 font-medium">
             <span>Deal ID:</span>
-            <span className="text-[#8B5CF6] font-bold">DW-2024-001</span>
+            <span className="text-[#8B5CF6] font-bold">{id}</span>
           </div>
+          <div className="ml-3"><DealRoleBadge side={side} /></div>
         </div>
+
+        {dealLoadFailed && (
+          <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 text-amber-900 text-xs px-4 py-3">
+            We couldn't load this deal, so the workspace below shows sample data and you only have view access.
+          </div>
+        )}
+
+        <NextStepCard
+          step={getNextStep({ side, dealStatus, escrowStatus, milestone, amountLabel: "$1,50,000" })}
+          onAction={(a) => (a === "approve" ? handleApprove() : a === "fund" ? handleFundEscrow() : handleReleaseEscrow())}
+        />
 
         {/* Smart Alerts */}
         <DealAlerts alerts={alerts} />

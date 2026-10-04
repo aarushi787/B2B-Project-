@@ -76,7 +76,7 @@ export function UserProfileDropdown() {
                 <Settings size={16} /> Account Settings
               </Link>
               {isAdmin && (
-                <Link to="/app/admin" onClick={() => setOpen(false)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", fontSize: 13, fontWeight: 500, color: "#334155", textDecoration: "none", borderRadius: 8 }}>
+                <Link to="/admin" onClick={() => setOpen(false)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", fontSize: 13, fontWeight: 500, color: "#334155", textDecoration: "none", borderRadius: 8 }}>
                   <Shield size={16} /> Admin Console
                 </Link>
               )}

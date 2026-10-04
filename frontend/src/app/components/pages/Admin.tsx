@@ -16,6 +16,8 @@ import {
   AreaChart, Area, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend, Cell
 } from "recharts";
+import { useNavigate } from "react-router";
+import { useAuth } from "../../../auth/AuthProvider";
 import { apiClient } from "../../../services/apiClient";
 import { socketService } from "../../../services/socketService";
 
@@ -432,6 +434,8 @@ function TableSkeleton({ cols, rows = 5 }: { cols: number; rows?: number }) {
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 export function Admin() {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const [section, setSection] = useState<Section>("overview");
   const [adminRole, setAdminRole] = useState<AdminRole>("Admin");
   const [roleOpen, setRoleOpen] = useState(false);
@@ -637,7 +641,7 @@ export function Admin() {
   ];
 
   return (
-    <div className="flex h-full min-h-screen bg-[#F5F7FA] -m-6 overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="flex h-full min-h-screen bg-[#F5F7FA] overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
       <Toaster position="top-right" richColors />
 
       {/* Modals */}
@@ -741,7 +745,7 @@ export function Admin() {
                       </button>
                     ))}
                     <div className="border-t border-slate-100 mt-1 pt-1">
-                      <button className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-red-500 hover:bg-red-50 transition-colors">
+                      <button onClick={async () => { await logout(); navigate("/auth", { replace: true }); }} className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-red-500 hover:bg-red-50 transition-colors">
                         <LogOut className="w-3.5 h-3.5" /> Sign out
                       </button>
                     </div>
