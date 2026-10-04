@@ -1,438 +1,282 @@
+import { useEffect } from "react";
 import { Link } from "react-router";
 import {
-  Shield, CheckCircle, ArrowRight, Building2, Zap,
-  Users, Globe, Star, Search, ChevronRight,
+  ArrowRight, BadgeCheck, FileSignature, GitCompareArrows, Handshake, Landmark, Lock, MessagesSquare,
+  Receipt, ShieldCheck, Workflow,
 } from "lucide-react";
+import { CATEGORIES } from "../marketplace/constants";
 
-// ─── Static data ──────────────────────────────────────────────────────────────
+// Everything on this page describes what the product does today, or is clearly labelled as coming soon.
+// Do not add numbers (customers, savings, ratings), customer logos or testimonials until they are real.
+
+const steps = [
+  { title: "Post a requirement", desc: "Describe the work, your budget range and the timeline you need." },
+  { title: "Receive proposals", desc: "Other businesses reply with their price, timeline, approach and deliverables." },
+  { title: "Compare and negotiate", desc: "See every offer side by side, then counter-offer. Each round is kept on record." },
+  { title: "Accept and start the deal", desc: "Accept the offer you prefer. A deal is created, and competing proposals close." },
+];
+
 const features = [
   {
-    icon: Shield,
-    title: "Verified Service Providers",
-    description: "Every vendor undergoes a comprehensive legal and structural identity check.",
+    icon: GitCompareArrows,
+    title: "Side-by-side comparison",
+    desc: "Price, timeline and status for every proposal in one table, sortable by what matters to you.",
   },
   {
-    icon: Zap,
-    title: "Smart Matching Engine",
-    description: "Our AI matches your complex requirements to specialized, idle suppliers.",
+    icon: MessagesSquare,
+    title: "Negotiation with a paper trail",
+    desc: "Offers and counter-offers take turns, and the full history is saved, so everyone knows exactly what was agreed.",
   },
   {
-    icon: CheckCircle,
-    title: "Escrow-Protected Transfers",
-    description: "Fund tasks systematically with absolute milestone-based clearance.",
+    icon: Handshake,
+    title: "One workspace per deal",
+    desc: "Each deal shows which side you are on and what the next step is, so nothing waits on a forgotten email.",
   },
   {
-    icon: Globe,
-    title: "Vast Enterprise Network",
-    description: "Connect seamlessly with verified suppliers and global contract manufacturers.",
+    icon: ShieldCheck,
+    title: "Safe by design",
+    desc: "Sessions are kept out of reach of page scripts, state-changing requests are checked against forgery, and admin tools are restricted to platform admins.",
   },
 ];
 
-const serviceCategories = [
-  { icon: "⚡", name: "Web Development",      providers: 142 },
-  { icon: "📱", name: "App Development",      providers: 89 },
-  { icon: "📣", name: "Digital Marketing",    providers: 215 },
-  { icon: "🎨", name: "UI/UX Design",         providers: 104 },
-  { icon: "☁️", name: "Cloud & DevOps",       providers: 67 },
-  { icon: "🤖", name: "Data & AI",            providers: 43 },
-  { icon: "💼", name: "Business Consulting",  providers: 156 },
-  { icon: "🔒", name: "Cybersecurity",        providers: 52 },
+const comingSoon = [
+  { icon: Landmark, title: "Escrow for milestone payments", desc: "Hold the payment safely and release it as milestones are delivered." },
+  { icon: Receipt, title: "GST-ready invoicing", desc: "Tax invoices generated from the agreed deal." },
+  { icon: BadgeCheck, title: "Verified business badges", desc: "GST and company checks shown on every profile." },
+  { icon: FileSignature, title: "E-signed contracts", desc: "Sign the agreement in the platform." },
 ];
 
-const processSteps = [
-  { num: "01", title: "Post Your Requirement",    desc: "Outline your project parameters, baseline budget, and timeline expectations." },
-  { num: "02", title: "Receive Proposals",        desc: "Get curated and structured bid cards from highly qualified verified providers." },
-  { num: "03", title: "Compare & Select",         desc: "Evaluate technical experience, historic ratings, and detailed project pricing." },
-  { num: "04", title: "Collaborate & Deliver",    desc: "Initiate project milestones, unlock protected escrow payments, and deploy safely." },
-];
+const focusRing = "focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2";
 
-const upcomingFeatures = [
-  { icon: "💳", title: "Stripe Escrow Integration", desc: "Automated, trustless payouts released upon milestone completion.", status: "Live" },
-  { icon: "🤝", title: "Smart Contract Agreements", desc: "Legally binding digital contracts signed instantly in-browser.", status: "Beta" },
-  { icon: "📊", title: "Advanced Analytics Dashboards", desc: "Track ROI, vendor spend, and operational metrics in real-time.", status: "Q3 2026" },
-  { icon: "🌍", title: "Multi-Currency Support", desc: "Transact seamlessly across borders with dynamic FX routing.", status: "Q4 2026" },
-];
-
-const metrics = [
-  { value: "4.2K+", label: "Registered Businesses" },
-  { value: "12K+", label: "Services Listed" },
-  { value: "85K+", label: "Requirements Fulfilled" },
-  { value: "98.5%", label: "Client Satisfaction" },
-];
-
-const trustedBy = ["AcmeCorp", "Intech", "Sayfent", "Hooli", "Umbrella", "Vehement"];
-
-const footerCols = [
-  {
-    heading: "PLATFORM",
-    links: ["About Us", "How It Works", "Pricing Models", "Success Stories"],
-  },
-  {
-    heading: "FOR BUSINESSES",
-    links: ["Post a Requirement", "Browse Agencies", "Vendor Qualification", "Enterprise Portal"],
-  },
-  {
-    heading: "RESOURCES",
-    links: ["Enterprise Blog", "Knowledge Center", "Developer API", "Documentation", "System Status"],
-  },
-  {
-    heading: "LEGAL SYSTEM",
-    links: ["Terms of Service", "Privacy Governance", "Global Compliance", "Cookie Preferences"],
-  },
-];
-
-// ─── Nav ──────────────────────────────────────────────────────────────────────
 function Navbar() {
   return (
-    <nav style={{
-      position: "sticky",
-      top: 0,
-      zIndex: 50,
-      background: "#ffffff",
-      borderBottom: "1px solid #e2e8f0",
-      fontFamily: "Inter, sans-serif",
-    }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", gap: 32, height: 60 }}>
-        {/* Logo */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <img src="/logo.png" alt="B2B Logo" style={{ height: "40px", width: "auto", objectFit: "contain" }} />
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
+      <nav aria-label="Main" className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-4 sm:px-6">
+        <Link to="/landing" className={`flex items-center rounded ${focusRing}`} aria-label="B2BForCorporates home">
+          <img src="/logo.png" alt="" className="h-9 w-auto" />
+        </Link>
+        <div className="hidden flex-1 items-center gap-6 md:flex">
+          <Link to="/services" className={`rounded text-sm font-medium text-slate-700 hover:text-blue-700 ${focusRing}`}>Services</Link>
+          <Link to="/explore" className={`rounded text-sm font-medium text-slate-700 hover:text-blue-700 ${focusRing}`}>Explore businesses</Link>
         </div>
-
-        {/* Links */}
-        <div style={{ display: "flex", alignItems: "center", gap: 24, flex: 1 }}>
-          <a href="/landing" style={{ fontSize: 14, fontWeight: 500, color: "#2563EB", textDecoration: "none" }}>Home</a>
-          <a href="/services" style={{ fontSize: 14, fontWeight: 500, color: "#64748b", textDecoration: "none" }}>Services</a>
-          <a href="/explore" style={{ fontSize: 14, fontWeight: 500, color: "#64748b", textDecoration: "none" }}>Explore Businesses</a>
-          <a href="#help" style={{ fontSize: 14, fontWeight: 500, color: "#64748b", textDecoration: "none" }}>Help</a>
-          <a href="#search" style={{ fontSize: 14, fontWeight: 600, background: "#3b82f6", color: "#fff", padding: "4px 16px", borderRadius: 16, textDecoration: "none" }}>Search</a>
-          <div style={{ flex: 1 }} />
-          <Link to="/auth" style={{ fontSize: 14, fontWeight: 500, color: "#0f172a", textDecoration: "none" }}>Sign In</Link>
-          <Link to="/auth"
-            style={{
-              fontSize: 14,
-              fontWeight: 600,
-              background: "#4f46e5",
-              color: "#fff",
-              padding: "8px 20px",
-              borderRadius: 8,
-              textDecoration: "none",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
+        <div className="ml-auto flex items-center gap-2 sm:gap-3 md:ml-0">
+          <Link to="/auth" className={`rounded px-2 py-1 text-sm font-medium text-slate-800 hover:text-blue-700 ${focusRing}`}>Sign in</Link>
+          <Link
+            to="/auth"
+            className={`inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 ${focusRing}`}
           >
-            Create Account <span style={{ fontSize: 14 }}>↗</span>
+            Create account
           </Link>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </header>
   );
 }
 
-// ─── Main Landing Component ───────────────────────────────────────────────────
-export function Landing() {
+/** A decorative illustration of the comparison screen. The figures are made up and labelled as such. */
+function ComparisonIllustration() {
+  const rows = [
+    { name: "Company A", price: "₹52,000", time: "4 weeks", status: "Submitted", tone: "bg-blue-50 text-blue-700" },
+    { name: "Company B", price: "₹47,000", time: "5 weeks", status: "Shortlisted", tone: "bg-violet-50 text-violet-700", lowest: true },
+    { name: "Company C", price: "₹58,500", time: "3 weeks", status: "Submitted", tone: "bg-blue-50 text-blue-700" },
+  ];
   return (
-    <div style={{ minHeight: "100vh", background: "#ffffff", fontFamily: "Inter, sans-serif", color: "#0f172a" }}>
+    <figure className="relative">
+      <div aria-hidden="true" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/60">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Requirement</p>
+            <p className="text-sm font-bold text-slate-900">Cloud migration to AWS</p>
+          </div>
+          <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800">Open</span>
+        </div>
+        <div className="space-y-2">
+          {rows.map((r) => (
+            <div key={r.name} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-slate-900">{r.name}</p>
+                <p className="text-xs text-slate-500">{r.time}</p>
+              </div>
+              <p className="text-sm font-bold text-slate-900">{r.price}</p>
+              {r.lowest && <span className="rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-bold text-green-800">Lowest</span>}
+              <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${r.tone}`}>{r.status}</span>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 flex items-center justify-between rounded-xl bg-amber-50 px-4 py-3">
+          <p className="text-xs font-medium text-amber-900">Your turn: accept the offer or send a counter-offer.</p>
+          <span className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white">Counter offer</span>
+        </div>
+      </div>
+      <figcaption className="mt-3 text-center text-xs text-slate-500">Illustration with example data</figcaption>
+    </figure>
+  );
+}
+
+export function Landing() {
+  useEffect(() => {
+    document.title = "B2BForCorporates · Find, compare and negotiate with business partners";
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-white font-sans text-slate-900">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:shadow"
+      >
+        Skip to content
+      </a>
       <Navbar />
 
-      {/* ── Hero ── */}
-      <section style={{ background: "#f8f9fc", paddingTop: 64, paddingBottom: 64, textAlign: "center" }}>
-        <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 24px" }}>
-          {/* Logo */}
-          <div style={{ width: 64, height: 64, margin: "0 auto 24px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <img src="/logo.png" alt="B2B Logo" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
-          </div>
-          <p style={{ fontSize: 11, fontWeight: 700, color: "#2563EB", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 16 }}>
-            ENTERPRISE B2B MARKETPLACE
-          </p>
-          <h1 style={{ fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 800, lineHeight: 1.2, marginBottom: 20, color: "#0f172a" }}>
-            Connecting Businesses with Trusted<br />Service Providers
-          </h1>
-          <p style={{ fontSize: 16, color: "#64748b", marginBottom: 36, lineHeight: 1.6 }}>
-            Discover verified businesses, explore professional services, and connect with the right providers for your next project.
-          </p>
-
-          {/* Search */}
-          <div style={{ display: "flex", gap: 0, background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, overflow: "hidden", maxWidth: 560, margin: "0 auto 36px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-            <div style={{ display: "flex", alignItems: "center", flex: 1, padding: "0 16px", gap: 8 }}>
-              <Search style={{ width: 16, height: 16, color: "#94a3b8", flexShrink: 0 }} />
-              <input
-                placeholder="Search services, businesses, or requirements..."
-                style={{ flex: 1, border: "none", outline: "none", fontSize: 14, color: "#0f172a", background: "transparent", padding: "14px 0" }}
-              />
-            </div>
-            <div style={{ borderLeft: "1px solid #e2e8f0", padding: "0 16px", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-              <span style={{ fontSize: 13, color: "#374151" }}>All Categories</span>
-              <ChevronRight style={{ width: 14, height: 14, color: "#94a3b8" }} />
-            </div>
-            <button onClick={() => window.location.href = '/explore'} style={{ background: "#2563EB", color: "#fff", border: "none", padding: "0 24px", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
-              Search
-            </button>
-          </div>
-
-
-        </div>
-      </section>
-
-      {/* ── Value Props ── */}
-      <section style={{ padding: "72px 24px", background: "#ffffff" }}>
-        <div style={{ maxWidth: 1120, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 48 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: "#2563EB", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 12 }}>
-              UNCOMPROMISED VALUE
-            </p>
-            <h2 style={{ fontSize: "clamp(22px, 3vw, 34px)", fontWeight: 700, color: "#0f172a", marginBottom: 0 }}>
-              Built for Complex B2B Enterprise<br />Transactions
-            </h2>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 24 }}>
-            {features.map(f => (
-              <div key={f.title} style={{
-                background: "#ffffff",
-                border: "1px solid #e2e8f0",
-                borderRadius: 12,
-                padding: "24px",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-              }}>
-                <div style={{ width: 36, height: 36, background: "#eff6ff", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
-                  <f.icon style={{ width: 18, height: 18, color: "#2563EB" }} />
-                </div>
-                <h3 style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>{f.title}</h3>
-                <p style={{ fontSize: 13, color: "#64748b", lineHeight: 1.6, margin: 0 }}>{f.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Service Categories ── */}
-      <section style={{ padding: "72px 24px", background: "#f8f9fc" }}>
-        <div style={{ maxWidth: 1120, margin: "0 auto" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32 }}>
+      <main id="main">
+        {/* Hero */}
+        <section className="bg-gradient-to-b from-blue-50/70 to-white">
+          <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 md:py-24 lg:grid-cols-[1.05fr_0.95fr]">
             <div>
-              <p style={{ fontSize: 11, fontWeight: 700, color: "#2563EB", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 8 }}>
-                EXPLORE ECOSYSTEM
+              <p className="mb-4 text-xs font-bold uppercase tracking-[0.14em] text-blue-700">For businesses that buy and sell services</p>
+              <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+                Find the right partner. Agree the terms in one place.
+              </h1>
+              <p className="mt-5 max-w-xl text-lg leading-relaxed text-slate-600">
+                Post what you need, compare proposals side by side, negotiate openly and start a deal. Every offer and
+                counter-offer is on record, so nothing gets lost in email threads.
               </p>
-              <h2 style={{ fontSize: "clamp(20px, 2.5vw, 30px)", fontWeight: 700, color: "#0f172a", margin: 0 }}>
-                Popular Service Categories
-              </h2>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link
+                  to="/auth"
+                  className={`inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-blue-700 ${focusRing}`}
+                >
+                  Post a requirement <ArrowRight size={18} aria-hidden="true" />
+                </Link>
+                <Link
+                  to="/explore"
+                  className={`inline-flex items-center rounded-lg border border-slate-300 bg-white px-6 py-3 text-base font-semibold text-slate-800 hover:border-slate-400 hover:bg-slate-50 ${focusRing}`}
+                >
+                  Explore businesses
+                </Link>
+              </div>
+              <p className="mt-5 flex items-center gap-2 text-sm text-slate-600">
+                <Lock size={15} aria-hidden="true" /> Your account is one login. Any business can both ask for work and offer it.
+              </p>
             </div>
-            <Link to="/services" style={{ fontSize: 13, fontWeight: 600, color: "#2563EB", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
-              View All Services <ArrowRight style={{ width: 14, height: 14 }} />
-            </Link>
+            <ComparisonIllustration />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: 16 }}>
-            {serviceCategories.map(cat => (
-              <div key={cat.name} style={{
-                background: "#ffffff",
-                border: "1px solid #e2e8f0",
-                borderRadius: 10,
-                padding: "20px",
-                cursor: "pointer",
-                display: "flex",
-                flexDirection: "column",
-                gap: 4,
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                  <span style={{ fontSize: 20 }}>{cat.icon}</span>
-                </div>
-                <p style={{ fontSize: 14, fontWeight: 600, color: "#0f172a", margin: 0 }}>{cat.name}</p>
-                <p style={{ fontSize: 12, color: "#2563EB", fontWeight: 500, margin: 0 }}>{cat.providers} providers</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ── Process ── */}
-      <section style={{ padding: "72px 24px", background: "#ffffff" }}>
-        <div style={{ maxWidth: 1120, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 52 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: "#2563EB", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 12 }}>
-              SECURE PIPELINE
-            </p>
-            <h2 style={{ fontSize: "clamp(22px, 3vw, 34px)", fontWeight: 700, color: "#0f172a" }}>
-              Efficient Project Execution<br />Blueprint
-            </h2>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 32 }}>
-            {processSteps.map((step, i) => (
-              <div key={step.num} style={{ textAlign: "left" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-                  <div style={{ width: 36, height: 36, background: "#eff6ff", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    {i === 0 && <Shield style={{ width: 18, height: 18, color: "#2563EB" }} />}
-                    {i === 1 && <Users style={{ width: 18, height: 18, color: "#2563EB" }} />}
-                    {i === 2 && <Star style={{ width: 18, height: 18, color: "#2563EB" }} />}
-                    {i === 3 && <CheckCircle style={{ width: 18, height: 18, color: "#2563EB" }} />}
-                  </div>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#94a3b8" }}>{step.num}</span>
-                </div>
-                <h3 style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>{step.title}</h3>
-                <p style={{ fontSize: 13, color: "#64748b", lineHeight: 1.6, margin: 0 }}>{step.desc}</p>
-              </div>
+        {/* How it works */}
+        <section aria-labelledby="how-heading" className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700">How it works</p>
+          <h2 id="how-heading" className="mt-2 text-3xl font-bold tracking-tight text-slate-900">From requirement to deal in four steps</h2>
+          <ol className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {steps.map((s, i) => (
+              <li key={s.title} className="rounded-2xl border border-slate-200 bg-white p-6">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white" aria-hidden="true">{i + 1}</span>
+                <h3 className="mt-4 text-base font-bold text-slate-900">{s.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600">{s.desc}</p>
+              </li>
             ))}
-          </div>
-        </div>
-      </section>
+          </ol>
+        </section>
 
-      {/* ── Coming Soon / Roadmap ── */}
-      <section style={{ padding: "72px 24px", background: "#f8fafc", borderTop: "1px solid #e2e8f0" }}>
-        <div style={{ maxWidth: 1120, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 52 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: "#8B5CF6", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 12 }}>
-              PRODUCT ROADMAP
-            </p>
-            <h2 style={{ fontSize: "clamp(22px, 3vw, 34px)", fontWeight: 700, color: "#0f172a" }}>
-              Coming Soon to B2B Nexus
-            </h2>
-            <p style={{ fontSize: 15, color: "#64748b", maxWidth: 600, margin: "16px auto 0" }}>
-              We are constantly evolving our platform to bring you the most secure, intelligent, and frictionless B2B experience possible.
-            </p>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20 }}>
-            {upcomingFeatures.map((feat, i) => (
-              <div key={i} style={{
-                background: "#ffffff",
-                border: "1px solid #e2e8f0",
-                borderRadius: 16,
-                padding: "24px",
-                position: "relative",
-                overflow: "hidden"
-              }}>
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
-                  <div style={{ fontSize: 24, background: "#f1f5f9", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 12 }}>
-                    {feat.icon}
-                  </div>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: feat.status === "In Development" ? "#2563EB" : "#8B5CF6", background: feat.status === "In Development" ? "#eff6ff" : "#f5f3ff", padding: "4px 10px", borderRadius: 20 }}>
-                    {feat.status}
+        {/* Features */}
+        <section aria-labelledby="features-heading" className="bg-slate-50">
+          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700">What you get</p>
+            <h2 id="features-heading" className="mt-2 text-3xl font-bold tracking-tight text-slate-900">Built to make the decision easy</h2>
+            <ul className="mt-10 grid gap-6 sm:grid-cols-2">
+              {features.map((f) => (
+                <li key={f.title} className="flex gap-4 rounded-2xl border border-slate-200 bg-white p-6">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+                    <f.icon size={22} aria-hidden="true" />
                   </span>
-                </div>
-                <h3 style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>{feat.title}</h3>
-                <p style={{ fontSize: 13, color: "#64748b", margin: 0, lineHeight: 1.6 }}>{feat.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Dark Metrics ── */}
-      <section style={{ padding: "72px 24px", background: "#0f172a" }}>
-        <div style={{ maxWidth: 1120, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 48 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: "#60a5fa", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 12 }}>
-              SECURE PLATFORM METRICS
-            </p>
-            <h2 style={{ fontSize: "clamp(22px, 3vw, 34px)", fontWeight: 700, color: "#ffffff" }}>
-              Powering Safe B2B Services Worldwide
-            </h2>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 20 }}>
-            {metrics.map(m => (
-              <div key={m.label} style={{
-                background: "rgba(255,255,255,0.06)",
-                borderRadius: 12,
-                padding: "32px 24px",
-                textAlign: "center",
-                border: "1px solid rgba(255,255,255,0.08)",
-              }}>
-                <p style={{ fontSize: 36, fontWeight: 800, color: "#ffffff", margin: "0 0 8px" }}>{m.value}</p>
-                <p style={{ fontSize: 13, color: "#94a3b8", margin: 0 }}>{m.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Trusted By + Testimonial ── */}
-      <section style={{ padding: "72px 24px", background: "#ffffff" }}>
-        <div style={{ maxWidth: 1120, margin: "0 auto" }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.12em", textAlign: "center", marginBottom: 32 }}>
-            TRUSTED BY LEADING ENTERPRISES
-          </p>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 40, flexWrap: "wrap", marginBottom: 56 }}>
-            {trustedBy.map(brand => (
-              <div key={brand} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <div style={{ width: 14, height: 14, borderRadius: "50%", border: "1.5px solid #94a3b8" }} />
-                <span style={{ fontSize: 13, fontWeight: 600, color: "#64748b" }}>{brand}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Testimonial */}
-          <div style={{
-            background: "#f8f9fc",
-            borderRadius: 16,
-            padding: "40px",
-            display: "flex",
-            gap: 32,
-            alignItems: "flex-start",
-            border: "1px solid #e2e8f0",
-          }}>
-            <div style={{ flexShrink: 0 }}>
-              <div style={{ width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(135deg, #e0e7ef 0%, #b0bec5 100%)", overflow: "hidden" }}>
-                <img src="https://i.pravatar.cc/56?img=47" alt="Sarah Jenkins" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              </div>
-              <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", margin: "10px 0 2px" }}>Sarah Jenkins</p>
-              <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>VP of Global Procurement</p>
-              <a href="#" style={{ fontSize: 11, color: "#2563EB", textDecoration: "none" }}>Nexis Digital Logistics</a>
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 28, color: "#d1d5db", lineHeight: 1, marginBottom: 8 }}>"</div>
-              <p style={{ fontSize: 15, color: "#374151", lineHeight: 1.7, margin: "0 0 16px" }}>
-                "ConnectPro completely transformed our vendor engagement process. Within 48 hours of posting our cloud migration requirement, we received three thoroughly validated bids, saving us over three weeks in typical RFI turnaround delays."
-              </p>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <CheckCircle style={{ width: 14, height: 14, color: "#16a34a" }} />
-                <span style={{ fontSize: 12, fontWeight: 600, color: "#16a34a" }}>Verified Enterprise Partner</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Footer ── */}
-      <footer style={{ background: "#0f172a", padding: "56px 24px 32px", color: "#94a3b8" }}>
-        <div style={{ maxWidth: 1120, margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1.5fr repeat(4, 1fr)", gap: 40, marginBottom: 48 }}>
-            {/* Brand */}
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                <img src="/logo.png" alt="B2B Logo" style={{ height: "32px", width: "auto", objectFit: "contain" }} />
-                <span style={{ fontSize: 15, fontWeight: 700, color: "#ffffff" }}>B2B CORPORATES</span>
-              </div>
-              <p style={{ fontSize: 12, lineHeight: 1.7, color: "#64748b", maxWidth: 220 }}>
-                Enterprise-grade secure marketplace matching international operators with premium vetted suppliers.
-              </p>
-            </div>
-            {footerCols.map(col => (
-              <div key={col.heading}>
-                <p style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 16 }}>
-                  {col.heading}
-                </p>
-                <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-                  {col.links.map(l => (
-                    <li key={l}>
-                      <a href="#" style={{ fontSize: 13, color: "#64748b", textDecoration: "none" }}>{l}</a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-          <div style={{ borderTop: "1px solid #1e293b", paddingTop: 24, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <p style={{ fontSize: 12, color: "#475569", margin: 0 }}>© 2026 ConnectPro Technologies Group, Inc. All rights reserved.</p>
-            <div style={{ display: "flex", gap: 16 }}>
-              {["twitter", "linkedin", "facebook"].map(s => (
-                <a key={s} href="#" style={{ width: 28, height: 28, borderRadius: 6, background: "#1e293b", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontSize: 12, color: "#64748b" }}>✦</span>
-                </a>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">{f.title}</h3>
+                    <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{f.desc}</p>
+                  </div>
+                </li>
               ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* Categories */}
+        <section aria-labelledby="cat-heading" className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700">Categories</p>
+          <h2 id="cat-heading" className="mt-2 text-3xl font-bold tracking-tight text-slate-900">Ask for the work you need</h2>
+          <ul className="mt-8 flex flex-wrap gap-3">
+            {CATEGORIES.map((c) => (
+              <li key={c}>
+                <Link
+                  to="/services"
+                  className={`inline-flex items-center rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:border-blue-600 hover:text-blue-700 ${focusRing}`}
+                >
+                  {c}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* Coming soon */}
+        <section aria-labelledby="soon-heading" className="bg-slate-900">
+          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20">
+            <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-blue-300">
+              <Workflow size={14} aria-hidden="true" /> In development
+            </p>
+            <h2 id="soon-heading" className="mt-2 text-3xl font-bold tracking-tight text-white">Coming next</h2>
+            <p className="mt-3 max-w-2xl text-slate-300">These are not available yet. We will announce them when they are.</p>
+            <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {comingSoon.map((c) => (
+                <li key={c.title} className="rounded-2xl border border-slate-700 bg-slate-800/60 p-6">
+                  <c.icon size={22} className="text-blue-300" aria-hidden="true" />
+                  <h3 className="mt-4 text-base font-bold text-white">{c.title}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-slate-300">{c.desc}</p>
+                  <span className="mt-4 inline-block rounded-full border border-slate-600 px-2.5 py-1 text-[11px] font-semibold text-slate-200">Coming soon</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* Call to action */}
+        <section aria-labelledby="cta-heading" className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20">
+          <div className="rounded-3xl bg-blue-600 px-6 py-12 text-center sm:px-12">
+            <h2 id="cta-heading" className="text-3xl font-bold tracking-tight text-white">Ready to post your first requirement?</h2>
+            <p className="mx-auto mt-3 max-w-xl text-blue-100">Create an account, describe what you need, and let businesses come to you with proposals.</p>
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <Link
+                to="/auth"
+                className={`inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-base font-semibold text-blue-700 hover:bg-blue-50 ${focusRing}`}
+              >
+                Create account <ArrowRight size={18} aria-hidden="true" />
+              </Link>
+              <Link
+                to="/auth"
+                className={`inline-flex items-center rounded-lg border border-blue-300 px-6 py-3 text-base font-semibold text-white hover:bg-blue-500 ${focusRing}`}
+              >
+                Sign in
+              </Link>
             </div>
           </div>
+        </section>
+      </main>
+
+      <footer className="border-t border-slate-200 bg-white">
+        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3">
+            <img src="/logo.png" alt="" className="h-8 w-auto" />
+            <p className="text-sm text-slate-600">B2BForCorporates · Find, compare and negotiate with business partners.</p>
+          </div>
+          <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+            <Link to="/services" className={`rounded text-slate-700 hover:text-blue-700 ${focusRing}`}>Services</Link>
+            <Link to="/explore" className={`rounded text-slate-700 hover:text-blue-700 ${focusRing}`}>Explore businesses</Link>
+            <Link to="/auth" className={`rounded text-slate-700 hover:text-blue-700 ${focusRing}`}>Sign in</Link>
+          </nav>
+        </div>
+        <div className="border-t border-slate-100 py-4 text-center text-xs text-slate-500">
+          © {new Date().getFullYear()} B2BForCorporates. All rights reserved.
         </div>
       </footer>
     </div>
   );
 }
-
-export default Landing;
