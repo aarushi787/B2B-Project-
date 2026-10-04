@@ -11,6 +11,7 @@ import { csrfProtection, csrfTokenFor } from '../middleware/csrf.js';
 import { allowedActions, assertAllowed, dealFromAcceptedProposal, NegotiationError, parseDeliverables, sideOf, validateBudget, validateOffer } from '../services/negotiation.js';
 import { createOriginMatcher, frontendBaseUrl, parseOriginList } from '../utils/origins.js';
 import { describeDatabase } from '../utils/redact.js';
+import { buildPoolConfig, resolveSsl } from '../config/database.js';
 import { encryptJson, decryptJson } from '../utils/encryption.js';
 
 test('access token round-trips its payload', () => {
@@ -269,4 +270,37 @@ test('socket token: works only as a socket token, and is not accepted as an acce
   const access = signAccessToken({ userId: 'u1', companyId: 'c1', role: 'user' });
   assert.throws(() => verifySocketToken(access));
   assert.throws(() => verifyAccessToken(socket)); // a websocket token can never authenticate REST requests
+});
+
+// ---- Database connection settings ---------------------------------------------------------------------
+test('database: a remote host gets TLS in production even when the URL has no ssl parameter', () => {
+  const cfg = buildPoolConfig({ NODE_ENV: 'production', DATABASE_URL: 'mysql://user.root:pw@gateway.tidbcloud.com:4000/b2b' });
+  assert.equal(cfg.host, 'gateway.tidbcloud.com');
+  assert.equal(cfg.port, 4000);
+  assert.equal(cfg.database, 'b2b');
+  assert.deepEqual(cfg.ssl, { rejectUnauthorized: true });
+});
+
+test('database: the ssl query parameter, in any form, turns TLS on and never breaks parsing', () => {
+  for (const q of ['?ssl={"rejectUnauthorized":true}', '?ssl=true', '?sslmode=require']) {
+    const cfg = buildPoolConfig({ NODE_ENV: 'development', DATABASE_URL: `mysql://u:p@db.example.com:4000/x${q}` });
+    assert.deepEqual(cfg.ssl, { rejectUnauthorized: true }, q);
+  }
+});
+
+test('database: local databases stay unencrypted unless asked, and DB_SSL overrides either way', () => {
+  assert.equal(buildPoolConfig({ NODE_ENV: 'production', DB_HOST: 'localhost' }).ssl, undefined);
+  assert.equal(buildPoolConfig({ NODE_ENV: 'production', DB_HOST: 'db' }).ssl, undefined); // docker-compose service
+  assert.equal(buildPoolConfig({ NODE_ENV: 'development', DB_HOST: '127.0.0.1' }).ssl, undefined);
+  assert.deepEqual(buildPoolConfig({ NODE_ENV: 'development', DB_HOST: 'remote.example.com', DB_SSL: 'true' }).ssl, { rejectUnauthorized: true });
+  assert.equal(buildPoolConfig({ NODE_ENV: 'production', DB_HOST: 'remote.example.com', DB_SSL: 'false' }).ssl, undefined);
+});
+
+test('database: passwords with special characters are decoded, and a provider CA can be supplied (PEM or base64)', () => {
+  const cfg = buildPoolConfig({ DATABASE_URL: 'mysql://us%40er:p%40ss%23w%2Frd@host.example.com/db' });
+  assert.equal(cfg.user, 'us@er');
+  assert.equal(cfg.password, 'p@ss#w/rd');
+  const pem = ['-----BEGIN CERTIFICATE-----', 'ABC', '-----END CERTIFICATE-----'].join(String.fromCharCode(10));
+  assert.equal(resolveSsl('h.example.com', { DB_SSL: 'true', DB_SSL_CA: pem })?.ca, pem);
+  assert.equal(resolveSsl('h.example.com', { DB_SSL: 'true', DB_SSL_CA: Buffer.from(pem).toString('base64') })?.ca, pem);
 });
