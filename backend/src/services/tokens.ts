@@ -47,12 +47,14 @@ export function getAccessTokenFromRequest(req: Request): string | undefined {
   return cookies[ACCESS_COOKIE_NAME];
 }
 
+// Refresh tokens are accepted from the httpOnly cookie only, never from the request body.
 export function getRefreshTokenFromRequest(req: Request): string | undefined {
-  const bodyToken = typeof req.body?.refreshToken === 'string' ? req.body.refreshToken : undefined;
-  if (bodyToken) return bodyToken;
+  return getAuthCookies(req).refresh;
+}
 
+export function getAuthCookies(req: Request): { access?: string; refresh?: string } {
   const cookies = parseCookies(req.headers.cookie);
-  return cookies[REFRESH_COOKIE_NAME];
+  return { access: cookies[ACCESS_COOKIE_NAME] || undefined, refresh: cookies[REFRESH_COOKIE_NAME] || undefined };
 }
 
 export function signAccessToken(payload: Omit<AuthTokenPayload, 'type'>): string {
