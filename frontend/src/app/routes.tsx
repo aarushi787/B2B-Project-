@@ -28,6 +28,7 @@ const EnquiriesReceived = React.lazy(() => import("./components/pages/EnquiriesR
 const EnquiriesArchived = React.lazy(() => import("./components/pages/EnquiriesArchived").then(m => ({ default: m.EnquiriesArchived })));
 const ServicesPage = React.lazy(() => import("./components/pages/ServicesPage").then(m => ({ default: m.ServicesPage })));
 const ExploreBusinesses = React.lazy(() => import("./components/pages/ExploreBusinesses").then(m => ({ default: m.ExploreBusinesses })));
+const ProposalDetails = React.lazy(() => import("./components/pages/ProposalDetails").then(m => ({ default: m.ProposalDetails })));
 const SendProposal = React.lazy(() => import("./components/pages/SendProposal").then(m => ({ default: m.SendProposal })));
 const PostRequirementPage = React.lazy(() => import("./components/pages/PostRequirementPage").then(m => ({ default: m.PostRequirementPage })));
 const NotificationsPage = React.lazy(() => import("./components/pages/NotificationsPage").then(m => ({ default: m.NotificationsPage })));
@@ -62,9 +63,10 @@ export const router = createBrowserRouter([
       { path: "requirements/active",          Component: ActiveRequirements },
       { path: "requirements/new",             Component: PostRequirementPage },
       { path: "requirements/closed",          Component: ClosedRequirements },
-      { path: "requirements/details",         Component: RequirementDetails },
+      { path: "requirements/:id",             Component: RequirementDetails },
       // Opportunities
       { path: "opportunities/matching",       Component: MatchingRequirements },
+      { path: "opportunities/proposals/:id",  Component: ProposalDetails },
       { path: "opportunities/send",           Component: SendProposal },
       { path: "opportunities/send/:id",       Component: SendProposal },
       { path: "opportunities/sent",           Component: SentProposals },

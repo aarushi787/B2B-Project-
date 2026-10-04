@@ -86,3 +86,79 @@ export interface Product {
   unit?: string;
   createdAt?: string;
 }
+
+// ---- Requirements (RFQs), proposals and negotiation ----
+export type RequirementStatus = 'open' | 'closed' | 'awarded' | 'cancelled';
+export type ProposalStatus = 'submitted' | 'shortlisted' | 'rejected' | 'accepted' | 'withdrawn';
+export type ProposalSide = 'proposer' | 'requester';
+export type ProposalAction = 'counter' | 'accept' | 'shortlist' | 'reject' | 'withdraw';
+
+export interface Requirement {
+  id: string;
+  companyId: string;
+  companyName: string | null;
+  companyVerified?: boolean;
+  title: string;
+  description: string;
+  category: string | null;
+  budgetMin: number | null;
+  budgetMax: number | null;
+  currency: string;
+  timeline: string | null;
+  status: RequirementStatus;
+  dealId: string | null;
+  proposalCount?: number;
+  myProposalId: string | null;
+  isMine: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProposalRevision {
+  version: number;
+  offeredBy: ProposalSide;
+  authorCompanyId: string;
+  authorCompanyName: string;
+  amount: number;
+  timeline: string | null;
+  message: string;
+  deliverables: string[];
+  createdAt: string;
+}
+
+export interface MarketProposal {
+  id: string;
+  requirementId: string;
+  requirementTitle: string;
+  requirementStatus: RequirementStatus;
+  requirementBudgetMin: number | null;
+  requirementBudgetMax: number | null;
+  proposerId: string;
+  proposerName: string | null;
+  proposerVerified: boolean;
+  requesterId: string;
+  requesterName: string | null;
+  amount: number;
+  currency: string;
+  timeline: string | null;
+  message: string;
+  deliverables: string[];
+  status: ProposalStatus;
+  lastOfferBy: ProposalSide;
+  version: number;
+  /** Which side the signed-in company is on for this proposal. */
+  side: ProposalSide | null;
+  /** What the signed-in company may do right now (the API enforces the same rules). */
+  allowedActions: ProposalAction[];
+  dealId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  revisions?: ProposalRevision[];
+}
+
+export interface Paged<T> {
+  data: T[];
+  total: number;
+  page: number;
+  totalPages: number;
+}

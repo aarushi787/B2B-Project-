@@ -7,6 +7,7 @@ export type ErrorCode =
   | 'NOT_FOUND'
   | 'VALIDATION_ERROR'
   | 'BAD_REQUEST'
+  | 'CONFLICT'
   | 'CSRF_ORIGIN'
   | 'CSRF_INVALID'
   | 'INTERNAL_ERROR';

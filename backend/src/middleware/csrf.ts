@@ -35,13 +35,14 @@ function safeEqual(a: string, b: string): boolean {
   return ab.length === bb.length && crypto.timingSafeEqual(ab, bb);
 }
 
-export function csrfProtection(allowedOrigins: string[]) {
+export function csrfProtection(allowedOrigins: string[] | ((origin: string) => boolean)) {
+  const isAllowed = Array.isArray(allowedOrigins) ? (o: string) => allowedOrigins.includes(o) : allowedOrigins;
   return (req: Request, res: Response, next: NextFunction) => {
     if (SAFE_METHODS.has(req.method)) return next();
     if (req.headers.authorization?.startsWith('Bearer ')) return next();
 
     const origin = req.get('origin');
-    if (origin && !allowedOrigins.includes(origin)) {
+    if (origin && !isAllowed(origin)) {
       return errorResponse(res, 403, 'CSRF_ORIGIN', 'Request origin is not allowed');
     }
 

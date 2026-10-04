@@ -1,4 +1,4 @@
-import type { APIRequestContext } from '@playwright/test';
+import { request as pwRequest, type APIRequestContext, type APIResponse } from '@playwright/test';
 
 export const API_URL = process.env.E2E_API_URL || 'http://localhost:5000/api';
 export const APP_ORIGIN = process.env.E2E_BASE_URL || 'http://localhost:5173';
@@ -29,3 +29,50 @@ export async function registerViaApi(request: APIRequestContext, extra: Record<s
   const body = await res.json();
   return { account, res, body };
 }
+
+/**
+ * One signed-in company, with its own cookie jar. Use several to play different companies in one test.
+ * Writes automatically carry the Origin and X-CSRF-Token headers, like the real frontend.
+ */
+export class Session {
+  constructor(
+    readonly ctx: APIRequestContext,
+    private csrf: string,
+    readonly companyId: string,
+    readonly userId: string,
+    readonly companyName: string,
+  ) {}
+
+  static async create(label = 'co'): Promise<Session> {
+    const ctx = await pwRequest.newContext();
+    const { account, res, body } = await registerViaApi(ctx);
+    if (res.status() !== 201) throw new Error(`register failed: ${res.status()} ${JSON.stringify(body)}`);
+    return new Session(ctx, body.csrfToken, body.user.companyId, body.user.id, `${label}:${account.companyName}`);
+  }
+
+  private headers() {
+    return { Origin: APP_ORIGIN, 'X-CSRF-Token': this.csrf };
+  }
+  get(path: string): Promise<APIResponse> {
+    return this.ctx.get(`${API_URL}${path}`);
+  }
+  post(path: string, data: unknown = {}): Promise<APIResponse> {
+    return this.ctx.post(`${API_URL}${path}`, { data, headers: this.headers() });
+  }
+  put(path: string, data: unknown = {}): Promise<APIResponse> {
+    return this.ctx.put(`${API_URL}${path}`, { data, headers: this.headers() });
+  }
+  dispose() {
+    return this.ctx.dispose();
+  }
+}
+
+export const sampleRequirement = (over: Record<string, unknown> = {}) => ({
+  title: 'Cloud migration to AWS',
+  description: 'Move our on-premise servers to AWS with a DevOps pipeline and documentation.',
+  category: 'Cloud & DevOps',
+  budgetMin: 40000,
+  budgetMax: 60000,
+  timeline: 'Within 1 Month',
+  ...over,
+});

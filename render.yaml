@@ -1,0 +1,47 @@
+# Render Blueprint for the API (backend/). See DEPLOY.md for the full guide.
+# Using it is optional: you can create the same service by hand in the Render dashboard with these settings.
+services:
+  - type: web
+    name: b2b-project-api
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: NODE_ENV
+        value: production
+
+      # --- Secrets: generated once by Render. Do not change DATA_ENCRYPTION_KEY later: data encrypted with
+      # --- the old key (KYC documents etc.) could no longer be read.
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATA_ENCRYPTION_KEY
+        generateValue: true
+
+      # --- You must provide these (Render asks for them when the blueprint is applied).
+      - key: DATABASE_URL        # e.g. mysql://user:password@host:4000/dbname?ssl={"rejectUnauthorized":true}
+        sync: false
+      - key: CORS_ORIGIN         # comma-separated frontend origins, no trailing slash. See DEPLOY.md.
+        sync: false
+      - key: FRONTEND_URL        # base URL used in emailed links, e.g. https://your-app.vercel.app
+        sync: false
+
+      # --- Vercel proxies /api to this service, so the browser sees one site and one extra proxy hop exists.
+      - key: COOKIE_SAMESITE
+        value: lax
+      - key: TRUST_PROXY_HOPS
+        value: "2"
+
+      # --- Create or upgrade database tables on every boot (idempotent). Free instances have no pre-deploy hook.
+      - key: AUTO_INIT_DB
+        value: "true"
+
+      # --- Optional integrations: add in the dashboard when you need them.
+      #   FILE_STORAGE_DRIVER=s3 plus R2_BUCKET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY (document uploads; required for them)
+      #   REDIS_URL (background jobs), SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS/EMAIL_FROM (email),
+      #   RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET/RAZORPAY_WEBHOOK_SECRET (payments), GEMINI_API_KEY, SENTRY_DSN, METRICS_TOKEN

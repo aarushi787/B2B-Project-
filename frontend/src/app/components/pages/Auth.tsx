@@ -92,7 +92,8 @@ export function Auth() {
       const res = await authService.register({
         name: registerData.name, email: registerData.email, phone: registerData.phone,
         password: registerData.password, companyName: registerData.companyName,
-        gstNumber: registerData.gstNumber,
+        // GST is optional: leave it out entirely when blank (the API rejects an empty string).
+        gstNumber: registerData.gstNumber.trim() || undefined,
       });
       login({ user: res.user as any, csrfToken: res.csrfToken });
       navigate("/app/dashboard");
@@ -282,7 +283,7 @@ export function Auth() {
                   <label style={{ display: "block", fontSize: 14, fontWeight: 500, color: "#334155", marginBottom: 4 }}>{label}</label>
                   <div style={{ position: "relative" }}>
                     <Icon size={16} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
-                    <input type={type} required value={(registerData as any)[key]}
+                    <input type={type} required={key !== "gstNumber"} value={(registerData as any)[key]}
                       onChange={e => {
                         setRegisterData(d => ({...d, [key]: e.target.value}));
                         setFieldErrors(err => ({...err, [key]: ""}));

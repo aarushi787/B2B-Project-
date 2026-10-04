@@ -2,6 +2,8 @@
 
 Enterprise collaboration platform — SaaS Dashboard UI + B2B Nexus backend engine.
 
+> Deploying to Vercel + Render? Follow [DEPLOY.md](DEPLOY.md).
+
 ## Mission
 Give corporates a trusted place to discover verified businesses, post requirements, exchange proposals, sign contracts and pay through escrow — with the deal, chat, ledger and audit trail in one workspace.
 

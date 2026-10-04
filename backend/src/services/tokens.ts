@@ -7,7 +7,7 @@ type AuthTokenPayload = {
   userId: string;
   companyId: string | null;
   role: string;
-  type: 'access';
+  type: 'access' | 'socket';
 };
 
 const ACCESS_COOKIE_NAME = process.env.ACCESS_TOKEN_COOKIE_NAME || 'access_token';
@@ -66,7 +66,28 @@ export function signAccessToken(payload: Omit<AuthTokenPayload, 'type'>): string
 }
 
 export function verifyAccessToken(token: string): AuthTokenPayload {
-  return jwt.verify(token, getJwtSecret()) as AuthTokenPayload;
+  const decoded = jwt.verify(token, getJwtSecret()) as AuthTokenPayload;
+  // Only real access tokens: a short-lived websocket token must never authenticate REST requests.
+  if (decoded.type !== 'access') throw new Error('Not an access token');
+  return decoded;
+}
+
+export const SOCKET_TOKEN_TTL_SECONDS = 60;
+
+/**
+ * A 60-second token used only to open a websocket. Browsers behind a different domain (Vercel frontend, Render API)
+ * may not send the auth cookie on the websocket handshake, so the page fetches one of these over the normal
+ * cookie-authenticated API and presents it once. It is never stored and cannot be used for the REST API.
+ */
+export function signSocketToken(payload: { userId: string; companyId: string | null; role: string }): string {
+  const signPayload: AuthTokenPayload = { ...payload, type: 'socket' };
+  return jwt.sign(signPayload, getJwtSecret(), { expiresIn: SOCKET_TOKEN_TTL_SECONDS } as SignOptions);
+}
+
+export function verifySocketToken(token: string): AuthTokenPayload {
+  const decoded = jwt.verify(token, getJwtSecret()) as AuthTokenPayload;
+  if (decoded.type !== 'socket') throw new Error('Not a socket token');
+  return decoded;
 }
 
 export function createRefreshToken(): string {
@@ -81,9 +102,21 @@ export function refreshTokenExpiryDate(): Date {
   return new Date(Date.now() + REFRESH_TOKEN_MAX_AGE_MS);
 }
 
+/**
+ * Cookie flags. COOKIE_SAMESITE (lax | strict | none) overrides the default, which is 'none' in production
+ * (frontend and API on different sites) and 'lax' elsewhere. When the frontend proxies /api to this server
+ * (see DEPLOY.md) the browser sees one site, so use 'lax': it is safer and works in Safari.
+ */
+export function cookieFlags(env: { NODE_ENV?: string; COOKIE_SAMESITE?: string } = process.env): { secure: boolean; sameSite: 'lax' | 'strict' | 'none' } {
+  const configured = (env.COOKIE_SAMESITE || '').toLowerCase();
+  const production = env.NODE_ENV === 'production';
+  const sameSite = configured === 'lax' || configured === 'strict' || configured === 'none' ? configured : production ? 'none' : 'lax';
+  // Browsers reject SameSite=None cookies that are not Secure.
+  return { secure: production || sameSite === 'none', sameSite };
+}
+
 export function setAuthCookies(res: Response, accessToken: string, refreshToken: string): void {
-  const secure = process.env.NODE_ENV === 'production';
-  const sameSite = secure ? 'none' : 'lax';
+  const { secure, sameSite } = cookieFlags();
   res.cookie(ACCESS_COOKIE_NAME, accessToken, {
     httpOnly: true,
     secure,
@@ -101,8 +134,7 @@ export function setAuthCookies(res: Response, accessToken: string, refreshToken:
 }
 
 export function clearAuthCookies(res: Response): void {
-  const secure = process.env.NODE_ENV === 'production';
-  const sameSite = secure ? 'none' : 'lax';
+  const { secure, sameSite } = cookieFlags();
   res.clearCookie(ACCESS_COOKIE_NAME, {
     httpOnly: true,
     secure,

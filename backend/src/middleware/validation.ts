@@ -7,6 +7,8 @@ const uuidSchema = z.string().uuid('Invalid UUID');
 const phoneSchema = z.string().regex(/^\+?[\d\s\-\(\)]+$/, 'Invalid phone format');
 const gstSchema = z.string().min(1, 'Invalid GST format');
 const panSchema = z.string().min(1, 'Invalid PAN format');
+// A blank optional text field means "not provided", not "invalid".
+const blankToUndefined = (value: unknown) => (typeof value === 'string' && value.trim() === '' ? undefined : value);
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
 
 const parseNumber = (value: unknown) => {
@@ -45,8 +47,8 @@ export const userRegisterSchema = z.object({
   phone: phoneSchema,
   companyName: z.string().min(1, 'Company name is required').max(255),
   companyId: uuidSchema.optional(),
-  gstNumber: gstSchema.optional(),
-  panNumber: panSchema.optional(),
+  gstNumber: z.preprocess(blankToUndefined, gstSchema.optional()),
+  panNumber: z.preprocess(blankToUndefined, panSchema.optional()),
   industry: z.string().max(100).optional(),
   companyDomain: z.string().max(255).optional(),
   website: z.string().url('Invalid website URL').optional(),
@@ -290,6 +292,31 @@ export const adminUpdateUserSchema = z.object({
   role: z.enum(['user', 'admin', 'buyer', 'seller']).optional(), // buyer/seller accepted as legacy aliases of 'user'
   password: passwordSchema.optional(),
 });
+
+// Requirements (RFQs) and proposals
+const deliverablesSchema = z.array(z.string().trim().min(1).max(300)).max(20);
+
+export const requirementCreateSchema = z.object({
+  title: z.string().trim().min(3, 'Title must be at least 3 characters').max(255),
+  description: z.string().trim().min(10, 'Please describe what you need (at least 10 characters)').max(5000),
+  category: z.string().trim().max(100).optional(),
+  budgetMin: nonNegativeNumberField().optional(),
+  budgetMax: nonNegativeNumberField().optional(),
+  timeline: z.string().trim().max(100).optional(),
+  currency: z.literal('INR').optional(),
+});
+
+export const requirementUpdateSchema = requirementCreateSchema.partial();
+
+export const proposalCreateSchema = z.object({
+  amount: positiveNumberField(),
+  timeline: z.string().trim().max(100).optional(),
+  message: z.string().trim().max(5000).optional(),
+  deliverables: deliverablesSchema.optional(),
+});
+
+// A counter-offer has the same shape as a proposal.
+export const offerSchema = proposalCreateSchema;
 
 // Ledger schema
 export const ledgerCreateSchema = z.object({

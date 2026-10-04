@@ -1,25 +1,41 @@
-// Purpose: This module (services/socketService.ts) is used to implement frontend Socket.IO connectivity and event helpers in a modular, maintainable way.
+// Purpose: Frontend Socket.IO connectivity and event helpers.
+//
+// Auth: the page asks the API (over the normal httpOnly-cookie session) for a 60-second socket token and presents
+// it in the handshake. This works even when the websocket host is a different site from the page (Vercel frontend,
+// Render API), where browsers may not send cookies on the handshake. No token is ever stored.
+//
+// Where: Vercel cannot proxy websockets, so in production set VITE_SOCKET_URL to the API host
+// (e.g. https://your-api.onrender.com). Without it the app still works; live updates are simply off.
 import { io, Socket } from 'socket.io-client';
+import { apiClient } from './apiClient';
 
 type EventHandler<T = unknown> = (payload: T) => void;
 
-const API_BASE_URL = (import.meta as any).env.VITE_SOCKET_URL || 'http://localhost:5000/api';
+const env = (import.meta as any).env ?? {};
 
-function toSocketUrl(apiBaseUrl: string): string {
-  return apiBaseUrl.replace(/\/api\/?$/, '');
+function resolveSocketUrl(): string | null {
+  const configured = String(env.VITE_SOCKET_URL || '').trim();
+  if (configured) return configured.replace(/\/api\/?$/, '').replace(/\/+$/, '');
+  return env.PROD ? null : 'http://localhost:5000';
 }
 
 class SocketService {
   private socket: Socket | null = null;
-  private socketUrl = toSocketUrl(API_BASE_URL);
+  private socketUrl = resolveSocketUrl();
 
   connect(): Socket {
-    if (this.socket?.connected) return this.socket;
+    if (this.socket) return this.socket; // socket.io reconnects by itself; never open a second connection
 
-    // Auth is the httpOnly cookie, sent automatically with credentials; no token is handled in JS.
-    this.socket = io(this.socketUrl, {
+    this.socket = io(this.socketUrl ?? window.location.origin, {
       transports: ['websocket'],
       withCredentials: true,
+      autoConnect: this.socketUrl !== null, // no websocket host configured: keep an inert socket so callers need no checks
+      auth: (cb) => {
+        apiClient
+          .get<{ token: string }>('/auth/socket-token')
+          .then((r) => cb({ token: r.token }))
+          .catch(() => cb({}));
+      },
     });
 
     return this.socket;

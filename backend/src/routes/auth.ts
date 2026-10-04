@@ -1,6 +1,7 @@
 // Purpose: This module (backend/src/routes/auth.ts) is used to implement project functionality in a modular, maintainable way.
 import { normalizeAccountRole, toDbRole } from '../utils/roles.js';
 import { csrfTokenFor, csrfTokenForRequest } from '../middleware/csrf.js';
+import { frontendBaseUrl } from '../utils/origins.js';
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
@@ -27,6 +28,8 @@ import {
   refreshTokenExpiryDate,
   setAuthCookies,
   signAccessToken,
+  signSocketToken,
+  SOCKET_TOKEN_TTL_SECONDS,
 } from '../services/tokens.js';
 import { sendEmail } from '../utils/mailer.js';
 
@@ -195,7 +198,7 @@ router.post('/register', authLimiter, validateRequest(userRegisterSchema), async
       ]
     );
 
-    const verifyUrl = `${process.env.CORS_ORIGIN || 'http://localhost:5173'}/verify-email?token=${verifyToken}`;
+    const verifyUrl = `${frontendBaseUrl()}/verify-email?token=${verifyToken}`;
     await sendEmail(normalizedEmail, 'Verify your B2B For Corporates Email', `
       <h1>Welcome to B2B For Corporates!</h1>
       <p>Please click the link below to verify your email address:</p>
@@ -263,6 +266,15 @@ router.post('/login', authLimiter, validateRequest(userLoginSchema), async (req:
   } finally {
     connection?.release();
   }
+});
+
+// Short-lived token for opening the websocket (see services/tokens.ts). Needs a valid cookie session.
+router.get('/socket-token', authMiddleware, (req: AuthRequest, res: Response) => {
+  res.set('Cache-Control', 'no-store');
+  return res.json({
+    token: signSocketToken({ userId: req.userId!, companyId: req.companyId ?? null, role: req.role ?? 'user' }),
+    expiresIn: SOCKET_TOKEN_TTL_SECONDS,
+  });
 });
 
 // CSRF token for the current session (the client calls this on page load).
@@ -470,7 +482,7 @@ router.post('/request-password-reset', async (req: Request, res: Response) => {
       const expiry = new Date(Date.now() + 60 * 60 * 1000);
       await connection.query('UPDATE users SET resetToken = ?, resetTokenExpiry = ? WHERE email = ?', [resetToken, expiry, normalizedEmail]);
       
-      const resetUrl = `${process.env.CORS_ORIGIN || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
+      const resetUrl = `${frontendBaseUrl()}/reset-password?token=${resetToken}`;
       await sendEmail(normalizedEmail, 'Password Reset Request', `
         <p>You requested a password reset. Click the link below to reset it:</p>
         <a href="${resetUrl}">${resetUrl}</a>

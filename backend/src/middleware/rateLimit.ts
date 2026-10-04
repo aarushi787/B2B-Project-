@@ -1,10 +1,12 @@
 // Purpose: This module (backend/src/middleware/rateLimit.ts) is used to implement project functionality in a modular, maintainable way.
 import rateLimit from 'express-rate-limit';
 
-// Strict rate limiting for authentication endpoints (5 attempts per 15 minutes)
+// Brute-force protection for login/register: only FAILED attempts count (successful ones are skipped),
+// 20 per 15 minutes per IP by default. Override with AUTH_RATE_LIMIT_MAX (CI/E2E creates many accounts).
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 500, // 5 attempts per window
+  max: Number(process.env.AUTH_RATE_LIMIT_MAX) || 20,
+  skipSuccessfulRequests: true,
   message: {
     error: 'Too many authentication attempts. Please try again in 15 minutes.',
     retryAfter: 15 * 60,

@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import { Check, UploadCloud, FileText, X } from "lucide-react";
-import { apiClient } from "../../../services/apiClient";
+import { requirementsService } from "../../../services/requirementsService";
+import { friendlyError } from "../../../lib/useLoad";
+import { parseAmount } from "../../../lib/format";
+import { BUDGET_PRESETS } from "../marketplace/constants";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router";
 
@@ -21,6 +24,7 @@ export function PostRequirementPage() {
   const [minBudget, setMinBudget] = useState("");
   const [maxBudget, setMaxBudget] = useState("");
   const [timeline, setTimeline] = useState("");
+  const [budgetPreset, setBudgetPreset] = useState("");
 
   const services = [
     "Web Development", "App Development", "Software Development", "Cybersecurity", "Graphic Design",
@@ -28,7 +32,7 @@ export function PostRequirementPage() {
     "Data & AI", "Business Consulting", "Accounting & Finance", "Legal Services"
   ];
   
-  const budgetRanges = ["Under 50k", "50K-1L", "1L-2L", "2L-5L"];
+  const budgetRanges = Object.keys(BUDGET_PRESETS);
   const timelinePresets = ["ASAP", "Within 1 Month", "1-3 Month", "3-6 Month", "1-2 Year", "Flexible"];
 
   const handleSubmit = async () => {
@@ -38,18 +42,23 @@ export function PostRequirementPage() {
         return;
       }
       setIsSubmitting(true);
-      const payload = {
-        title,
-        description,
+      const budgetMin = parseAmount(minBudget);
+      const budgetMax = parseAmount(maxBudget);
+      if (minBudget.trim() && budgetMin === undefined) { toast.error("Enter the minimum budget as a number, for example 10000 or 1.5L."); setIsSubmitting(false); return; }
+      if (maxBudget.trim() && budgetMax === undefined) { toast.error("Enter the maximum budget as a number, for example 30000 or 2L."); setIsSubmitting(false); return; }
+      if (budgetMin !== undefined && budgetMax !== undefined && budgetMin > budgetMax) { toast.error("The minimum budget cannot be higher than the maximum."); setIsSubmitting(false); return; }
+      await requirementsService.create({
+        title: title.trim(),
+        description: description.trim(),
         category: service,
-        status: "active",
-        totalAmount: parseInt(maxBudget.replace(/[^0-9]/g, "")) || 0
-      };
-      await apiClient.post('/deals', payload);
+        budgetMin,
+        budgetMax,
+        timeline: timeline || undefined,
+      });
       toast.success("Requirement posted successfully!");
       navigate('/app/requirements/active');
     } catch (error) {
-      toast.error("Failed to post requirement.");
+      toast.error(friendlyError(error));
     } finally {
       setIsSubmitting(false);
     }
@@ -164,11 +173,11 @@ export function PostRequirementPage() {
                 <label style={{ fontSize: 12, fontWeight: 600, color: "#0f172a", display: "block", marginBottom: 8 }}>Quick Budget Range</label>
                 <div style={{ display: "flex", gap: 12 }}>
                   {budgetRanges.map(r => (
-                    <button key={r} onClick={() => { setMinBudget(r); setMaxBudget(r); setActiveStep(Math.max(activeStep, 3)); }} style={{ 
+                    <button key={r} onClick={() => { setBudgetPreset(r); setMinBudget(String(BUDGET_PRESETS[r][0])); setMaxBudget(String(BUDGET_PRESETS[r][1])); setActiveStep(Math.max(activeStep, 3)); }} style={{ 
                       padding: "8px 24px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
                       background: "#fff",
-                      border: minBudget === r ? "2px solid #4f46e5" : "1px solid #cbd5e1",
-                      color: minBudget === r ? "#0f172a" : "#334155"
+                      border: budgetPreset === r ? "2px solid #4f46e5" : "1px solid #cbd5e1",
+                      color: budgetPreset === r ? "#0f172a" : "#334155"
                     }}>
                       {r}
                     </button>

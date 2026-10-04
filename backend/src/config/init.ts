@@ -1,4 +1,5 @@
 // Purpose: This module (backend/src/config/init.ts) is used to implement project functionality in a modular, maintainable way.
+import { pathToFileURL } from 'url';
 import pool from './database.js';
 import { logger } from '../utils/logger.js';
 
@@ -40,7 +41,7 @@ const createIndexIfMissing = async (connection: any, table: string, indexName: s
   }
 };
 
-const initializeDatabase = async () => {
+export async function initializeDatabase(options: { standalone?: boolean } = {}) {
   try {
     const connection = await pool.getConnection();
     
@@ -134,6 +135,73 @@ const initializeDatabase = async () => {
       )
     `);
 
+    // Requirements (RFQs): a company asks for work. Replaces the old hack of storing them as deals.
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS requirements (
+        id VARCHAR(36) PRIMARY KEY,
+        companyId VARCHAR(36) NOT NULL,
+        createdBy VARCHAR(36) NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        category VARCHAR(100),
+        budgetMin DECIMAL(15, 2) NULL,
+        budgetMax DECIMAL(15, 2) NULL,
+        currency CHAR(3) NOT NULL DEFAULT 'INR',
+        timeline VARCHAR(100),
+        status ENUM('open', 'closed', 'awarded', 'cancelled') NOT NULL DEFAULT 'open',
+        awardedProposalId VARCHAR(36) NULL,
+        dealId VARCHAR(36) NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        deletedAt TIMESTAMP NULL,
+        FOREIGN KEY (companyId) REFERENCES companies(id) ON DELETE CASCADE,
+        FOREIGN KEY (createdBy) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
+
+    // Proposals: one per company per requirement. The row always holds the CURRENT terms; history is in proposal_revisions.
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS proposals (
+        id VARCHAR(36) PRIMARY KEY,
+        requirementId VARCHAR(36) NOT NULL,
+        companyId VARCHAR(36) NOT NULL,
+        createdBy VARCHAR(36) NOT NULL,
+        amount DECIMAL(15, 2) NOT NULL,
+        currency CHAR(3) NOT NULL DEFAULT 'INR',
+        timeline VARCHAR(100),
+        message TEXT,
+        deliverables TEXT,
+        status ENUM('submitted', 'shortlisted', 'rejected', 'accepted', 'withdrawn') NOT NULL DEFAULT 'submitted',
+        lastOfferBy ENUM('proposer', 'requester') NOT NULL DEFAULT 'proposer',
+        version INT NOT NULL DEFAULT 1,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_proposals_requirement_company (requirementId, companyId),
+        FOREIGN KEY (requirementId) REFERENCES requirements(id) ON DELETE CASCADE,
+        FOREIGN KEY (companyId) REFERENCES companies(id) ON DELETE CASCADE,
+        FOREIGN KEY (createdBy) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
+
+    // Append-only negotiation history: the first proposal and every counter-offer.
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS proposal_revisions (
+        id VARCHAR(36) PRIMARY KEY,
+        proposalId VARCHAR(36) NOT NULL,
+        version INT NOT NULL,
+        offeredBy ENUM('proposer', 'requester') NOT NULL,
+        authorCompanyId VARCHAR(36) NOT NULL,
+        authorUserId VARCHAR(36) NOT NULL,
+        amount DECIMAL(15, 2) NOT NULL,
+        timeline VARCHAR(100),
+        message TEXT,
+        deliverables TEXT,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_proposal_revisions_version (proposalId, version),
+        FOREIGN KEY (proposalId) REFERENCES proposals(id) ON DELETE CASCADE
+      )
+    `);
+
     // Messages table
     await connection.query(`
       CREATE TABLE IF NOT EXISTS messages (
@@ -157,6 +225,10 @@ const initializeDatabase = async () => {
     await createIndexIfMissing(connection, 'companies', 'idx_companies_deletedAt', 'deletedAt');
     await createIndexIfMissing(connection, 'products', 'idx_products_deletedAt', 'deletedAt');
     await createIndexIfMissing(connection, 'deals', 'idx_deals_deletedAt', 'deletedAt');
+    await createIndexIfMissing(connection, 'requirements', 'idx_requirements_company', 'companyId');
+    await createIndexIfMissing(connection, 'requirements', 'idx_requirements_status_category', 'status, category');
+    await createIndexIfMissing(connection, 'proposals', 'idx_proposals_requirement', 'requirementId');
+    await createIndexIfMissing(connection, 'proposals', 'idx_proposals_company', 'companyId');
     await createIndexIfMissing(connection, 'messages', 'idx_messages_deletedAt', 'deletedAt');
 
     // Ledger table
@@ -573,12 +645,18 @@ const initializeDatabase = async () => {
 
     logger.info('All tables created successfully');
     connection.release();
-    await pool.end();
-    process.exit(0);
+    if (options.standalone) {
+      await pool.end();
+      process.exit(0);
+    }
   } catch (error) {
     logger.error('Error initializing database:', error);
-    process.exit(1);
+    if (options.standalone) process.exit(1);
+    throw error;
   }
-};
+}
 
-initializeDatabase();
+// Run directly (`npm run db:init`) but not when imported by the server (AUTO_INIT_DB).
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  void initializeDatabase({ standalone: true });
+}
