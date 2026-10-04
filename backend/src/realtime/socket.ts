@@ -1,7 +1,7 @@
 // Purpose: This module (backend/src/realtime/socket.ts) is used to implement project functionality in a modular, maintainable way.
 import { type Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
-import { verifyAccessToken } from '../services/tokens.js';
+import { verifyAccessToken, verifySocketToken } from '../services/tokens.js';
 
 type AuthContext = {
   userId: string;
@@ -23,20 +23,24 @@ function parseCookie(cookieHeader?: string): Record<string, string> {
   }, {});
 }
 
-function resolveSocketToken(socket: Socket): string | null {
-  const fromAuth = typeof socket.handshake.auth?.token === 'string' ? socket.handshake.auth.token : null;
-  if (fromAuth?.trim()) return fromAuth.trim();
+type SocketCredential = { token: string; kind: 'socket' | 'access' };
+
+// A short-lived socket token (from GET /api/auth/socket-token) works even where browsers do not send cookies on a
+// cross-site websocket handshake. Otherwise fall back to the Bearer header or the httpOnly access cookie.
+function resolveSocketCredential(socket: Socket): SocketCredential | null {
+  const fromAuth = typeof socket.handshake.auth?.token === 'string' ? socket.handshake.auth.token.trim() : '';
+  if (fromAuth) return { token: fromAuth, kind: 'socket' };
 
   const authHeader = socket.handshake.headers.authorization;
   if (typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
     const token = authHeader.slice('Bearer '.length).trim();
-    if (token) return token;
+    if (token) return { token, kind: 'access' };
   }
 
   const cookieName = process.env.ACCESS_TOKEN_COOKIE_NAME || 'access_token';
   const cookies = parseCookie(socket.handshake.headers.cookie);
-  const fromCookie = cookies[cookieName];
-  return fromCookie?.trim() || null;
+  const fromCookie = cookies[cookieName]?.trim();
+  return fromCookie ? { token: fromCookie, kind: 'access' } : null;
 }
 
 function companyRoom(companyId: string) {
@@ -68,10 +72,10 @@ export function initSocketServer(httpServer: HttpServer, corsOrigin: any) {
 
   io.use((socket, next) => {
     try {
-      const token = resolveSocketToken(socket);
-      if (!token) return next(new Error('Authentication required'));
-      const decoded = verifyAccessToken(token);
-      if (decoded.type !== 'access') return next(new Error('Invalid token type'));
+      const credential = resolveSocketCredential(socket);
+      if (!credential) return next(new Error('Authentication required'));
+      const decoded = credential.kind === 'socket' ? verifySocketToken(credential.token) : verifyAccessToken(credential.token);
+      if (decoded.type !== credential.kind) return next(new Error('Invalid token type'));
 
       socket.data.auth = {
         userId: decoded.userId,

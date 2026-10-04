@@ -7,6 +7,7 @@ import { errorHandler } from './middleware/auth.js';
 import { csrfProtection } from './middleware/csrf.js';
 import { createOriginMatcher, parseOriginList } from './utils/origins.js';
 import { describeDatabase } from './utils/redact.js';
+import { initializeDatabase } from './config/init.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import { logger } from './utils/logger.js';
 import { errorResponse } from './utils/http.js';
@@ -51,7 +52,9 @@ if (process.env.NODE_ENV === 'production' && !process.env.CORS_ORIGIN) {
 const warnedOrigins = new Set<string>();
 
 // Middleware
-app.set('trust proxy', 1);
+// Number of reverse proxies in front of this server: 1 on Render alone, 2 when Vercel proxies /api to Render.
+// It decides which X-Forwarded-For entry is the real client IP (rate limits are per IP), so keep it accurate.
+app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS) || 1);
 app.use(helmet());
 const corsFunc = function(origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
   // Non-browser clients (curl, server-to-server, health checks) send no Origin header.
@@ -167,13 +170,23 @@ app.use((_req, res) => {
 const server = createServer(app);
 initSocketServer(server, corsFunc);
 
-server.listen(PORT, () => {
-  logger.info('server_started', {
-    port: PORT,
-    nodeEnv: process.env.NODE_ENV || 'development',
-    database: describeDatabase(),
-    corsOrigin,
-    websocket: 'socket.io enabled',
+async function start() {
+  // Optional: create/upgrade tables on boot (idempotent). Useful on hosts without a pre-deploy command.
+  if (process.env.AUTO_INIT_DB === 'true') {
+    await initializeDatabase();
+  }
+  server.listen(PORT, () => {
+    logger.info('server_started', {
+      port: PORT,
+      nodeEnv: process.env.NODE_ENV || 'development',
+      database: describeDatabase(),
+      corsOrigin,
+      websocket: 'socket.io enabled',
+    });
   });
-});
+}
 
+start().catch((error) => {
+  logger.error('startup_failed', { error: error instanceof Error ? error.message : String(error) });
+  process.exit(1);
+});

@@ -1,4 +1,5 @@
 // Purpose: This module (backend/src/config/init.ts) is used to implement project functionality in a modular, maintainable way.
+import { pathToFileURL } from 'url';
 import pool from './database.js';
 import { logger } from '../utils/logger.js';
 
@@ -40,7 +41,7 @@ const createIndexIfMissing = async (connection: any, table: string, indexName: s
   }
 };
 
-const initializeDatabase = async () => {
+export async function initializeDatabase(options: { standalone?: boolean } = {}) {
   try {
     const connection = await pool.getConnection();
     
@@ -644,12 +645,18 @@ const initializeDatabase = async () => {
 
     logger.info('All tables created successfully');
     connection.release();
-    await pool.end();
-    process.exit(0);
+    if (options.standalone) {
+      await pool.end();
+      process.exit(0);
+    }
   } catch (error) {
     logger.error('Error initializing database:', error);
-    process.exit(1);
+    if (options.standalone) process.exit(1);
+    throw error;
   }
-};
+}
 
-initializeDatabase();
+// Run directly (`npm run db:init`) but not when imported by the server (AUTO_INIT_DB).
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  void initializeDatabase({ standalone: true });
+}

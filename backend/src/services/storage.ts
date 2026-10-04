@@ -73,6 +73,10 @@ export async function uploadToCloudStorage(
   const driver = (process.env.FILE_STORAGE_DRIVER || 'local').toLowerCase();
 
   if (driver === 'local') {
+    if (process.env.NODE_ENV === 'production') {
+      // The local driver does not write files and the host disk is ephemeral: fail loudly instead of losing documents.
+      throw new Error('File storage is not configured. Set FILE_STORAGE_DRIVER=s3 with R2_BUCKET/S3_BUCKET credentials (see DEPLOY.md).');
+    }
     const localBase = (process.env.LOCAL_STORAGE_DIR || 'uploads').replace(/^\/+|\/+$/g, '');
     return { key, url: `/${localBase}/${key}` };
   }

@@ -28,6 +28,8 @@ import {
   refreshTokenExpiryDate,
   setAuthCookies,
   signAccessToken,
+  signSocketToken,
+  SOCKET_TOKEN_TTL_SECONDS,
 } from '../services/tokens.js';
 import { sendEmail } from '../utils/mailer.js';
 
@@ -264,6 +266,15 @@ router.post('/login', authLimiter, validateRequest(userLoginSchema), async (req:
   } finally {
     connection?.release();
   }
+});
+
+// Short-lived token for opening the websocket (see services/tokens.ts). Needs a valid cookie session.
+router.get('/socket-token', authMiddleware, (req: AuthRequest, res: Response) => {
+  res.set('Cache-Control', 'no-store');
+  return res.json({
+    token: signSocketToken({ userId: req.userId!, companyId: req.companyId ?? null, role: req.role ?? 'user' }),
+    expiresIn: SOCKET_TOKEN_TTL_SECONDS,
+  });
 });
 
 // CSRF token for the current session (the client calls this on page load).

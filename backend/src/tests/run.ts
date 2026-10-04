@@ -4,7 +4,7 @@ process.env.DATA_ENCRYPTION_KEY = 'test-encryption-key';
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { signAccessToken, verifyAccessToken, createRefreshToken, hashRefreshToken } from '../services/tokens.js';
+import { cookieFlags, signSocketToken, verifySocketToken, signAccessToken, verifyAccessToken, createRefreshToken, hashRefreshToken } from '../services/tokens.js';
 import { checkDealParties } from '../utils/dealParties.js';
 import { normalizeAccountRole, toDbRole } from '../utils/roles.js';
 import { csrfProtection, csrfTokenFor } from '../middleware/csrf.js';
@@ -249,4 +249,24 @@ test('logging: the database description never contains credentials', () => {
   const bad = describeDatabase({ DATABASE_URL: 'not a url but has SuperSecretPw1' });
   assert.ok(!bad.includes('SuperSecretPw1'));
   assert.equal(describeDatabase({ DB_HOST: 'db', DB_PORT: '3307', DB_NAME: 'x' }), 'db:3307/x');
+});
+
+// ---- Deployment: cookie flags and socket tokens ---------------------------------------------------------
+test('cookies: SameSite follows COOKIE_SAMESITE, defaults to none in production and lax elsewhere, and is Secure when it must be', () => {
+  assert.deepEqual(cookieFlags({ NODE_ENV: 'development' }), { secure: false, sameSite: 'lax' });
+  assert.deepEqual(cookieFlags({ NODE_ENV: 'production' }), { secure: true, sameSite: 'none' });
+  assert.deepEqual(cookieFlags({ NODE_ENV: 'production', COOKIE_SAMESITE: 'lax' }), { secure: true, sameSite: 'lax' });
+  assert.deepEqual(cookieFlags({ NODE_ENV: 'production', COOKIE_SAMESITE: 'STRICT' }), { secure: true, sameSite: 'strict' });
+  // an invalid value is ignored, and SameSite=None is never sent without Secure
+  assert.deepEqual(cookieFlags({ NODE_ENV: 'production', COOKIE_SAMESITE: 'bogus' }), { secure: true, sameSite: 'none' });
+  assert.deepEqual(cookieFlags({ NODE_ENV: 'development', COOKIE_SAMESITE: 'none' }), { secure: true, sameSite: 'none' });
+});
+
+test('socket token: works only as a socket token, and is not accepted as an access token or vice versa', () => {
+  const socket = signSocketToken({ userId: 'u1', companyId: 'c1', role: 'user' });
+  assert.equal(verifySocketToken(socket).userId, 'u1');
+  assert.equal(verifySocketToken(socket).type, 'socket');
+  const access = signAccessToken({ userId: 'u1', companyId: 'c1', role: 'user' });
+  assert.throws(() => verifySocketToken(access));
+  assert.throws(() => verifyAccessToken(socket)); // a websocket token can never authenticate REST requests
 });
