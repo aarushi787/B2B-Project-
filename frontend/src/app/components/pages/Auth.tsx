@@ -198,25 +198,21 @@ export function Auth() {
               </div>
 
               <div style={{ paddingTop: 8 }}>
-                <p style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Quick Demo Login</p>
+                <p style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Test accounts (fills the email; enter the password you were given)</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <button type="button" onClick={() => setLoginData({ email: "admin@example.com", password: "password123" })}
-                    style={{ width: "100%", textAlign: "left", padding: 8, backgroundColor: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: 4, fontSize: 12, color: "#1e293b", fontWeight: 500, cursor: "pointer" }}>
-                    <b>Admin Console</b> (admin@example.com)
-                  </button>
-                  <button type="button" onClick={() => setLoginData({ email: "rahul@example.com", password: "password123" })}
+                  <button type="button" onClick={() => setLoginData({ email: "test.buyer@example.com", password: "" })}
                     style={{ width: "100%", textAlign: "left", padding: 8, backgroundColor: "#eff6ff", border: "1px solid #dbeafe", borderRadius: 4, fontSize: 12, color: "#1e40af", fontWeight: 500, cursor: "pointer" }}>
-                    <b>Acme Corp</b> (rahul@example.com)
+                    <b>Test buyer</b> (test.buyer@example.com)
                   </button>
-                  <button type="button" onClick={() => setLoginData({ email: "maya@example.com", password: "password123" })}
-                    style={{ width: "100%", textAlign: "left", padding: 8, backgroundColor: "#f5f3ff", border: "1px solid #ede9fe", borderRadius: 4, fontSize: 12, color: "#5b21b6", fontWeight: 500, cursor: "pointer" }}>
-                    <b>TechVista</b> (maya@example.com)
+                  <button type="button" onClick={() => setLoginData({ email: "test.seller@example.com", password: "" })}
+                    style={{ width: "100%", textAlign: "left", padding: 8, backgroundColor: "#EFF6FF", border: "1px solid #DBEAFE", borderRadius: 4, fontSize: 12, color: "#1E40AF", fontWeight: 500, cursor: "pointer" }}>
+                    <b>Test seller</b> (test.seller@example.com)
                   </button>
                 </div>
               </div>
 
               <button type="submit" disabled={loading}
-                style={{ width: "100%", padding: "10px", backgroundColor: "#0f172a", color: "#ffffff", fontWeight: 500, borderRadius: 8, border: "none", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: loading ? 0.6 : 1 }}>
+                style={{ width: "100%", padding: "10px", backgroundColor: "#2563EB", color: "#ffffff", fontWeight: 500, borderRadius: 8, border: "none", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: loading ? 0.6 : 1 }}>
                 {loading ? <><Loader2 size={16} /> Signing in...</> : "Sign In"}
               </button>
             </form>
@@ -232,7 +228,7 @@ export function Auth() {
                 </div>
               </div>
               <button type="submit" disabled={loading}
-                style={{ width: "100%", padding: "10px", backgroundColor: "#0f172a", color: "#ffffff", fontWeight: 500, borderRadius: 8, border: "none", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: loading ? 0.6 : 1 }}>
+                style={{ width: "100%", padding: "10px", backgroundColor: "#2563EB", color: "#ffffff", fontWeight: 500, borderRadius: 8, border: "none", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: loading ? 0.6 : 1 }}>
                 {loading ? <><Loader2 size={16} /> Sending...</> : "Send Reset Link"}
               </button>
               <button type="button" onClick={() => { setMode("login"); setError(""); setSuccessMsg(""); }}
@@ -262,7 +258,7 @@ export function Auth() {
                 </div>
               </div>
               <button type="submit" disabled={loading}
-                style={{ width: "100%", padding: "10px", backgroundColor: "#0f172a", color: "#ffffff", fontWeight: 500, borderRadius: 8, border: "none", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: loading ? 0.6 : 1 }}>
+                style={{ width: "100%", padding: "10px", backgroundColor: "#2563EB", color: "#ffffff", fontWeight: 500, borderRadius: 8, border: "none", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: loading ? 0.6 : 1 }}>
                 {loading ? <><Loader2 size={16} /> Resetting...</> : "Reset Password"}
               </button>
               <button type="button" onClick={() => { setMode("login"); setError(""); setSuccessMsg(""); }}
@@ -331,7 +327,7 @@ export function Auth() {
               )}
 
               <button type="submit" disabled={loading}
-                style={{ width: "100%", padding: "10px", backgroundColor: "#0f172a", color: "#ffffff", fontWeight: 500, borderRadius: 8, border: "none", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: loading ? 0.6 : 1 }}>
+                style={{ width: "100%", padding: "10px", backgroundColor: "#2563EB", color: "#ffffff", fontWeight: 500, borderRadius: 8, border: "none", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: loading ? 0.6 : 1 }}>
                 {loading ? <><Loader2 size={16} /> Creating account...</> : "Create Account"}
               </button>
             </form>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link, Outlet, useLocation } from "react-router";
+import { Link, Outlet, useLocation, useNavigate } from "react-router";
+import { apiClient } from "../../services/apiClient";
 import { motion, AnimatePresence } from "motion/react";
 import {
   LayoutDashboard, Building2, ShoppingBag, Folder,
@@ -28,8 +29,6 @@ const NAV_ITEMS = [
 
   // Communication
   { icon: MessageSquare,   label: "Messages",             path: "/app/messaging",              group: "communication" },
-  { icon: Send,            label: "Sent Enquiries",       path: "/app/enquiries/sent",         group: "communication" },
-  { icon: Inbox,           label: "Received Enquiries",   path: "/app/enquiries/received",     group: "communication" },
 
   // Administrative: Company Identity
   { icon: Building2,       label: "Business Profile",     path: "/app/companies",              group: "company" },
@@ -82,6 +81,7 @@ function BrandLogo({ small }: { small?: boolean }) {
 export function Layout() {
   const { user, logout: authLogout, isAdmin } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -91,25 +91,37 @@ export function Layout() {
   const avatarRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
 
-  const [notifications, setNotifications] = useState<any[]>([
-    { id: 1, type: "success", title: "Welcome!", message: "Your real-time notifications will appear here.", time: "Just now" },
-  ]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  // Real notifications: loaded from the API, then pushed live over the websocket.
+  const toUi = (n: any) => ({
+    id: n.id,
+    type: n.type === 'success' || n.type === 'warning' ? n.type : 'info',
+    title: n.title,
+    message: n.message,
+    time: n.createdAt ? new Date(n.createdAt).toLocaleString() : 'Just now',
+    read: !!n.isRead,
+    link: n.payload?.link ?? null,
+  });
 
   useEffect(() => {
+    let alive = true;
+    apiClient.get<any[]>('/notifications').then((rows) => { if (alive) setNotifications((rows || []).map(toUi)); }).catch(() => {});
     socketService.connect();
-    const handleNotification = (data: any) => {
-      setNotifications(prev => [{
-        id: Date.now(),
-        type: data.type || "info",
-        title: data.title || "New Notification",
-        message: data.message || data.text || "You have a new alert.",
-        time: "Just now"
-      }, ...prev]);
-    };
-    
-    const unsubscribe = socketService.on('notification', handleNotification);
-    return () => unsubscribe();
+    const unsubscribe = socketService.on<any>('notifications:new', (n) => {
+      setNotifications((prev) => (prev.some((p) => p.id === n.id) ? prev : [toUi({ ...n, createdAt: n.createdAt ?? new Date().toISOString() }), ...prev]));
+    });
+    return () => { alive = false; unsubscribe(); };
   }, []);
+
+  const markAllRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    apiClient.put('/notifications/read-all', {}).catch(() => {});
+  };
+  const markRead = (id: string) => {
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    apiClient.put(`/notifications/${id}/read`, {}).catch(() => {});
+  };
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
@@ -260,18 +272,13 @@ export function Layout() {
                 justifyContent: "center",
                 flexShrink: 0,
               }}>
-                <img
-                  src="https://i.pravatar.cc/36?img=12"
-                  alt="User"
-                  style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover" }}
-                  onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-                />
+                <span style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>{(user?.name || user?.email || "?").trim().charAt(0).toUpperCase()}</span>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", margin: 0, lineHeight: "1.2" }}>
-                  {user?.name ?? "TechVista Solutions"}
+                  {user?.name ?? ""}
                 </p>
-                <p style={{ fontSize: 11, color: "#64748b", margin: 0, lineHeight: "1.2" }}>Admin Account</p>
+                <p style={{ fontSize: 11, color: "#64748b", margin: 0, lineHeight: "1.2" }}>{isAdmin ? "Platform admin" : (user as any)?.companyName ?? "Member"}</p>
               </div>
             </div>
           )}
@@ -377,7 +384,7 @@ export function Layout() {
                     <Link
                       to={c.path}
                       className={`text-[11px] font-semibold tracking-wide uppercase transition-colors ${
-                        i === crumbs.length - 1 ? "text-[#8B5CF6]" : "text-slate-400 hover:text-slate-600"
+                        i === crumbs.length - 1 ? "text-[#2563EB]" : "text-slate-400 hover:text-slate-600"
                       }`}
                     >
                       {c.label}
@@ -392,13 +399,13 @@ export function Layout() {
 
             {/* Search */}
             <div className="relative hidden md:block w-[320px] group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#8B5CF6] transition-colors" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#2563EB] transition-colors" />
               <input
                 type="text"
                 placeholder="Search deals, companies, or users..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full pl-9 pr-12 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20 focus:border-[#8B5CF6] focus:bg-white transition-all shadow-sm"
+                className="w-full pl-9 pr-12 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB] focus:bg-white transition-all shadow-sm"
               />
               <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-60">
                 <kbd className="px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 bg-white border border-slate-200 rounded">⌘</kbd>
@@ -445,11 +452,11 @@ export function Layout() {
                         <span style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Notifications</span>
                         <span style={{ fontSize: 10, fontWeight: 700, background: "#ef4444", color: "#fff", padding: "2px 6px", borderRadius: 10 }}>{notifications.filter(n => !n.read).length} new</span>
                       </div>
-                      <button onClick={() => setNotifications(prev => prev.map(n => ({...n, read: true})))} style={{ fontSize: 11, fontWeight: 600, color: "#2563EB", background: "none", border: "none", cursor: "pointer" }}>Mark all read</button>
+                      <button onClick={markAllRead} style={{ fontSize: 11, fontWeight: 600, color: "#2563EB", background: "none", border: "none", cursor: "pointer" }}>Mark all read</button>
                     </div>
                     <div style={{ maxHeight: 320, overflowY: "auto" }}>
                       {notifications.map(n => (
-                        <div key={n.id} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 16px", borderBottom: "1px solid #f8fafc", cursor: "pointer", background: n.read ? "#fff" : "#f8fafc" }}>
+                        <div key={n.id} onClick={() => { markRead(n.id); if (n.link) { setNotifOpen(false); navigate(n.link); } }} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 16px", borderBottom: "1px solid #f8fafc", cursor: "pointer", background: n.read ? "#fff" : "#f8fafc" }}>
                           <div style={{
                             width: 32,
                             height: 32,
@@ -488,23 +495,14 @@ export function Layout() {
                 onClick={() => setAvatarOpen(o => !o)}
                 className="flex items-center gap-2.5 p-1.5 hover:bg-slate-100 rounded-xl transition-colors border border-transparent hover:border-slate-200 group"
               >
-                <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 border-2 border-slate-100 shadow-sm group-hover:border-[#8B5CF6]/30 transition-colors">
-                  <img
-                    src="https://i.pravatar.cc/34?img=12"
-                    alt="User"
-                    className="w-full h-full object-cover"
-                    onError={e => {
-                      const el = e.target as HTMLImageElement;
-                      el.parentElement!.className += " bg-gradient-to-br from-[#8B5CF6] to-cyan-400 flex items-center justify-center";
-                      el.parentElement!.innerHTML = '<span class="text-white text-xs font-bold">JS</span>';
-                    }}
-                  />
+                <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 border-2 border-slate-100 shadow-sm group-hover:border-[#2563EB]/30 transition-colors">
+                  <span className="w-full h-full bg-gradient-to-br from-[#2563EB] to-blue-400 flex items-center justify-center text-white text-xs font-bold">{(user?.name || user?.email || "?").trim().charAt(0).toUpperCase()}</span>
                 </div>
                 <div className="hidden sm:block text-left pr-1">
-                  <p className="text-xs font-bold text-slate-800 leading-none group-hover:text-[#8B5CF6] transition-colors">{user?.name || "Jane Smith"}</p>
-                  <p className="text-[10px] font-semibold text-slate-400 mt-1 leading-none">{user?.companyId || "TechCorp Inc"}</p>
+                  <p className="text-xs font-bold text-slate-800 leading-none group-hover:text-[#2563EB] transition-colors">{user?.name || ""}</p>
+                  <p className="text-[10px] font-semibold text-slate-400 mt-1 leading-none">{user?.companyName || ""}</p>
                 </div>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:block group-hover:text-[#8B5CF6] transition-colors" />
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:block group-hover:text-[#2563EB] transition-colors" />
               </button>
 
               <AnimatePresence>
@@ -527,8 +525,8 @@ export function Layout() {
                     }}
                   >
                     <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9" }}>
-                      <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", margin: 0 }}>{user?.name ?? "TechVista Solutions"}</p>
-                      <p style={{ fontSize: 11, color: "#64748b", margin: "2px 0 0" }}>{user?.email ?? "enterprise@techvista.com"}</p>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", margin: 0 }}>{user?.name ?? ""}</p>
+                      <p style={{ fontSize: 11, color: "#64748b", margin: "2px 0 0" }}>{user?.email ?? ""}</p>
                     </div>
                     {[
                       { icon: User, label: "Profile", path: "/app/settings" },
@@ -585,7 +583,7 @@ export function Layout() {
               transition={{ duration: 0.2 }}
               style={{ minHeight: "100%" }}
             >
-              <Outlet context={{ notifications, setNotifications }} />
+              <Outlet context={{ notifications, setNotifications, markAllRead, markRead }} />
             </motion.div>
           </AnimatePresence>
         </main>

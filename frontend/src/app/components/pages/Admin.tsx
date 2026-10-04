@@ -20,14 +20,15 @@ import { useNavigate } from "react-router";
 import { useAuth } from "../../../auth/AuthProvider";
 import { apiClient } from "../../../services/apiClient";
 import { socketService } from "../../../services/socketService";
+import { AdminApprovals } from "./AdminApprovals";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type AdminRole = "Admin" | "Moderator" | "Viewer";
 type UserStatus = "Active" | "Suspended" | "Pending";
 type CompanyStatus = "Pending" | "Verified" | "Rejected";
-type DealStatus = "In Progress" | "Pending" | "Under Review" | "Completed" | "Flagged";
+type DealStatus = "In Progress" | "Pending" | "Under Review" | "Completed" | "Flagged" | "Closed";
 type RiskLevel = "Low" | "Medium" | "High" | "Critical";
-type Section = "overview" | "users" | "companies" | "deals" | "compliance" | "reports" | "settings" | "investors";
+type Section = "approvals" | "overview" | "users" | "companies" | "deals" | "compliance" | "reports" | "settings" | "investors";
 type LogType = "all" | "user" | "company" | "deal" | "security";
 
 interface AdminUser {
@@ -36,7 +37,7 @@ interface AdminUser {
 }
 interface Company {
   id: number | string; name: string; industry: string; status: CompanyStatus;
-  kyc: number; docs: number; submittedBy: string; date: string; revenue: string;
+  date: string;
 }
 interface Deal {
   id: number | string; name: string; client: string; provider: string;
@@ -47,11 +48,11 @@ interface AuditLog {
   ip: string; result: "success" | "failed" | "warning"; type: LogType;
 }
 interface Notification {
-  id: number; title: string; message: string; time: string;
+  id: string; title: string; message: string; time: string;
   read: boolean; type: "alert" | "info" | "success" | "warning";
 }
 interface FraudAlert {
-  id: number; title: string; entity: string; riskScore: number;
+  id: string; title: string; entity: string; riskScore: number;
   detected: string; type: "user" | "deal" | "transaction"; resolved: boolean;
 }
 
@@ -59,89 +60,8 @@ const INIT_USERS: AdminUser[] = [];
 
 const INIT_COMPANIES: Company[] = [];
 
-const INIT_DEALS: Deal[] = [
-  { id: 1, name: "TechCorp Equipment Purchase", client: "FinanceHub Inc", provider: "TechCorp Solutions", amount: 250000, status: "In Progress", risk: "Low", date: "Apr 20, 2026", flagged: false },
-  { id: 2, name: "Green Energy Partnership", client: "RetailPro Solutions", provider: "Green Energy Ltd", amount: 180000, status: "Pending", risk: "Low", date: "Apr 19, 2026", flagged: false },
-  { id: 3, name: "Medical Equipment Deal", client: "HealthFirst Medical", provider: "ManufactureX Corp", amount: 420000, status: "In Progress", risk: "Medium", date: "Apr 18, 2026", flagged: false },
-  { id: 4, name: "Suspicious High-Value Transfer", client: "Unknown Entity", provider: "NewTech Industries", amount: 850000, status: "Under Review", risk: "Critical", date: "Apr 17, 2026", flagged: true },
-  { id: 5, name: "SaaS Platform Licensing", client: "Acme Corp", provider: "DataStream Analytics", amount: 95000, status: "Completed", risk: "Low", date: "Apr 16, 2026", flagged: false },
-  { id: 6, name: "Cross-Border Shipment", client: "GlobalTrade Ltd", provider: "Smart Manufacturing", amount: 310000, status: "Under Review", risk: "High", date: "Apr 15, 2026", flagged: false },
-];
-
-const AUDIT_LOGS: AuditLog[] = [
-  { id: 1, action: "User Login", user: "John Doe", timestamp: "Apr 23, 2026 · 10:30 AM", ip: "192.168.1.1", result: "success", type: "user" },
-  { id: 2, action: "Company Approved", user: "Admin", timestamp: "Apr 23, 2026 · 09:45 AM", ip: "192.168.1.5", result: "success", type: "company" },
-  { id: 3, action: "Failed Login Attempt (×5)", user: "Unknown", timestamp: "Apr 23, 2026 · 08:15 AM", ip: "203.45.67.89", result: "failed", type: "security" },
-  { id: 4, action: "Deal Status Changed to Flagged", user: "System", timestamp: "Apr 22, 2026 · 04:20 PM", ip: "192.168.1.3", result: "warning", type: "deal" },
-  { id: 5, action: "User Suspended", user: "Admin", timestamp: "Apr 22, 2026 · 02:10 PM", ip: "192.168.1.5", result: "success", type: "user" },
-  { id: 6, action: "AML Check Triggered", user: "System", timestamp: "Apr 22, 2026 · 11:00 AM", ip: "internal", result: "warning", type: "security" },
-  { id: 7, action: "New Company Registration", user: "Bob Martinez", timestamp: "Apr 21, 2026 · 09:30 AM", ip: "78.23.45.10", result: "success", type: "company" },
-  { id: 8, action: "Password Reset", user: "Emma Wilson", timestamp: "Apr 21, 2026 · 08:00 AM", ip: "192.168.2.7", result: "success", type: "user" },
-];
-
-const INIT_NOTIFS: Notification[] = [
-  { id: 1, title: "High-Risk Deal Detected", message: "Deal #4 flagged by fraud detection system.", time: "5m ago", read: false, type: "alert" },
-  { id: 2, title: "Company Pending Review", message: "EnergyTech Inc submitted KYC documents.", time: "22m ago", read: false, type: "warning" },
-  { id: 3, title: "User Suspended", message: "Michael Chen account suspended by admin.", time: "1h ago", read: false, type: "info" },
-  { id: 4, title: "Monthly Report Ready", message: "April 2026 revenue report generated.", time: "2h ago", read: true, type: "success" },
-  { id: 5, title: "Failed Login Attempts", message: "5 failed logins from IP 203.45.67.89.", time: "3h ago", read: true, type: "alert" },
-];
-
-const REVENUE_DATA = [
-  { name: 'Jan', revenue: 120000, volume: 45 },
-  { name: 'Feb', revenue: 150000, volume: 52 },
-  { name: 'Mar', revenue: 200000, volume: 78 },
-  { name: 'Apr', revenue: 350000, volume: 110 },
-  { name: 'May', revenue: 450000, volume: 135 },
-  { name: 'Jun', revenue: 520000, volume: 160 },
-];
-
-const PLATFORM_USAGE = [
-  { name: 'Buyers', value: 450 },
-  { name: 'Sellers', value: 300 },
-  { name: 'Agencies', value: 150 },
-];
-
-const COLORS = ['#8B5CF6', '#3B82F6', '#10B981', '#F59E0B'];
-
-const INIT_FRAUD: FraudAlert[] = [
-  { id: 1, title: "Suspicious User Activity", entity: "Unknown (IP: 203.45.67.89)", riskScore: 87, detected: "Apr 23 · 08:15 AM", type: "user", resolved: false },
-  { id: 2, title: "High-Risk Deal Flagged", entity: "Suspicious High-Value Transfer · $850K", riskScore: 94, detected: "Apr 22 · 04:20 PM", type: "deal", resolved: false },
-  { id: 3, title: "Unusual Transaction Pattern", entity: "DataStream Analytics", riskScore: 71, detected: "Apr 21 · 11:00 AM", type: "transaction", resolved: true },
-];
-
-const GROWTH_DATA = [
-  { month: "Oct", users: 840, revenue: 1.4 }, { month: "Nov", users: 920, revenue: 1.6 },
-  { month: "Dec", users: 1020, revenue: 1.9 }, { month: "Jan", users: 1080, revenue: 2.0 },
-  { month: "Feb", users: 1140, revenue: 2.1 }, { month: "Mar", users: 1200, revenue: 2.3 },
-  { month: "Apr", users: 1247, revenue: 2.4 },
-];
-
-const INV_MONTHLY_DATA = [
-  { period: "Nov '25", gmv: 15.1, revenue: 1.51, users: 1110, deals: 52 },
-  { period: "Dec '25", gmv: 17.2, revenue: 1.72, users: 1140, deals: 58 },
-  { period: "Jan '26", gmv: 14.8, revenue: 1.48, users: 1160, deals: 49 },
-  { period: "Feb '26", gmv: 16.3, revenue: 1.63, users: 1190, deals: 55 },
-  { period: "Mar '26", gmv: 18.9, revenue: 1.89, users: 1218, deals: 63 },
-  { period: "Apr '26", gmv: 20.4, revenue: 2.04, users: 1247, deals: 68 },
-];
-
-const INV_DEAL_CATEGORIES = [
-  { category: "Technology", count: 124, value: 42.1, color: "#8B5CF6" },
-  { category: "Manufacturing", count: 89, value: 31.4, color: "#8B5CF6" },
-  { category: "Healthcare", count: 76, value: 28.8, color: "#3B82F6" },
-  { category: "Energy", count: 58, value: 22.6, color: "#22C55E" },
-  { category: "Retail", count: 76, value: 17.9, color: "#F59E0B" },
-];
-
-const INV_TREND_METRICS = [
-  { label: "Avg Deal Size", current: "$184K", prev: "$142K", change: "+29.6%", up: true },
-  { label: "Deal Velocity", current: "18 days", prev: "24 days", change: "-25%", up: true },
-  { label: "Take Rate", current: "9.96%", prev: "9.41%", change: "+55bps", up: true },
-  { label: "Churn Rate", current: "2.1%", prev: "3.4%", change: "-1.3pp", up: true },
-  { label: "NPS Score", current: "72", prev: "61", change: "+11 pts", up: true },
-  { label: "Support SLA", current: "98.2%", prev: "95.1%", change: "+3.1pp", up: true },
-];
+const INIT_DEALS: Deal[] = [];
+const COLORS = ['#2563EB', '#3B82F6', '#10B981', '#F59E0B'];
 
 // ─── Small helpers ────────────────────────────────────────────────────────────
 const userStatusStyle: Record<UserStatus, string> = {
@@ -176,8 +96,8 @@ function SectionHeader({ icon: Icon, title, subtitle, action }: {
   return (
     <div className="flex items-center justify-between mb-5">
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center">
-          <Icon className="w-4.5 h-4.5 text-[#8B5CF6]" style={{ width: 18, height: 18 }} />
+        <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center">
+          <Icon className="w-4.5 h-4.5 text-[#2563EB]" style={{ width: 18, height: 18 }} />
         </div>
         <div>
           <h2 className="text-sm font-bold text-slate-900">{title}</h2>
@@ -254,10 +174,10 @@ function UserModal({ user, status, onToggle, onClose }: {
       onClick={e => e.currentTarget === e.target && onClose()}>
       <motion.div initial={{ scale: 0.95, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 12 }}
         className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
-        <div className="h-20 bg-gradient-to-r from-[#8B5CF6] to-cyan-400" />
+        <div className="h-20 bg-gradient-to-r from-[#2563EB] to-blue-400" />
         <div className="px-6 pb-6 -mt-10">
           <div className="flex items-end justify-between mb-4">
-            <div className="w-16 h-16 rounded-2xl bg-white border-4 border-white shadow-lg flex items-center justify-center text-xl font-black text-[#8B5CF6]">
+            <div className="w-16 h-16 rounded-2xl bg-white border-4 border-white shadow-lg flex items-center justify-center text-xl font-black text-[#2563EB]">
               {user.name.charAt(0)}
             </div>
             <button onClick={onClose} className="p-2 text-slate-400 hover:bg-slate-100 rounded-xl mb-1"><X className="w-4 h-4" /></button>
@@ -280,10 +200,6 @@ function UserModal({ user, status, onToggle, onClose }: {
             ))}
           </div>
           <div className="flex gap-2">
-            <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} onClick={onToggle}
-              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-colors ${status === "Active" ? "bg-red-500 hover:bg-red-600 text-white" : "bg-green-500 hover:bg-green-600 text-white"}`}>
-              {status === "Active" ? "Suspend User" : "Activate User"}
-            </motion.button>
             <button onClick={onClose} className="flex-1 py-2.5 text-xs font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">Close</button>
           </div>
         </div>
@@ -305,8 +221,8 @@ function DealPanel({ deal, onClose, onFlag, canFlag }: {
         className="w-full max-w-sm bg-white h-full shadow-2xl flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#8B5CF6]/10 flex items-center justify-center">
-              <Handshake className="w-4 h-4 text-[#8B5CF6]" />
+            <div className="w-8 h-8 rounded-lg bg-[#2563EB]/10 flex items-center justify-center">
+              <Handshake className="w-4 h-4 text-[#2563EB]" />
             </div>
             <div>
               <p className="text-xs font-bold text-slate-900">Deal Detail</p>
@@ -368,7 +284,7 @@ function DealPanel({ deal, onClose, onFlag, canFlag }: {
 
 // ─── Notification Panel ────────────────────────────────────────────────────────
 function NotifPanel({ notifs, onMarkRead, onClearAll, onClose }: {
-  notifs: Notification[]; onMarkRead: (id: number) => void; onClearAll: () => void; onClose: () => void;
+  notifs: Notification[]; onMarkRead: (id: string) => void; onClearAll: () => void; onClose: () => void;
 }) {
   const typeIcon: Record<Notification["type"], React.ElementType> = { alert: AlertCircle, warning: AlertTriangle, info: Info, success: CheckCircle };
   const typeColor: Record<Notification["type"], string> = { alert: "text-red-500", warning: "text-amber-500", info: "text-blue-500", success: "text-green-500" };
@@ -391,18 +307,19 @@ function NotifPanel({ notifs, onMarkRead, onClearAll, onClose }: {
           </div>
         </div>
         <div className="max-h-80 overflow-y-auto">
+          {notifs.length === 0 && <p className="p-4 text-xs text-slate-400">No notifications.</p>}
           {notifs.map(n => {
             const Icon = typeIcon[n.type];
             return (
               <div key={n.id} onClick={() => onMarkRead(n.id)}
-                className={`flex gap-3 p-3.5 border-b border-slate-50 cursor-pointer hover:bg-slate-50 transition-colors ${!n.read ? "bg-purple-50/30" : ""}`}>
+                className={`flex gap-3 p-3.5 border-b border-slate-50 cursor-pointer hover:bg-slate-50 transition-colors ${!n.read ? "bg-blue-50/30" : ""}`}>
                 <div className={`w-7 h-7 rounded-full ${typeBg[n.type]} flex items-center justify-center shrink-0`}>
                   <Icon className={`w-3.5 h-3.5 ${typeColor[n.type]}`} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <p className={`text-[11px] font-bold ${n.read ? "text-slate-600" : "text-slate-900"}`}>{n.title}</p>
-                    {!n.read && <div className="w-2 h-2 rounded-full bg-[#8B5CF6] shrink-0 mt-0.5" />}
+                    {!n.read && <div className="w-2 h-2 rounded-full bg-[#2563EB] shrink-0 mt-0.5" />}
                   </div>
                   <p className="text-[10px] text-slate-500 leading-relaxed mt-0.5">{n.message}</p>
                   <p className="text-[9px] text-slate-400 mt-1">{n.time}</p>
@@ -444,7 +361,7 @@ export function Admin() {
   const [search, setSearch] = useState("");
   const [liveRefresh, setLiveRefresh] = useState(true);
   const [liveTime, setLiveTime] = useState(new Date().toLocaleTimeString());
-  const [notifications, setNotifications] = useState<Notification[]>(INIT_NOTIFS);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [users, setUsers] = useState<AdminUser[]>(INIT_USERS);
   const [userStatuses, setUserStatuses] = useState<Record<string | number, UserStatus>>(
     Object.fromEntries(INIT_USERS.map(u => [u.id, u.status]))
@@ -458,24 +375,35 @@ export function Admin() {
   const [rejectModal, setRejectModal] = useState<{ open: boolean; id: number | string; name: string }>({ open: false, id: 0, name: "" });
   const [deals, setDeals] = useState<Deal[]>(INIT_DEALS);
 
+  const fetchDataRef = useRef<() => Promise<void>>(async () => {});
+  const [amlTotal, setAmlTotal] = useState(0);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [dataLoading, setDataLoading] = useState(true);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [usersRes, compsRes, dealsRes] = await Promise.all([
-          apiClient.get<any[]>('/admin/users').catch(() => []),
-          apiClient.get<any[]>('/admin/companies').catch(() => []),
-          apiClient.get<any>('/deals').catch(() => ({ data: [] }))
+        const [usersRes, compsRes, dealsRes, activityRes, amlRes, notifRes] = await Promise.all([
+          apiClient.get<any[]>('/admin/users'),
+          apiClient.get<any[]>('/admin/companies'),
+          apiClient.get<any>('/deals'),
+          apiClient.get<any[]>('/admin/activity').catch(() => [] as any[]),
+          apiClient.get<any[]>('/compliance/aml-checks').catch(() => [] as any[]),
+          apiClient.get<any[]>('/notifications').catch(() => [] as any[]),
         ]);
-        
-        if (usersRes !== undefined && Array.isArray(usersRes)) {
+        setLoadError(null);
+        const compNames: Record<string, string> = {};
+        (Array.isArray(compsRes) ? compsRes : []).forEach((c: any) => { compNames[c.id] = c.name || c.legalName || 'Unnamed company'; });
+
+        if (Array.isArray(usersRes)) {
           const mappedUsers = usersRes.map((u: any) => ({
             id: u.id,
-            name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Unknown User',
+            name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email || 'Unknown User',
             email: u.email,
             role: u.role || 'User',
             status: "Active" as UserStatus,
-            lastActive: "Just now",
-            company: "Platform User",
+            lastActive: "—",
+            company: (u.companyId && compNames[u.companyId]) || "—",
             joined: new Date(u.createdAt).toLocaleDateString(),
             deals: 0
           }));
@@ -483,63 +411,95 @@ export function Admin() {
           setUserStatuses(Object.fromEntries(mappedUsers.map((u: any) => [u.id, u.status])));
         }
 
-        if (compsRes !== undefined && Array.isArray(compsRes)) {
+        if (Array.isArray(compsRes)) {
           const mappedComps = compsRes.map((c: any) => ({
             id: c.id,
-            name: c.name || c.legalName || 'Unknown Company',
-            industry: c.industry || "General",
-            status: c.kycStatus === 'verified' ? 'Verified' as CompanyStatus : 'Pending' as CompanyStatus,
-            kyc: 100, docs: 3, submittedBy: "Admin", date: new Date(c.createdAt || Date.now()).toLocaleDateString(), revenue: "$0"
+            name: c.name || c.legalName || 'Unnamed company',
+            industry: c.industry || c.type || "General",
+            status: (String(c.kycStatus || '').toLowerCase() === 'rejected' ? 'Rejected' : (c.verified || String(c.kycStatus || '').toLowerCase() === 'verified') ? 'Verified' : 'Pending') as CompanyStatus,
+            date: c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "—",
           }));
           setCompanies(mappedComps);
           setCompanyStatuses(Object.fromEntries(mappedComps.map((c: any) => [c.id, c.status])));
         }
 
-        if (dealsRes !== undefined && dealsRes.data && Array.isArray(dealsRes.data)) {
-          const mappedDeals = dealsRes.data.map((d: any) => ({
+        if (dealsRes && Array.isArray(dealsRes.data)) {
+          const dealStatusOf = (st: string): DealStatus =>
+            st === 'COMPLETED' ? 'Completed' : st === 'CONFIRMED' ? 'In Progress' : st === 'VOIDED' ? 'Closed' : 'Pending';
+          setDeals(dealsRes.data.map((d: any) => ({
             id: d.id,
-            name: d.notes || `Deal ${d.id.substring(0,8)}`,
-            client: d.buyerId?.substring(0, 8) || "Unknown",
-            provider: d.sellerIds?.[0]?.substring(0,8) || "Unknown",
+            name: d.title || d.notes || `Deal ${String(d.id).substring(0, 8)}`,
+            client: compNames[d.buyerId] || "Unknown company",
+            provider: compNames[d.sellerIds?.[0]] || "Unknown company",
             amount: d.amount || 0,
-            status: d.status === 'CONFIRMED' ? 'Completed' : d.status === 'ENQUIRY' ? 'Pending' : 'In Progress',
+            status: dealStatusOf(String(d.status)),
             risk: "Low" as RiskLevel,
             date: new Date(d.createdAt).toLocaleDateString(),
             flagged: false
-          }));
-          setDeals(mappedDeals);
+          })));
         }
-      } catch (e) {
+
+        if (Array.isArray(activityRes)) {
+          setLogs(activityRes.map((a: any) => ({
+            id: a.id,
+            action: String(a.action || '').replace(/_/g, ' ').toLowerCase().replace(/^./, (c: string) => c.toUpperCase()),
+            user: a.actorEmail || "System",
+            timestamp: new Date(a.createdAt).toLocaleString(),
+            ip: "—",
+            result: "success" as const,
+            type: (/USER|LOGIN|REGISTER/i.test(a.action) ? "user" : /COMPANY|KYC/i.test(a.action) ? "company" : /DEAL|PROPOSAL|REQUIREMENT/i.test(a.action) ? "deal" : "security") as LogType,
+          })));
+        }
+
+        if (Array.isArray(amlRes)) {
+          setFraudAlerts(amlRes
+            .filter((a: any) => ['HIGH', 'CRITICAL'].includes(String(a.riskLevel || '').toUpperCase()))
+            .map((a: any) => ({
+              id: a.id,
+              title: `${String(a.riskLevel).toUpperCase()} risk AML check`,
+              entity: a.reason || (a.dealId ? `Deal ${String(a.dealId).substring(0, 8)}` : 'Transaction'),
+              riskScore: Math.round(Number(a.riskScore) || 0),
+              detected: new Date(a.createdAt).toLocaleString(),
+              type: "transaction" as const,
+              resolved: false,
+            })));
+          setAmlTotal(amlRes.length);
+        }
+
+        if (Array.isArray(notifRes)) {
+          setNotifications(notifRes.map((n: any) => ({
+            id: String(n.id),
+            title: n.title,
+            message: n.message,
+            time: new Date(n.createdAt).toLocaleString(),
+            read: !!n.isRead,
+            type: (['alert', 'info', 'success', 'warning'].includes(n.type) ? n.type : n.type === 'error' ? 'alert' : 'info') as Notification["type"],
+          })));
+        }
+      } catch (e: any) {
         console.error("Failed to load admin data", e);
+        setLoadError("Could not load admin data. Check your connection and permissions, then retry.");
+      } finally {
+        setDataLoading(false);
       }
     };
+    fetchDataRef.current = fetchData;
     fetchData();
 
     socketService.connect();
-    const unsubDeals = socketService.on('deals:updated', () => fetchData());
-    const unsubCompany = socketService.on('company:updated', () => fetchData());
-    return () => {
-      unsubDeals();
-      unsubCompany();
-    };
+    const unsubs = ['deals:updated', 'company:updated', 'admin:activity', 'notifications:new', 'proposals:new'].map(ev => socketService.on(ev, () => fetchData()));
+    return () => { unsubs.forEach(u => u()); };
   }, []);
   const [viewDeal, setViewDeal] = useState<Deal | null>(null);
-  const [fraudAlerts, setFraudAlerts] = useState<FraudAlert[]>(INIT_FRAUD);
+  const [fraudAlerts, setFraudAlerts] = useState<FraudAlert[]>([]);
   const [auditFilter, setAuditFilter] = useState<LogType>("all");
-  const [logs, setLogs] = useState<AuditLog[]>(AUDIT_LOGS);
-  const [settingsState, setSettingsState] = useState<Record<string, boolean>>({
-    "Two-Factor Auth": true,
-    "Email Notifications": true,
-    "Auto-Suspend on 5 Failed Logins": true,
-    "Real-time Fraud Alerts": true,
-    "Audit Logging": true,
-    "Auto KYC Screening": false,
-  });
-  const [loading, setLoading] = useState(true);
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const loading = dataLoading;
   const roleRef = useRef<HTMLDivElement>(null);
   const avatarRef = useRef<HTMLDivElement>(null);
 
-  const canWrite = adminRole !== "Viewer";
+  // Suspend/flag/approve actions in these tabs are not backed by an API (real reviews happen in "Approvals & Activity"), so they stay disabled.
+  const canWrite = false;
   const isAdmin = adminRole === "Admin";
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -550,12 +510,6 @@ export function Admin() {
   }, [liveRefresh]);
 
   useEffect(() => {
-    setLoading(true);
-    const timer = setTimeout(() => setLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, [section]);
-
-  useEffect(() => {
     const h = (e: MouseEvent) => {
       if (roleRef.current && !roleRef.current.contains(e.target as Node)) setRoleOpen(false);
       if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) setAvatarOpen(false);
@@ -564,13 +518,7 @@ export function Admin() {
     return () => document.removeEventListener("mousedown", h);
   }, []);
 
-  const addLog = (action: string, type: LogType) => {
-    setLogs(prev => [{
-      id: Date.now(), action, user: `Admin (${adminRole})`,
-      timestamp: `${new Date().toLocaleDateString()} · ${new Date().toLocaleTimeString()}`,
-      ip: "192.168.1.5", result: "success", type,
-    }, ...prev]);
-  };
+  const addLog = (_action: string, _type: LogType) => { void fetchDataRef.current(); };
 
   const handleToggleUser = (id: string | number) => {
     const cur = userStatuses[id];
@@ -622,15 +570,26 @@ export function Admin() {
     setViewDeal(null);
   };
 
-  const handleResolveFraud = (id: string | number) => {
-    setFraudAlerts(prev => prev.map(f => f.id === id ? { ...f, resolved: true } : f));
-    toast.success("Fraud alert resolved.");
-  };
-
   const filteredLogs = auditFilter === "all" ? logs : logs.filter(l => l.type === auditFilter);
+
+  const formatMoney = (n: number) => (n >= 1e7 ? `₹${(n / 1e7).toFixed(1)}Cr` : n >= 1e5 ? `₹${(n / 1e5).toFixed(1)}L` : `₹${Math.round(n).toLocaleString()}`);
+  const monthKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  const monthLabel = (k: string) => new Date(`${k}-01`).toLocaleDateString(undefined, { month: "short", year: "2-digit" });
+  const volumeByMonth = (() => {
+    const m: Record<string, { volume: number; deals: number }> = {};
+    deals.forEach(d => { const k = monthKey(new Date(d.date)); if (k.includes("NaN")) return; (m[k] ??= { volume: 0, deals: 0 }); m[k].volume += d.amount; m[k].deals += 1; });
+    return Object.keys(m).sort().map(k => ({ name: monthLabel(k), ...m[k] }));
+  })();
+  const usersByMonth = (() => {
+    const m: Record<string, number> = {};
+    users.forEach(u => { const k = monthKey(new Date(u.joined)); if (!k.includes("NaN")) m[k] = (m[k] ?? 0) + 1; });
+    return Object.keys(m).sort().map(k => ({ month: monthLabel(k), users: m[k] }));
+  })();
+  const platformUsage = Object.entries(users.reduce((a: Record<string, number>, u) => { a[u.role] = (a[u.role] ?? 0) + 1; return a; }, {})).map(([name, value]) => ({ name, value }));
 
   const SIDEBAR_ITEMS: { icon: React.ElementType; label: string; key: Section; badge?: number }[] = [
     { icon: LayoutDashboard, label: "Overview", key: "overview" },
+    { icon: FileText, label: "Approvals & Activity", key: "approvals" },
     { icon: Users, label: "Users", key: "users", badge: users.filter(u => userStatuses[u.id] === "Pending").length || undefined },
     { icon: Building2, label: "Companies", key: "companies", badge: Object.values(companyStatuses).filter(s => s === "Pending").length || undefined },
     { icon: Handshake, label: "Deals", key: "deals", badge: deals.filter(d => d.flagged).length || undefined },
@@ -641,7 +600,7 @@ export function Admin() {
   ];
 
   return (
-    <div className="flex h-full min-h-screen bg-[#F5F7FA] overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="flex h-full min-h-screen bg-[#F8FAFC] overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
       <Toaster position="top-right" richColors />
 
       {/* Modals */}
@@ -649,7 +608,7 @@ export function Admin() {
         {rejectModal.open && <RejectModal companyName={rejectModal.name} onConfirm={handleRejectConfirm} onClose={() => setRejectModal({ open: false, id: 0, name: "" })} />}
         {viewUser && <UserModal user={viewUser} status={userStatuses[viewUser.id]} onToggle={() => handleToggleUser(viewUser.id)} onClose={() => setViewUser(null)} />}
         {viewDeal && <DealPanel deal={viewDeal} onClose={() => setViewDeal(null)} onFlag={() => handleFlagDeal(viewDeal.id)} canFlag={canWrite} />}
-        {showNotifs && <NotifPanel notifs={notifications} onMarkRead={id => setNotifications(p => p.map(n => n.id === id ? { ...n, read: true } : n))} onClearAll={() => setNotifications(p => p.map(n => ({ ...n, read: true })))} onClose={() => setShowNotifs(false)} />}
+        {showNotifs && <NotifPanel notifs={notifications} onMarkRead={id => { setNotifications(p => p.map(n => n.id === id ? { ...n, read: true } : n)); void apiClient.put(`/notifications/${id}/read`, {}).catch(() => {}); }} onClearAll={() => { setNotifications(p => p.map(n => ({ ...n, read: true }))); void apiClient.put('/notifications/read-all', {}).catch(() => {}); }} onClose={() => setShowNotifs(false)} />}
       </AnimatePresence>
 
       {/* ── Main Content ─────────────────────────────────────────── */}
@@ -660,15 +619,15 @@ export function Admin() {
           {/* Top Header */}
           <div className="px-6 py-4 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#8B5CF6] to-cyan-400 flex items-center justify-center shadow-sm">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#2563EB] to-blue-400 flex items-center justify-center shadow-sm">
                 <Shield className="w-4.5 h-4.5 text-white" />
               </div>
               <div>
                 <h1 className="text-sm font-black text-slate-900 tracking-tight">Admin Control Center</h1>
                 <div className="flex items-center gap-2 mt-0.5">
                   <div className="relative" ref={roleRef}>
-                    <button onClick={() => setRoleOpen(o => !o)} className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 hover:text-[#8B5CF6] transition-colors">
-                      {adminRole === "Admin" ? <ShieldCheck className="w-3 h-3 text-[#8B5CF6]" /> : adminRole === "Moderator" ? <ShieldAlert className="w-3 h-3 text-purple-500" /> : <Eye className="w-3 h-3 text-slate-400" />}
+                    <button onClick={() => setRoleOpen(o => !o)} className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 hover:text-[#2563EB] transition-colors">
+                      {adminRole === "Admin" ? <ShieldCheck className="w-3 h-3 text-[#2563EB]" /> : adminRole === "Moderator" ? <ShieldAlert className="w-3 h-3 text-blue-500" /> : <Eye className="w-3 h-3 text-slate-400" />}
                       Role: {adminRole}
                       <ChevronDown className="w-3 h-3" />
                     </button>
@@ -678,7 +637,7 @@ export function Admin() {
                           className="absolute left-0 mt-2 w-40 bg-white rounded-xl border border-slate-200 shadow-xl overflow-hidden z-50">
                           {(["Admin", "Moderator", "Viewer"] as AdminRole[]).map(r => (
                             <button key={r} onClick={() => { setAdminRole(r); setRoleOpen(false); toast.info(`Switched to ${r} role`); }}
-                              className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${adminRole === r ? "bg-purple-50 text-[#8B5CF6] font-bold" : "text-slate-600 hover:bg-slate-50"}`}>
+                              className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${adminRole === r ? "bg-blue-50 text-[#2563EB] font-bold" : "text-slate-600 hover:bg-slate-50"}`}>
                               {r === "Admin" ? <ShieldCheck className="w-3.5 h-3.5" /> : r === "Moderator" ? <ShieldAlert className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                               {r}
                             </button>
@@ -701,7 +660,7 @@ export function Admin() {
               <div className="relative w-64 hidden md:block">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                 <input type="text" placeholder="Search logs, users, alerts..." value={search} onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/30 focus:border-[#8B5CF6] transition-all" />
+                  className="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 focus:border-[#2563EB] transition-all" />
               </div>
 
           <div className="ml-auto flex items-center gap-2">
@@ -712,7 +671,7 @@ export function Admin() {
               </div>
             )}
             {adminRole === "Moderator" && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-50 border border-purple-200 rounded-xl text-[10px] font-bold text-purple-600">
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 border border-blue-200 rounded-xl text-[10px] font-bold text-blue-600">
                 <ShieldAlert className="w-3 h-3" /> Limited access
               </div>
             )}
@@ -727,7 +686,7 @@ export function Admin() {
             {/* Avatar dropdown */}
             <div className="relative" ref={avatarRef}>
               <button onClick={() => setAvatarOpen(o => !o)} className="flex items-center gap-2 pl-2 pr-1 py-1 hover:bg-slate-50 border border-transparent hover:border-slate-200 rounded-full transition-all">
-                <div className="w-8 h-8 bg-gradient-to-br from-[#8B5CF6] to-cyan-400 rounded-full flex items-center justify-center text-[11px] font-black text-white shadow-sm">A</div>
+                <div className="w-8 h-8 bg-gradient-to-br from-[#2563EB] to-blue-400 rounded-full flex items-center justify-center text-[11px] font-black text-white shadow-sm">A</div>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400 mr-1" />
               </button>
               <AnimatePresence>
@@ -763,14 +722,14 @@ export function Admin() {
           <div className="flex items-center gap-6 overflow-x-auto hide-scrollbar">
             {SIDEBAR_ITEMS.map(item => (
               <button key={item.key} onClick={() => setSection(item.key)}
-                className={`relative flex items-center gap-2 py-3.5 text-xs font-semibold whitespace-nowrap transition-colors ${section === item.key ? "text-[#8B5CF6]" : "text-slate-500 hover:text-slate-800"}`}>
-                <item.icon className={`w-4 h-4 ${section === item.key ? "text-[#8B5CF6]" : "text-slate-400"}`} />
+                className={`relative flex items-center gap-2 py-3.5 text-xs font-semibold whitespace-nowrap transition-colors ${section === item.key ? "text-[#2563EB]" : "text-slate-500 hover:text-slate-800"}`}>
+                <item.icon className={`w-4 h-4 ${section === item.key ? "text-[#2563EB]" : "text-slate-400"}`} />
                 {item.label}
                 {item.badge ? (
-                  <span className={`ml-1.5 text-[9px] font-black px-1.5 py-0.5 rounded-full ${section === item.key ? "bg-[#8B5CF6] text-white" : "bg-slate-200 text-slate-600"}`}>{item.badge}</span>
+                  <span className={`ml-1.5 text-[9px] font-black px-1.5 py-0.5 rounded-full ${section === item.key ? "bg-[#2563EB] text-white" : "bg-slate-200 text-slate-600"}`}>{item.badge}</span>
                 ) : null}
                 {section === item.key && (
-                  <motion.div layoutId="adminTabLine" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#8B5CF6] rounded-t-full" />
+                  <motion.div layoutId="adminTabLine" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2563EB] rounded-t-full" />
                 )}
               </button>
             ))}
@@ -783,6 +742,14 @@ export function Admin() {
             <motion.div key={section} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
 
               {/* ══════════════ OVERVIEW ══════════════ */}
+              {loadError && (
+                <div role="alert" className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center justify-between">
+                  <span>{loadError}</span>
+                  <button onClick={() => void fetchDataRef.current()} className="font-bold underline">Retry</button>
+                </div>
+              )}
+              {section === "approvals" && <AdminApprovals />}
+
               {section === "overview" && (
                 <div className="space-y-5">
                   {/* Fraud banner */}
@@ -803,10 +770,10 @@ export function Admin() {
                   {/* Metrics */}
                   <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
                     {[
-                      { label: "Total Users", value: users.length.toString(), sub: `+3 this week`, icon: Users, color: "#8B5CF6", bg: "bg-purple-50", sec: "users" as Section },
-                      { label: "Companies", value: companies.length.toString(), sub: `${Object.values(companyStatuses).filter(s => s === "Pending").length} pending`, icon: Building2, color: "#8B5CF6", bg: "bg-purple-50", sec: "companies" as Section },
-                      { label: "Active Deals", value: deals.filter(d => d.status === "In Progress").length.toString(), sub: `${deals.filter(d => d.flagged).length} flagged`, icon: Handshake, color: "#3B82F6", bg: "bg-blue-50", sec: "deals" as Section },
-                      { label: "Revenue (MTD)", value: "$2.4M", sub: "+15% vs last month", icon: DollarSign, color: "#22C55E", bg: "bg-green-50", sec: "reports" as Section },
+                      { label: "Total Users", value: users.length.toString(), sub: `${users.filter(u => Date.now() - new Date(u.joined).getTime() < 7 * 86400000).length} joined this week`, icon: Users, color: "#2563EB", bg: "bg-blue-50", sec: "users" as Section },
+                      { label: "Companies", value: companies.length.toString(), sub: `${Object.values(companyStatuses).filter(s => s === "Pending").length} pending`, icon: Building2, color: "#2563EB", bg: "bg-blue-50", sec: "companies" as Section },
+                      { label: "Active Deals", value: deals.filter(d => d.status === "In Progress" || d.status === "Pending").length.toString(), sub: `${deals.filter(d => d.flagged).length} flagged`, icon: Handshake, color: "#3B82F6", bg: "bg-blue-50", sec: "deals" as Section },
+                      { label: "Deal Volume", value: formatMoney(deals.reduce((t, d) => t + d.amount, 0)), sub: `${deals.length} deals total`, icon: DollarSign, color: "#22C55E", bg: "bg-green-50", sec: "reports" as Section },
                       { label: "Pending KYC", value: Object.values(companyStatuses).filter(s => s === "Pending").length.toString(), sub: "Needs review", icon: ShieldAlert, color: "#F59E0B", bg: "bg-amber-50", sec: "compliance" as Section },
                     ].map((m, i) => (
                       <motion.button key={m.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
@@ -829,34 +796,34 @@ export function Admin() {
                     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden xl:col-span-2">
                       <div className="p-4 border-b border-slate-100 flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center">
-                            <TrendingUp className="w-4 h-4 text-[#8B5CF6]" />
+                          <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
+                            <TrendingUp className="w-4 h-4 text-[#2563EB]" />
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-slate-900">Revenue Growth</p>
-                            <p className="text-[10px] text-slate-400">Total platform volume</p>
+                            <p className="text-xs font-bold text-slate-900">Deal Volume</p>
+                            <p className="text-[10px] text-slate-400">Total deal value by month</p>
                           </div>
                         </div>
                       </div>
                       <div className="p-4 h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={REVENUE_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        {volumeByMonth.length === 0 ? <p className="text-xs text-slate-400 mt-6">No deals yet.</p> : <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={volumeByMonth} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                             <defs>
                               <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3}/>
-                                <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
+                                <stop offset="5%" stopColor="#2563EB" stopOpacity={0.3}/>
+                                <stop offset="95%" stopColor="#2563EB" stopOpacity={0}/>
                               </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                             <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} dy={10} />
-                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} tickFormatter={(value) => `$${value / 1000}k`} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} tickFormatter={(value) => formatMoney(Number(value))} />
                             <Tooltip 
                               contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                              formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
+                              formatter={(value: number) => [formatMoney(value), 'Deal volume']}
                             />
-                            <Area type="monotone" dataKey="revenue" stroke="#8B5CF6" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
+                            <Area type="monotone" dataKey="volume" stroke="#2563EB" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
                           </AreaChart>
-                        </ResponsiveContainer>
+                        </ResponsiveContainer>}
                       </div>
                     </div>
 
@@ -869,19 +836,19 @@ export function Admin() {
                           </div>
                           <div>
                             <p className="text-xs font-bold text-slate-900">User Demographics</p>
-                            <p className="text-[10px] text-slate-400">Account distribution</p>
+                            <p className="text-[10px] text-slate-400">Accounts by role</p>
                           </div>
                         </div>
                       </div>
                       <div className="p-4 h-64 flex flex-col justify-center">
                         <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={PLATFORM_USAGE} layout="vertical" margin={{ top: 0, right: 30, left: 10, bottom: 0 }}>
+                          <BarChart data={platformUsage} layout="vertical" margin={{ top: 0, right: 30, left: 10, bottom: 0 }}>
                             <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
                             <XAxis type="number" hide />
                             <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }} width={60} />
                             <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                             <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                              {PLATFORM_USAGE.map((entry, index) => (
+                              {platformUsage.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                               ))}
                             </Bar>
@@ -897,10 +864,11 @@ export function Admin() {
                     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                       <div className="p-4 border-b border-slate-100 flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center"><Zap className="w-4 h-4 text-red-500" /></div>
-                        <div><p className="text-xs font-bold text-slate-900">Fraud Detection</p><p className="text-[10px] text-slate-400">Real-time risk monitoring</p></div>
+                        <div><p className="text-xs font-bold text-slate-900">Fraud Detection</p><p className="text-[10px] text-slate-400">High-risk AML checks</p></div>
                         <span className="ml-auto text-[9px] font-bold text-red-500 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">{fraudAlerts.filter(f => !f.resolved).length} Active</span>
                       </div>
                       <div className="p-4 space-y-3">
+                        {fraudAlerts.length === 0 && <p className="text-xs text-slate-400">No high-risk checks have been recorded.</p>}
                         {fraudAlerts.map(f => (
                           <motion.div key={f.id} layout
                             className={`p-3.5 rounded-xl border transition-all ${f.resolved ? "bg-slate-50 border-slate-100 opacity-60" : f.riskScore >= 90 ? "bg-red-50 border-red-100" : f.riskScore >= 70 ? "bg-amber-50 border-amber-100" : "bg-yellow-50 border-yellow-100"}`}>
@@ -919,9 +887,6 @@ export function Admin() {
                                 <div className={`text-[10px] font-black px-2 py-0.5 rounded-full ${f.resolved ? "bg-green-100 text-green-600" : f.riskScore >= 90 ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>
                                   {f.resolved ? "Resolved" : `Risk ${f.riskScore}`}
                                 </div>
-                                {!f.resolved && canWrite && (
-                                  <button onClick={() => handleResolveFraud(f.id)} className="text-[9px] font-bold text-[#8B5CF6] hover:underline">Resolve</button>
-                                )}
                               </div>
                             </div>
                           </motion.div>
@@ -936,9 +901,10 @@ export function Admin() {
                           <div className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center"><Activity className="w-4 h-4 text-slate-500" /></div>
                           <div><p className="text-xs font-bold text-slate-900">Recent Activity</p><p className="text-[10px] text-slate-400">Last 5 events</p></div>
                         </div>
-                        <button onClick={() => setSection("compliance")} className="text-[10px] font-semibold text-[#8B5CF6] hover:underline">View all</button>
+                        <button onClick={() => setSection("compliance")} className="text-[10px] font-semibold text-[#2563EB] hover:underline">View all</button>
                       </div>
                       <div className="p-4 space-y-0">
+                        {logs.length === 0 && <p className="text-xs text-slate-400">No activity recorded yet.</p>}
                         {logs.slice(0, 5).map((log, i) => (
                           <div key={log.id} className="flex gap-3">
                             <div className="flex flex-col items-center">
@@ -974,8 +940,8 @@ export function Admin() {
                   <AnimatePresence>
                     {selectedUsers.size > 0 && canWrite && (
                       <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-                        className="flex items-center gap-3 p-3 bg-[#8B5CF6]/5 border border-purple-200 rounded-2xl">
-                        <span className="text-xs font-bold text-[#8B5CF6]">{selectedUsers.size} selected</span>
+                        className="flex items-center gap-3 p-3 bg-[#2563EB]/5 border border-blue-200 rounded-2xl">
+                        <span className="text-xs font-bold text-[#2563EB]">{selectedUsers.size} selected</span>
                         <div className="flex gap-2 ml-auto">
                           <motion.button whileTap={{ scale: 0.97 }} onClick={() => handleBulkAction("activate")}
                             className="px-3 py-1.5 text-[11px] font-bold text-white bg-green-500 hover:bg-green-600 rounded-xl flex items-center gap-1.5 transition-colors">
@@ -996,7 +962,7 @@ export function Admin() {
                       <table className="w-full text-xs">
                         <thead>
                           <tr className="bg-slate-50 border-b border-slate-100">
-                            {canWrite && <th className="py-3 px-4 w-10"><button onClick={() => selectedUsers.size === users.length ? setSelectedUsers(new Set()) : setSelectedUsers(new Set(users.map(u => u.id)))} className="text-slate-400 hover:text-slate-600">{selectedUsers.size === users.length ? <CheckSquare className="w-3.5 h-3.5 text-[#8B5CF6]" /> : <Square className="w-3.5 h-3.5" />}</button></th>}
+                            {canWrite && <th className="py-3 px-4 w-10"><button onClick={() => selectedUsers.size === users.length ? setSelectedUsers(new Set()) : setSelectedUsers(new Set(users.map(u => u.id)))} className="text-slate-400 hover:text-slate-600">{selectedUsers.size === users.length ? <CheckSquare className="w-3.5 h-3.5 text-[#2563EB]" /> : <Square className="w-3.5 h-3.5" />}</button></th>}
                             {["User", "Company", "Role", "Status", "Last Active", "Actions"].map(h => <th key={h} className="text-left py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">{h}</th>)}
                           </tr>
                         </thead>
@@ -1012,10 +978,10 @@ export function Admin() {
                               {users.map((u, i) => (
                               <motion.tr key={u.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }}
                                 className="border-b border-slate-50 hover:bg-slate-50/60 transition-colors">
-                                {canWrite && <td className="py-3 px-4"><button onClick={() => toggleSelectUser(u.id)}>{selectedUsers.has(u.id) ? <CheckSquare className="w-3.5 h-3.5 text-[#8B5CF6]" /> : <Square className="w-3.5 h-3.5 text-slate-300" />}</button></td>}
+                                {canWrite && <td className="py-3 px-4"><button onClick={() => toggleSelectUser(u.id)}>{selectedUsers.has(u.id) ? <CheckSquare className="w-3.5 h-3.5 text-[#2563EB]" /> : <Square className="w-3.5 h-3.5 text-slate-300" />}</button></td>}
                                 <td className="py-3 px-4">
                                   <div className="flex items-center gap-2.5">
-                                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-[11px] font-black text-white shrink-0 ${userStatuses[u.id] === "Suspended" ? "bg-slate-400" : "bg-gradient-to-br from-[#8B5CF6] to-cyan-400"}`}>{u.name.charAt(0)}</div>
+                                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-[11px] font-black text-white shrink-0 ${userStatuses[u.id] === "Suspended" ? "bg-slate-400" : "bg-gradient-to-br from-[#2563EB] to-blue-400"}`}>{u.name.charAt(0)}</div>
                                     <div>
                                       <p className="font-bold text-slate-800">{u.name}</p>
                                       <p className="text-[10px] text-slate-400">{u.email}</p>
@@ -1024,13 +990,13 @@ export function Admin() {
                                 </td>
                                 <td className="py-3 px-4 text-slate-600">{u.company}</td>
                                 <td className="py-3 px-4">
-                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${u.role === "Admin" ? "bg-purple-100 text-purple-700" : "bg-slate-100 text-slate-600"}`}>{u.role}</span>
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${u.role === "Admin" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-600"}`}>{u.role}</span>
                                 </td>
                                 <td className="py-3 px-4"><Badge label={userStatuses[u.id]} style={userStatusStyle[userStatuses[u.id]]} /></td>
                                 <td className="py-3 px-4 text-slate-400 text-[10px]">{u.lastActive}</td>
                                 <td className="py-3 px-4">
                                   <div className="flex items-center gap-1">
-                                    <button onClick={() => setViewUser(u)} className="p-1.5 text-slate-400 hover:text-[#8B5CF6] hover:bg-purple-50 rounded-lg transition-colors" title="View Profile"><Eye className="w-3.5 h-3.5" /></button>
+                                    <button onClick={() => setViewUser(u)} className="p-1.5 text-slate-400 hover:text-[#2563EB] hover:bg-blue-50 rounded-lg transition-colors" title="View Profile"><Eye className="w-3.5 h-3.5" /></button>
                                     {canWrite && (
                                       <>
                                         <button onClick={() => handleToggleUser(u.id)}
@@ -1075,30 +1041,12 @@ export function Admin() {
                               </div>
                               <Badge label={st} style={companyStatusStyle[st]} />
                             </div>
-                            <div className="flex items-center gap-4 mt-3">
-                              <div>
-                                <p className="text-[9px] text-slate-400 mb-1">KYC Score</p>
-                                <div className="flex items-center gap-2">
-                                  <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                    <motion.div className={`h-full rounded-full ${c.kyc >= 80 ? "bg-green-400" : c.kyc >= 60 ? "bg-amber-400" : "bg-red-400"}`}
-                                      initial={{ width: 0 }} animate={{ width: `${c.kyc}%` }} transition={{ delay: i * 0.07 + 0.3 }} />
-                                  </div>
-                                  <span className="text-[10px] font-bold text-slate-700">{c.kyc}</span>
-                                </div>
-                              </div>
-                              <div>
-                                <p className="text-[9px] text-slate-400">Revenue</p>
-                                <p className="text-[10px] font-bold text-slate-700">{c.revenue}</p>
-                              </div>
-                              <div>
-                                <p className="text-[9px] text-slate-400">Docs</p>
-                                <p className="text-[10px] font-bold text-slate-700">{c.docs} files</p>
-                              </div>
-                            </div>
                           </div>
                           <div className="p-3 bg-slate-50/60">
-                            <p className="text-[9px] text-slate-400 mb-2.5">By {c.submittedBy} · {c.date}</p>
-                            {st === "Pending" && canWrite ? (
+                            <p className="text-[9px] text-slate-400 mb-2.5">Registered {c.date}</p>
+                            {st === "Pending" ? (
+                              <button onClick={() => setSection("approvals")} className="w-full py-2 text-[11px] font-bold text-[#2563EB] bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors">Review in Approvals</button>
+                            ) : st === "Verified" && false ? (
                               <div className="flex gap-2">
                                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={() => handleApprove(c.id)}
                                   className="flex-1 py-2 text-[11px] font-bold text-white bg-green-500 hover:bg-green-600 rounded-xl transition-colors flex items-center justify-center gap-1">
@@ -1145,7 +1093,7 @@ export function Admin() {
                             deals.map((d, i) => (
                             <motion.tr key={d.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                               onClick={() => setViewDeal(d)}
-                              className={`border-b border-slate-50 cursor-pointer transition-colors group ${d.flagged ? "bg-red-50/40 hover:bg-red-50" : "hover:bg-purple-50/30"}`}>
+                              className={`border-b border-slate-50 cursor-pointer transition-colors group ${d.flagged ? "bg-red-50/40 hover:bg-red-50" : "hover:bg-blue-50/30"}`}>
                               <td className="py-3.5 px-4">
                                 <div className="flex items-center gap-2.5">
                                   {d.flagged && <Flag className="w-3.5 h-3.5 text-red-500 shrink-0" />}
@@ -1171,7 +1119,7 @@ export function Admin() {
                               </td>
                               <td className="py-3.5 px-4"><Badge label={d.risk} style={riskStyle[d.risk]} /></td>
                               <td className="py-3.5 px-4">
-                                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#8B5CF6] transition-colors" />
+                                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#2563EB] transition-colors" />
                               </td>
                             </motion.tr>
                           )))}
@@ -1191,8 +1139,8 @@ export function Admin() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[
                       { label: "KYC Verified", value: Object.values(companyStatuses).filter(s => s === "Verified").length, total: companies.length, color: "#22C55E", bg: "bg-green-50", border: "border-green-200", icon: ShieldCheck },
-                      { label: "AML Checks Passed", value: 4, total: 5, color: "#8B5CF6", bg: "bg-purple-50", border: "border-purple-200", icon: CheckCircle },
-                      { label: "High Risk Entities", value: fraudAlerts.filter(f => !f.resolved).length, total: fraudAlerts.length, color: "#EF4444", bg: "bg-red-50", border: "border-red-200", icon: AlertTriangle },
+                      { label: "AML Checks Passed", value: Math.max(amlTotal - fraudAlerts.length, 0), total: amlTotal, color: "#2563EB", bg: "bg-blue-50", border: "border-blue-200", icon: CheckCircle },
+                      { label: "High Risk Checks", value: fraudAlerts.length, total: amlTotal, color: "#EF4444", bg: "bg-red-50", border: "border-red-200", icon: AlertTriangle },
                     ].map(c => (
                       <div key={c.label} className={`bg-white rounded-2xl border ${c.border} shadow-sm p-5`}>
                         <div className="flex items-center gap-2.5 mb-3">
@@ -1202,7 +1150,7 @@ export function Admin() {
                         <p className="text-2xl font-black text-slate-900">{c.value}<span className="text-sm font-medium text-slate-400">/{c.total}</span></p>
                         <div className="mt-3 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                           <motion.div className="h-full rounded-full" style={{ backgroundColor: c.color }}
-                            initial={{ width: 0 }} animate={{ width: `${(c.value / c.total) * 100}%` }} transition={{ duration: 0.8 }} />
+                            initial={{ width: 0 }} animate={{ width: `${c.total ? (c.value / c.total) * 100 : 0}%` }} transition={{ duration: 0.8 }} />
                         </div>
                       </div>
                     ))}
@@ -1231,6 +1179,7 @@ export function Admin() {
                         </tr></thead>
                         <tbody>
                           <AnimatePresence mode="popLayout">
+                            {filteredLogs.length === 0 && <tr><td colSpan={5} className="py-6 px-4 text-xs text-slate-400">No events recorded.</td></tr>}
                             {filteredLogs.map((log, i) => (
                               <motion.tr key={log.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ delay: i * 0.03 }}
                                 className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
@@ -1257,62 +1206,49 @@ export function Admin() {
               {/* ══════════════ REPORTS ══════════════ */}
               {section === "reports" && (
                 <div className="space-y-5">
-                  <SectionHeader icon={BarChart2} title="Reports & Analytics" subtitle="Platform performance overview"
-                    action={
-                      <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                        onClick={() => toast.success("Report exported!", { description: "admin_report_apr2026.csv downloaded." })}
-                        className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-[#8B5CF6] hover:bg-[#7C3AED] rounded-xl transition-colors shadow-sm">
-                        <Download className="w-3.5 h-3.5" /> Export Report
-                      </motion.button>
-                    }
-                  />
+                  <SectionHeader icon={BarChart2} title="Reports & Analytics" subtitle="Computed from live platform data" />
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
                     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-                      <h3 className="text-xs font-bold text-slate-900 mb-4">User Growth (Oct – Apr)</h3>
+                      <h3 className="text-xs font-bold text-slate-900 mb-4">New Users per Month</h3>
                       <ResponsiveContainer width="100%" height={220}>
-                        <AreaChart data={GROWTH_DATA}>
+                        <AreaChart data={usersByMonth}>
                           <defs key="admin-area-defs">
                             <linearGradient id="adminGradUsers" x1="0" y1="0" x2="0" y2="1">
-                              <stop key="s0" offset="5%" stopColor="#8B5CF6" stopOpacity={0.18} />
-                              <stop key="s1" offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
+                              <stop key="s0" offset="5%" stopColor="#2563EB" stopOpacity={0.18} />
+                              <stop key="s1" offset="95%" stopColor="#2563EB" stopOpacity={0} />
                             </linearGradient>
                           </defs>
                           <CartesianGrid key="ag-cg" strokeDasharray="3 3" stroke="#F1F5F9" />
                           <XAxis key="ag-xa" dataKey="month" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
                           <YAxis key="ag-ya" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} width={40} />
                           <Tooltip key="ag-tt" content={<ChartTooltip />} />
-                          <Area key="ag-users" type="monotone" dataKey="users" stroke="#8B5CF6" strokeWidth={2.5} fill="url(#adminGradUsers)" name="Users" dot={false} activeDot={{ r: 5 }} />
+                          <Area key="ag-users" type="monotone" dataKey="users" stroke="#2563EB" strokeWidth={2.5} fill="url(#adminGradUsers)" name="Users" dot={false} activeDot={{ r: 5 }} />
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
                     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-                      <h3 className="text-xs font-bold text-slate-900 mb-4">Monthly Revenue ($M)</h3>
+                      <h3 className="text-xs font-bold text-slate-900 mb-4">Deal Volume per Month</h3>
                       <ResponsiveContainer width="100%" height={220}>
-                        <BarChart data={GROWTH_DATA}>
+                        <BarChart data={volumeByMonth}>
                           <CartesianGrid key="abr-cg" strokeDasharray="3 3" stroke="#F1F5F9" />
-                          <XAxis key="abr-xa" dataKey="month" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
+                          <XAxis key="abr-xa" dataKey="name" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
                           <YAxis key="abr-ya" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} width={40} />
                           <Tooltip key="abr-tt" content={<ChartTooltip />} />
-                          <Bar key="abr-rev" dataKey="revenue" fill="#8B5CF6" name="Revenue" radius={[6, 6, 0, 0]} />
+                          <Bar key="abr-rev" dataKey="volume" fill="#2563EB" name="Deal volume" radius={[6, 6, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
                   </div>
-                  {/* Summary cards */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {[
-                      { label: "Total Users (Apr)", value: "1,247", change: "+47", up: true },
-                      { label: "Revenue (Apr)", value: "$2.4M", change: "+$300K", up: true },
-                      { label: "Deals Closed", value: "18", change: "+5", up: true },
-                      { label: "Fraud Cases", value: "3", change: "-2", up: false },
-                    ].map(s => (
-                      <div key={s.label} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-                        <p className="text-[10px] text-slate-400 mb-2">{s.label}</p>
-                        <p className="text-xl font-black text-slate-900">{s.value}</p>
-                        <div className={`flex items-center gap-1 mt-1 text-[10px] font-bold ${s.up ? "text-green-600" : "text-red-500"}`}>
-                          {s.up ? <TrendingUp className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                          {s.change} vs last month
-                        </div>
+                      { label: "Total Users", value: String(users.length) },
+                      { label: "Total Deal Volume", value: formatMoney(deals.reduce((t, d) => t + d.amount, 0)) },
+                      { label: "Deals Completed", value: String(deals.filter(d => d.status === "Completed").length) },
+                      { label: "High-Risk AML Checks", value: String(fraudAlerts.length) },
+                    ].map(st => (
+                      <div key={st.label} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+                        <p className="text-[10px] text-slate-400 mb-2">{st.label}</p>
+                        <p className="text-xl font-black text-slate-900">{st.value}</p>
                       </div>
                     ))}
                   </div>
@@ -1322,255 +1258,21 @@ export function Admin() {
               {/* ══════════════ INVESTORS ══════════════ */}
               {section === "investors" && (
                 <div className="space-y-5">
-                  <SectionHeader icon={TrendingUp} title="Investor Dashboard" subtitle="Platform performance · GMV · Growth metrics"
-                    action={
-                      <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                        onClick={() => toast.success("Investor report exported!", { description: "investor_report_apr2026.pdf downloaded." })}
-                        className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-[#8B5CF6] hover:bg-[#0c8080] rounded-xl transition-colors shadow-sm">
-                        <Download className="w-3.5 h-3.5" /> Export Report
-                      </motion.button>
-                    }
-                  />
-
-                  {/* KPI Cards */}
-                  <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-                    {[
-                      { label: "Total GMV", value: "$188.4M", sub: "+8% vs last quarter", icon: DollarSign, gradient: true, color: "", bg: "" },
-                      { label: "Annual Revenue", value: "$18.8M", sub: "10% blended take rate", icon: TrendingUp, gradient: false, color: "#8B5CF6", bg: "bg-purple-50" },
-                      { label: "Active Users", value: "1,247", sub: "+71 new this month", icon: Users, gradient: false, color: "#3B82F6", bg: "bg-blue-50" },
-                      { label: "Deals Closed", value: "635", sub: "Q1 '26 total", icon: Handshake, gradient: false, color: "#22C55E", bg: "bg-green-50" },
-                    ].map((m, i) => (
-                      <motion.div key={m.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
-                        whileHover={{ y: -3, boxShadow: "0 10px 28px -8px rgba(0,0,0,0.12)" }}
-                        className={`rounded-2xl border shadow-sm p-4 ${m.gradient ? "bg-gradient-to-br from-[#8B5CF6] to-[#0c8080] border-cyan-600" : "bg-white border-slate-100"}`}>
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 ${m.gradient ? "bg-white/20" : m.bg}`}>
-                          <m.icon className="w-4.5 h-4.5" style={{ width: 18, height: 18, color: m.gradient ? "#fff" : m.color }} />
-                        </div>
-                        <p className={`text-xl font-black ${m.gradient ? "text-white" : "text-slate-900"}`}>{m.value}</p>
-                        <p className={`text-[10px] font-semibold mt-0.5 ${m.gradient ? "text-white/80" : "text-slate-500"}`}>{m.label}</p>
-                        <p className={`text-[9px] mt-1 ${m.gradient ? "text-white/60" : "text-slate-400"}`}>{m.sub}</p>
-                      </motion.div>
-                    ))}
-                  </div>
-
-                  {/* GMV + Revenue/Users Charts */}
-                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-                    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <h3 className="text-xs font-bold text-slate-900">GMV Growth</h3>
-                          <p className="text-[10px] text-slate-400">Last 6 months · $M</p>
-                        </div>
-                        <span className="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
-                          <ArrowUpRight className="w-3 h-3" /> +8% MoM
-                        </span>
-                      </div>
-                      <ResponsiveContainer width="100%" height={200}>
-                        <AreaChart data={INV_MONTHLY_DATA}>
-                          <defs>
-                            <linearGradient id="invGmvGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.2} />
-                              <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
-                          <XAxis dataKey="period" tick={{ fontSize: 9, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
-                          <YAxis tick={{ fontSize: 9, fill: "#94A3B8" }} axisLine={false} tickLine={false} width={32} />
-                          <Tooltip contentStyle={{ fontSize: 11, borderRadius: 10, border: "1px solid #E2E8F0", boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }} />
-                          <Area type="monotone" dataKey="gmv" stroke="#8B5CF6" strokeWidth={2.5} fill="url(#invGmvGrad)" name="GMV ($M)" dot={false} activeDot={{ r: 5 }} />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
-
-                    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <h3 className="text-xs font-bold text-slate-900">Revenue & Users</h3>
-                          <p className="text-[10px] text-slate-400">Dual-axis monthly trend</p>
-                        </div>
-                        <span className="flex items-center gap-1 text-[10px] font-bold text-purple-600 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full">
-                          <Activity className="w-3 h-3" /> Live
-                        </span>
-                      </div>
-                      <ResponsiveContainer width="100%" height={200}>
-                        <LineChart data={INV_MONTHLY_DATA}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
-                          <XAxis dataKey="period" tick={{ fontSize: 9, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
-                          <YAxis yAxisId="left" tick={{ fontSize: 9, fill: "#94A3B8" }} axisLine={false} tickLine={false} width={32} />
-                          <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 9, fill: "#94A3B8" }} axisLine={false} tickLine={false} width={40} />
-                          <Tooltip contentStyle={{ fontSize: 11, borderRadius: 10, border: "1px solid #E2E8F0" }} />
-                          <Legend wrapperStyle={{ fontSize: 10 }} />
-                          <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="#8B5CF6" strokeWidth={2.5} name="Revenue ($M)" dot={false} activeDot={{ r: 5 }} />
-                          <Line yAxisId="right" type="monotone" dataKey="users" stroke="#3B82F6" strokeWidth={2.5} name="Users" dot={false} activeDot={{ r: 5 }} strokeDasharray="5 3" />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-
-                  {/* Deal Categories + Key Metrics */}
-                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-                    {/* Deal Breakdown */}
-                    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                      <div className="p-4 border-b border-slate-100 flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center">
-                          <PieChartIcon className="w-4 h-4 text-[#8B5CF6]" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-900">Deal Breakdown by Sector</p>
-                          <p className="text-[10px] text-slate-400">GMV by industry vertical</p>
-                        </div>
-                      </div>
-                      <div className="p-4 space-y-3">
-                        {INV_DEAL_CATEGORIES.map((c, i) => {
-                          const total = INV_DEAL_CATEGORIES.reduce((s, x) => s + x.value, 0);
-                          const pct = ((c.value / total) * 100).toFixed(1);
-                          return (
-                            <motion.div key={c.category} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.07 }}>
-                              <div className="flex items-center justify-between mb-1.5">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
-                                  <span className="text-[11px] font-semibold text-slate-700">{c.category}</span>
-                                  <span className="text-[10px] text-slate-400">{c.count} deals</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[11px] font-bold text-slate-800">${c.value}M</span>
-                                  <span className="text-[10px] text-slate-400">{pct}%</span>
-                                </div>
-                              </div>
-                              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                <motion.div className="h-full rounded-full" style={{ backgroundColor: c.color }}
-                                  initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ delay: i * 0.07 + 0.2, duration: 0.6 }} />
-                              </div>
-                            </motion.div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Trend Metrics */}
-                    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                      <div className="p-4 border-b border-slate-100 flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-xl bg-green-50 border border-green-100 flex items-center justify-center">
-                          <Target className="w-4 h-4 text-green-600" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-900">Key Business Metrics</p>
-                          <p className="text-[10px] text-slate-400">QoQ performance indicators</p>
-                        </div>
-                      </div>
-                      <div className="p-4 grid grid-cols-2 gap-3">
-                        {INV_TREND_METRICS.map((m, i) => (
-                          <motion.div key={m.label} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
-                            className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                            <p className="text-[10px] text-slate-400 mb-1">{m.label}</p>
-                            <p className="text-sm font-black text-slate-900">{m.current}</p>
-                            <div className={`flex items-center gap-1 mt-1 text-[10px] font-bold ${m.up ? "text-green-600" : "text-red-500"}`}>
-                              {m.up ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                              {m.change}
-                              <span className="text-slate-400 font-normal ml-0.5">vs prev</span>
-                            </div>
-                          </motion.div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Platform Health Banner */}
-                  <div className="bg-gradient-to-r from-[#8B5CF6]/8 to-purple-50 border border-purple-200 rounded-2xl p-5">
-                    <div className="flex items-center justify-between flex-wrap gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-[#8B5CF6] flex items-center justify-center shadow-sm">
-                          <Globe className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-black text-slate-900">Platform Health Score</p>
-                          <p className="text-[10px] text-slate-500">As of April 2026 · All systems operational</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-6 flex-wrap">
-                        {[
-                          { label: "Uptime", value: "99.97%", color: "text-green-600" },
-                          { label: "API Latency", value: "42ms", color: "text-[#8B5CF6]" },
-                          { label: "Error Rate", value: "0.03%", color: "text-green-600" },
-                        ].map(s => (
-                          <div key={s.label} className="text-center">
-                            <p className={`text-sm font-black ${s.color}`}>{s.value}</p>
-                            <p className="text-[9px] text-slate-400">{s.label}</p>
-                          </div>
-                        ))}
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500 rounded-xl">
-                          <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                          <span className="text-[10px] font-bold text-white">All Systems Go</span>
-                        </div>
-                      </div>
-                    </div>
+                  <SectionHeader icon={TrendingUp} title="Investor Dashboard" subtitle="Platform performance · GMV · Growth metrics" />
+                  <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-10 text-center">
+                    <p className="text-sm font-bold text-slate-800">No data yet</p>
+                    <p className="text-xs text-slate-400 mt-1">Investor metrics will appear here once there is real activity to report.</p>
                   </div>
                 </div>
               )}
 
-              {/* ══════════════ SETTINGS ══════════════ */}
               {section === "settings" && (
                 <div className="space-y-5">
                   <SectionHeader icon={Settings} title="Platform Settings" subtitle="Configuration & access control" />
-                  {!isAdmin && (
-                    <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
-                      <Lock className="w-5 h-5 text-amber-500 shrink-0" />
-                      <p className="text-xs text-amber-700 font-semibold">Settings are only accessible to Admin role. Switch to Admin to make changes.</p>
-                    </div>
-                  )}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[
-                      { title: "Two-Factor Auth", desc: "Require 2FA for all admin logins", icon: Shield },
-                      { title: "Email Notifications", desc: "Send alerts for critical events", icon: Bell },
-                      { title: "Auto-Suspend on 5 Failed Logins", desc: "Security lockout policy", icon: Lock },
-                      { title: "Real-time Fraud Alerts", desc: "ML-based fraud detection", icon: Zap },
-                      { title: "Audit Logging", desc: "Log all admin actions", icon: FileText },
-                      { title: "Auto KYC Screening", desc: "Automated company screening", icon: ShieldCheck },
-                    ].map((s) => {
-                      const on = settingsState[s.title] ?? false;
-                      return (
-                        <div key={s.title} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center">
-                              <s.icon className="w-4 h-4 text-slate-500" />
-                            </div>
-                            <div>
-                              <p className="text-xs font-bold text-slate-800">{s.title}</p>
-                              <p className="text-[10px] text-slate-400">{s.desc}</p>
-                            </div>
-                          </div>
-                          <button disabled={!isAdmin}
-                            onClick={() => {
-                              setSettingsState(prev => ({ ...prev, [s.title]: !prev[s.title] }));
-                              toast[on ? "warning" : "success"](`${s.title} ${on ? "disabled" : "enabled"}`);
-                            }}
-                            className={`rounded-full transition-all relative ${on ? "bg-[#8B5CF6]" : "bg-slate-200"} ${!isAdmin ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                            style={{ height: 22, width: 40, flexShrink: 0 }}>
-                            <motion.div animate={{ x: on ? 18 : 2 }} transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                              className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm" style={{ margin: 1 }} />
-                          </button>
-                        </div>
-                      );
-                    })}
+                  <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-10 text-center">
+                    <p className="text-sm font-bold text-slate-800">No configurable settings yet</p>
+                    <p className="text-xs text-slate-400 mt-1">Platform-wide settings are managed in the server configuration.</p>
                   </div>
-                  {isAdmin && (
-                    <div className="bg-red-50 border border-red-200 rounded-2xl p-5">
-                      <div className="flex items-center gap-2.5 mb-3">
-                        <AlertTriangle className="w-5 h-5 text-red-500" />
-                        <p className="text-xs font-bold text-red-800">Danger Zone</p>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-semibold text-red-700">Reset Platform Settings</p>
-                          <p className="text-[10px] text-red-500">This will reset all configuration to defaults. Cannot be undone.</p>
-                        </div>
-                        <button onClick={() => toast.error("Reset cancelled — confirmation required")}
-                          className="px-4 py-2 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-colors">
-                          Reset
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
 

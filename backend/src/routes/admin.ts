@@ -13,13 +13,51 @@ const router = Router();
 // Platform admins only (users.role === 'admin'). Company-level OWNER/ADMIN roles must NOT grant access here.
 const adminAccess = [adminMiddleware] as const;
 
+// --- Approvals and live activity ---
+
+// Documents waiting for review (oldest first), then the most recently decided ones.
+router.get('/approvals', ...adminAccess, async (_req: AuthRequest, res: Response) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT d.id, d.companyId, c.name AS companyName, d.documentType, d.status, d.createdAt, d.verifiedAt,
+              u.email AS uploadedByEmail
+       FROM kyc_documents d
+       LEFT JOIN companies c ON c.id = d.companyId
+       LEFT JOIN users u ON u.id = d.uploadedBy
+       ORDER BY (d.status = 'PENDING') DESC, d.createdAt DESC
+       LIMIT 200`
+    );
+    res.json(rows);
+  } catch (error) {
+    logger.error('Admin approvals error:', error);
+    res.status(500).json({ error: 'Failed to fetch approvals' });
+  }
+});
+
+// What users did recently (registrations, requirements, proposals, deals, documents).
+router.get('/activity', ...adminAccess, async (_req: AuthRequest, res: Response) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT a.id, a.action, a.resourceType, a.resourceId, a.metadata, a.createdAt, u.email AS actorEmail
+       FROM audit_logs a LEFT JOIN users u ON u.id = a.userId
+       ORDER BY a.createdAt DESC LIMIT 100`
+    );
+    res.json((rows as any[]).map((r) => ({ ...r, metadata: typeof r.metadata === 'string' ? JSON.parse(r.metadata) : r.metadata })));
+  } catch (error) {
+    logger.error('Admin activity error:', error);
+    res.status(500).json({ error: 'Failed to fetch activity' });
+  }
+});
+
 // --- User Management ---
 
 // Get all users
 router.get('/users', ...adminAccess, async (_req: AuthRequest, res: Response) => {
   try {
     const connection = await pool.getConnection();
-    const [users] = await connection.query('SELECT id, email, phone, firstName, lastName, role, createdAt FROM users');
+    const [users] = await connection.query(`SELECT u.id, u.email, u.phone, u.firstName, u.lastName, u.role, u.createdAt,
+              (SELECT c.id FROM companies c WHERE c.userId = u.id ORDER BY c.createdAt ASC LIMIT 1) AS companyId
+       FROM users u`);
     connection.release();
     res.json((users as any[]).map(u => ({ ...u, role: normalizeAccountRole(u.role) })));
   } catch (error) {

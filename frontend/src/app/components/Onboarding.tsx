@@ -19,14 +19,14 @@ interface Step {
 
 const STEPS: Step[] = [
   {
-    id: 1, icon: LayoutDashboard, iconColor: "text-[#8B5CF6]", iconBg: "bg-purple-50",
+    id: 1, icon: LayoutDashboard, iconColor: "text-[#2563EB]", iconBg: "bg-blue-50",
     title: "Your Command Center",
     description: "The Dashboard gives you a bird's-eye view of all platform activity — GMV, active deals, revenue, and company health at a glance.",
     area: "sidebar",
     spotlightPos: { top: "13%", left: "0", width: "256px", height: "44px" },
   },
   {
-    id: 2, icon: ShoppingBag, iconColor: "text-purple-600", iconBg: "bg-purple-50",
+    id: 2, icon: ShoppingBag, iconColor: "text-blue-600", iconBg: "bg-blue-50",
     title: "Browse the Marketplace",
     description: "Discover verified companies, explore products & services, and connect with potential deal partners across all industries.",
     area: "sidebar",
@@ -40,7 +40,7 @@ const STEPS: Step[] = [
     spotlightPos: { top: "27%", left: "0", width: "256px", height: "44px" },
   },
   {
-    id: 4, icon: Building2, iconColor: "text-indigo-600", iconBg: "bg-indigo-50",
+    id: 4, icon: Building2, iconColor: "text-blue-600", iconBg: "bg-blue-50",
     title: "Company Directory",
     description: "Explore verified companies with KYC badges, financial profiles, and direct messaging — your B2B network in one place.",
     area: "sidebar",
@@ -117,7 +117,7 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
               className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
             >
               {/* Gradient top banner */}
-              <div className="h-40 bg-gradient-to-br from-[#8B5CF6] via-cyan-400 to-emerald-400 relative overflow-hidden flex items-center justify-center">
+              <div className="h-40 bg-gradient-to-br from-[#2563EB] via-blue-400 to-emerald-400 relative overflow-hidden flex items-center justify-center">
                 <div className="absolute inset-0 opacity-20">
                   {Array.from({ length: 12 }).map((_, i) => (
                     <motion.div key={i}
@@ -145,8 +145,8 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
 
                 <div className="grid grid-cols-3 gap-3 mb-6">
                   {[
-                    { icon: Handshake, label: "Deals", color: "#8B5CF6" },
-                    { icon: Building2, label: "Companies", color: "#8B5CF6" },
+                    { icon: Handshake, label: "Deals", color: "#2563EB" },
+                    { icon: Building2, label: "Companies", color: "#2563EB" },
                     { icon: TrendingUp, label: "Analytics", color: "#22C55E" },
                   ].map(f => (
                     <div key={f.label} className="flex flex-col items-center gap-1.5 p-3 bg-slate-50 rounded-2xl border border-slate-100">
@@ -162,7 +162,7 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
                   <motion.button
                     whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                     onClick={() => setPhase("steps")}
-                    className="flex-1 py-3 text-sm font-black text-white bg-gradient-to-r from-[#8B5CF6] to-cyan-400 hover:from-[#7C3AED] hover:to-cyan-500 rounded-2xl transition-all shadow-sm shadow-cyan-500/20 flex items-center justify-center gap-2"
+                    className="flex-1 py-3 text-sm font-black text-white bg-gradient-to-r from-[#2563EB] to-blue-400 hover:from-[#2563EB] hover:to-blue-500 rounded-2xl transition-all shadow-sm shadow-blue-500/20 flex items-center justify-center gap-2"
                   >
                     Start Tour <ArrowRight className="w-4 h-4" />
                   </motion.button>
@@ -203,7 +203,7 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
               >
                 {/* Pulse ring */}
                 <motion.div
-                  className="absolute inset-0 rounded-xl border-2 border-[#8B5CF6]"
+                  className="absolute inset-0 rounded-xl border-2 border-[#2563EB]"
                   animate={{ scale: [1, 1.04, 1], opacity: [0.8, 0.4, 0.8] }}
                   transition={{ duration: 1.5, repeat: Infinity }}
                 />
@@ -223,7 +223,7 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
                 {/* Progress bar */}
                 <div className="h-1 bg-slate-100">
                   <motion.div
-                    className="h-full bg-gradient-to-r from-[#8B5CF6] to-cyan-400 rounded-full"
+                    className="h-full bg-gradient-to-r from-[#2563EB] to-blue-400 rounded-full"
                     initial={{ width: `${((stepIdx) / STEPS.length) * 100}%` }}
                     animate={{ width: `${pct}%` }}
                     transition={{ duration: 0.4 }}
@@ -237,7 +237,7 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-0.5">
-                        <span className="text-[10px] font-black text-[#8B5CF6] uppercase tracking-wider">
+                        <span className="text-[10px] font-black text-[#2563EB] uppercase tracking-wider">
                           Step {stepIdx + 1} of {STEPS.length}
                         </span>
                         <button onClick={onSkip} className="p-1 text-slate-300 hover:text-slate-500 rounded-lg transition-colors">
@@ -257,7 +257,7 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
                         key={i}
                         onClick={() => setStepIdx(i)}
                         animate={{ width: i === stepIdx ? 20 : 6 }}
-                        className={`h-1.5 rounded-full transition-colors ${i === stepIdx ? "bg-[#8B5CF6]" : i < stepIdx ? "bg-purple-200" : "bg-slate-200"}`}
+                        className={`h-1.5 rounded-full transition-colors ${i === stepIdx ? "bg-[#2563EB]" : i < stepIdx ? "bg-blue-200" : "bg-slate-200"}`}
                       />
                     ))}
                   </div>
@@ -274,7 +274,7 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
                     <motion.button
                       whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                       onClick={next}
-                      className="flex-1 py-2.5 text-xs font-black text-white bg-gradient-to-r from-[#8B5CF6] to-cyan-400 hover:from-[#7C3AED] rounded-xl flex items-center justify-center gap-1.5 shadow-sm shadow-cyan-500/20"
+                      className="flex-1 py-2.5 text-xs font-black text-white bg-gradient-to-r from-[#2563EB] to-blue-400 hover:from-[#2563EB] rounded-xl flex items-center justify-center gap-1.5 shadow-sm shadow-blue-500/20"
                     >
                       {isLast ? "Finish Tour" : "Next"} <ArrowRight className="w-3.5 h-3.5" />
                     </motion.button>
@@ -308,9 +308,9 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, type: "spring", stiffness: 300 }}
-                className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4"
+                className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4"
               >
-                <CheckCircle2 className="w-8 h-8 text-[#8B5CF6]" />
+                <CheckCircle2 className="w-8 h-8 text-[#2563EB]" />
               </motion.div>
               <h3 className="text-base font-black text-slate-900 mb-2">You're all set! 🚀</h3>
               <p className="text-xs text-slate-500">You know your way around. Happy deal-making!</p>

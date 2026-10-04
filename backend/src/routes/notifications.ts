@@ -2,7 +2,7 @@
 import { Router, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import pool from '../config/database.js';
-import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+import { adminMiddleware, authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { emptyBodySchema, notificationCreateSchema, validateRequest } from '../middleware/validation.js';
 import { emitToCompany, emitToUser } from '../realtime/socket.js';
 import { logger } from '../utils/logger.js';
@@ -39,13 +39,13 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     const [rows] = await connection.query(
       `SELECT id, userId, companyId, type, title, message, payload, isRead, createdAt
        FROM notifications
-       WHERE (userId = ? OR userId IS NULL) AND (companyId = ? OR companyId IS NULL)
+       WHERE userId = ? OR (userId IS NULL AND companyId = ?)
        ORDER BY createdAt DESC
        LIMIT 100`,
       [req.userId ?? null, req.companyId ?? null]
     );
     connection.release();
-    res.json(rows);
+    res.json((rows as any[]).map((r) => ({ ...r, payload: typeof r.payload === 'string' ? JSON.parse(r.payload) : r.payload, isRead: !!r.isRead })));
   } catch (error) {
     logger.error('List notifications error:', error);
     res.status(500).json({ error: 'Failed to fetch notifications' });
@@ -67,9 +67,10 @@ router.get('/stream', authMiddleware, (req: AuthRequest, res: Response) => {
   });
 });
 
+// Creating arbitrary notifications for other users is an admin tool; the app itself uses services/notify.ts.
 router.post(
   '/',
-  authMiddleware,
+  adminMiddleware,
   withIdempotency({ required: false, ttlHours: 24 }),
   validateRequest(notificationCreateSchema),
   async (req: AuthRequest, res: Response) => {
@@ -112,6 +113,19 @@ router.post(
   }
 );
 
+router.put('/read-all', authMiddleware, validateRequest(emptyBodySchema), async (req: AuthRequest, res: Response) => {
+  try {
+    await pool.query(
+      'UPDATE notifications SET isRead = TRUE WHERE isRead = FALSE AND (userId = ? OR (userId IS NULL AND companyId = ?))',
+      [req.userId ?? null, req.companyId ?? null]
+    );
+    res.json({ ok: true });
+  } catch (error) {
+    logger.error('Mark all notifications read error:', error);
+    res.status(500).json({ error: 'Failed to update notifications' });
+  }
+});
+
 router.put(
   '/:id/read',
   authMiddleware,
@@ -120,7 +134,10 @@ router.put(
   async (req: AuthRequest, res: Response) => {
   try {
     const connection = await pool.getConnection();
-    await connection.query('UPDATE notifications SET isRead = TRUE WHERE id = ?', [req.params.id]);
+    await connection.query(
+      'UPDATE notifications SET isRead = TRUE WHERE id = ? AND (userId = ? OR (userId IS NULL AND companyId = ?))',
+      [req.params.id, req.userId ?? null, req.companyId ?? null]
+    );
     connection.release();
     emitToUser(req.userId, 'notifications:read', { id: req.params.id, isRead: true });
     emitToCompany(req.companyId, 'notifications:read', { id: req.params.id, isRead: true });

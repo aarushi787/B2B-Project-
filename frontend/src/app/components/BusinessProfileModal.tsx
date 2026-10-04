@@ -37,7 +37,7 @@ export function BusinessProfileModal({ business, onClose }: BusinessProfileModal
           className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[95vh]"
         >
           {/* Header Cover Image */}
-          <div className="relative h-48 bg-gradient-to-r from-blue-600 to-indigo-900">
+          <div className="relative h-48 bg-gradient-to-r from-blue-600 to-blue-900">
             <button 
               onClick={onClose} 
               className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur-md transition-colors"

@@ -225,10 +225,13 @@ export const kycUploadSchema = z.object({
   filePath: z.string().max(2000).optional(),
   mimeType: z.string().max(120).optional(),
   sizeBytes: nonNegativeIntegerField().optional(),
+  // The file itself (base64, max about 2 MB). Stored encrypted so an admin can review it before approving.
+  contentBase64: z.string().max(2_800_000).optional(),
 });
 
 export const kycVerifySchema = z.object({
   status: z.enum(['VERIFIED', 'REJECTED']).optional(),
+  reason: z.string().max(500).optional(),
 });
 
 // Privacy/GDPR schemas

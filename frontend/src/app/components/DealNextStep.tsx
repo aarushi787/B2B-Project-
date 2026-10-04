@@ -4,7 +4,7 @@ import { DealSide, NextStep } from "../../lib/dealRole";
 const SIDE_LABEL: Record<DealSide, { text: string; className: string; Icon: typeof Shield }> = {
   buyer:    { text: "You are the buyer",  className: "bg-blue-50 text-blue-700 border-blue-200",       Icon: ShoppingCart },
   seller:   { text: "You are the seller", className: "bg-emerald-50 text-emerald-700 border-emerald-200", Icon: Store },
-  admin:    { text: "Viewing as admin",   className: "bg-purple-50 text-purple-700 border-purple-200", Icon: Shield },
+  admin:    { text: "Viewing as admin",   className: "bg-blue-50 text-blue-700 border-blue-200", Icon: Shield },
   observer: { text: "View only",          className: "bg-slate-50 text-slate-700 border-slate-200",    Icon: Eye },
 };
 

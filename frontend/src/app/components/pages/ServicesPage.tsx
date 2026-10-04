@@ -69,11 +69,11 @@ export function ServicesPage() {
           return acc;
         }, {});
 
-        // Add 3 random providers for categories that have products to make the demo look populated
+        // Provider counts come from real product categories
         setServicesData(prev => prev.map(s => {
           // simple match: if category string is somewhat similar
           const count = Object.entries(categoryCounts).find(([k]) => k.includes(s.name) || s.name.includes(k))?.[1] as number || 0;
-          return { ...s, providers: count > 0 ? count + 3 : 0 }; // Just adding some artificial baseline if > 0
+          return { ...s, providers: count };
         }));
       } catch (err) {
         console.error("Failed to load products for services count:", err);

@@ -30,6 +30,7 @@ import {
   validateOffer,
 } from '../services/negotiation.js';
 import { emitToCompany } from '../realtime/socket.js';
+import { notifyAdmins, notifyCompany } from '../services/notify.js';
 import { errorResponse } from '../utils/http.js';
 import { logger } from '../utils/logger.js';
 
@@ -197,6 +198,10 @@ requirementsRouter.post('/', ...writeAccess, validateRequest(requirementCreateSc
     [id, companyId, req.userId, b.title, b.description, b.category ?? null, b.budgetMin ?? null, b.budgetMax ?? null, b.timeline ?? null]
   );
   const [rows] = await pool.query('SELECT * FROM requirements WHERE id = ?', [id]);
+  void notifyAdmins({
+    kind: 'REQUIREMENT_POSTED', title: 'New requirement posted', message: `"${b.title}" was posted.`,
+    actorUserId: req.userId, actorCompanyId: companyId, resourceType: 'requirement', resourceId: id, link: `/app/requirements/${id}`,
+  });
   return res.status(201).json(mapRequirement((rows as Row[])[0], companyId));
 }));
 
@@ -392,6 +397,14 @@ requirementsRouter.post('/:id/proposals', ...writeAccess, validateRequest(propos
   });
 
   emitToCompany(requirement.companyId, 'proposals:new', { proposalId, requirementId: requirement.id });
+  void notifyCompany(requirement.companyId, {
+    kind: 'PROPOSAL_RECEIVED', type: 'success', title: 'New proposal received',
+    message: `A proposal of ${b.amount} was sent for "${requirement.title}".`, link: `/app/opportunities/proposals/${proposalId}`,
+  });
+  void notifyAdmins({
+    kind: 'PROPOSAL_SENT', title: 'Proposal sent', message: `A proposal was sent for "${requirement.title}".`,
+    actorUserId: req.userId, actorCompanyId: companyId, resourceType: 'proposal', resourceId: proposalId,
+  });
   const [created] = await pool.query(`${PROPOSAL_SELECT} WHERE p.id = ?`, [proposalId]);
   return res.status(201).json(mapProposal((created as Row[])[0], companyId));
 }));
@@ -493,6 +506,21 @@ async function act(
   });
 
   notifyBoth(loaded.requirement!, loaded.proposal!, 'proposals:updated', { action });
+  {
+    const other = companyId === loaded.requirement!.companyId ? loaded.proposal!.companyId : loaded.requirement!.companyId;
+    const accepted = String(action) === 'accept';
+    void notifyCompany(other, {
+      kind: 'PROPOSAL_' + String(action).toUpperCase(), type: accepted ? 'success' : 'info',
+      title: accepted ? 'Proposal accepted: a deal was created' : ({ counter: 'New counter-offer', shortlist: 'Proposal shortlisted', reject: 'Proposal rejected', withdraw: 'Proposal withdrawn' } as Record<string, string>)[String(action)] ?? 'Proposal updated',
+      message: `Update on "${loaded.requirement!.title}".`, link: `/app/opportunities/proposals/${req.params.id}`,
+    });
+    if (accepted) {
+      void notifyAdmins({
+        kind: 'DEAL_CREATED', type: 'success', title: 'Deal created', message: `"${loaded.requirement!.title}" was awarded.`,
+        actorUserId: req.userId, actorCompanyId: companyId, resourceType: 'proposal', resourceId: req.params.id,
+      });
+    }
+  }
   const [rows] = await pool.query(`${PROPOSAL_SELECT} WHERE p.id = ?`, [req.params.id]);
   return res.json({ ...mapProposal((rows as Row[])[0], companyId), ...extra });
 }

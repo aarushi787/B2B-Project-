@@ -6,7 +6,7 @@
 // browser treats auth cookies as first-party), http://localhost:5000/api in development.
 
 const env = (import.meta as any).env ?? {};
-const API_BASE_URL: string = (env.VITE_API_BASE_URL || (env.PROD ? '/api' : 'http://localhost:5000/api')).replace(/\/+$/, '');
+export const API_BASE_URL: string = (env.VITE_API_BASE_URL || (env.PROD ? '/api' : 'http://localhost:5000/api')).replace(/\/+$/, '');
 const LEGACY_TOKEN_KEY = 'b2bforcorporates_token';
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 // Endpoints where a 401 means "bad credentials/no session", not "your access token expired".

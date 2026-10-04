@@ -2,7 +2,7 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import pool from '../config/database.js';
-import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+import { adminMiddleware, authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { emptyBodySchema, messageSendSchema, validateRequest } from '../middleware/validation.js';
 import { emitToCompany, emitToDeal } from '../realtime/socket.js';
 import { logger } from '../utils/logger.js';
@@ -23,7 +23,7 @@ function mapMessage(row: any) {
 }
 
 // Get all messages
-router.get('/', async (_req: Request, res: Response) => {
+router.get('/', adminMiddleware, async (_req: AuthRequest, res: Response) => {
   let connection;
   try {
     connection = await pool.getConnection();
@@ -38,9 +38,10 @@ router.get('/', async (_req: Request, res: Response) => {
 });
 
 // Get messages by company
-router.get('/company/:companyId', async (req: Request, res: Response) => {
+router.get('/company/:companyId', authMiddleware, async (req: AuthRequest, res: Response) => {
   let connection;
   try {
+    if (req.role !== 'admin' && req.params.companyId !== req.companyId) return res.status(403).json({ error: 'Forbidden' });
     connection = await pool.getConnection();
     const [rows] = await connection.query(
       'SELECT * FROM messages WHERE deletedAt IS NULL AND (senderId = ? OR receiverId = ?) ORDER BY createdAt DESC',
@@ -56,10 +57,11 @@ router.get('/company/:companyId', async (req: Request, res: Response) => {
 });
 
 // Get message thread between two users
-router.get('/thread', async (req: Request, res: Response) => {
+router.get('/thread', authMiddleware, async (req: AuthRequest, res: Response) => {
   let connection;
   try {
     const { sender, receiver } = req.query;
+    if (req.role !== 'admin' && sender !== req.companyId && receiver !== req.companyId) return res.status(403).json({ error: 'Forbidden' });
 
     if (!sender || !receiver) {
       return res.status(400).json({ error: 'Sender and receiver IDs are required' });
@@ -83,11 +85,18 @@ router.get('/thread', async (req: Request, res: Response) => {
 });
 
 // Get deal messages
-router.get('/deal/:dealId', async (req: Request, res: Response) => {
+router.get('/deal/:dealId', authMiddleware, async (req: AuthRequest, res: Response) => {
   let connection;
   try {
     connection = await pool.getConnection();
-    const [rows] = await connection.query('SELECT * FROM messages WHERE deletedAt IS NULL AND dealId = ? ORDER BY createdAt DESC', [req.params.dealId]);
+    if (req.role !== 'admin') {
+      const [deals] = await connection.query('SELECT buyerId, sellerId FROM deals WHERE id = ? AND deletedAt IS NULL', [req.params.dealId]);
+      const d = (deals as any[])[0];
+      if (!d || !req.companyId || (d.buyerId !== req.companyId && d.sellerId !== req.companyId)) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+    }
+    const [rows] = await connection.query('SELECT * FROM messages WHERE deletedAt IS NULL AND dealId = ? ORDER BY createdAt ASC', [req.params.dealId]);
     res.json((rows as any[]).map(mapMessage));
   } catch (error) {
     logger.error('Get deal messages error:', error);

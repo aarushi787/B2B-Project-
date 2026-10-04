@@ -1,34 +1,41 @@
 import React from "react";
-import { Calendar, Package, MapPin, Tag, ExternalLink } from "lucide-react";
+import { Calendar, Package, MapPin, Tag } from "lucide-react";
 import { motion } from "motion/react";
 import { DealStatus } from "./pages/DealWorkspace";
 
 interface DealDetailsProps {
   dealStatus: DealStatus;
+  dealId: string;
+  title?: string;
+  category?: string;
+  amountLabel?: string;
+  createdAt?: string;
+  client?: { name: string; location?: string };
+  provider?: { name: string; location?: string };
 }
 
-export function DealDetails({ dealStatus }: DealDetailsProps) {
+const initials = (n?: string) => (n || "?").split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase();
+
+export function DealDetails({ dealStatus, dealId, title, category, amountLabel, createdAt, client, provider }: DealDetailsProps) {
   const deal = {
-    id: "DW-2024-001",
-    product: "Enterprise SaaS License Bundle",
-    category: "Software & Technology",
-    clientName: "Acme Corporation",
-    clientLocation: "Mumbai, India",
-    clientInitials: "AC",
-    providerName: "Globex Inc.",
-    providerLocation: "Bangalore, India",
-    providerInitials: "GI",
-    amount: "$1,50,000",
-    startDate: "Apr 10, 2024",
-    endDate: "Apr 22, 2024",
-    dealType: "B2B License",
+    id: dealId,
+    product: title || "Untitled deal",
+    category: category || "Not specified",
+    clientName: client?.name || "Unknown company",
+    clientLocation: client?.location || "",
+    clientInitials: initials(client?.name),
+    providerName: provider?.name || "Unknown company",
+    providerLocation: provider?.location || "",
+    providerInitials: initials(provider?.name),
+    amount: amountLabel || "Not set",
+    startDate: createdAt ? new Date(createdAt).toLocaleDateString() : "—",
   };
 
   const getStatusBg = () => {
     switch (dealStatus) {
       case "Approved": return "from-green-50 to-emerald-50 border-green-100";
       case "Rejected": return "from-red-50 to-rose-50 border-red-100";
-      case "Completed": return "from-emerald-50 to-purple-50 border-emerald-100";
+      case "Completed": return "from-emerald-50 to-blue-50 border-emerald-100";
       default: return "from-amber-50 to-yellow-50 border-amber-100";
     }
   };
@@ -43,9 +50,6 @@ export function DealDetails({ dealStatus }: DealDetailsProps) {
       <div className={`p-4 bg-gradient-to-r ${getStatusBg()} border-b`}>
         <div className="flex items-center justify-between mb-2">
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Deal Details</span>
-          <a href="#" className="text-[10px] text-[#8B5CF6] hover:underline flex items-center gap-1 font-semibold">
-            View Full <ExternalLink className="w-2.5 h-2.5" />
-          </a>
         </div>
         <p className="text-xs font-bold text-slate-800">{deal.product}</p>
         <p className="text-[10px] text-slate-500 mt-0.5">{deal.id}</p>
@@ -66,9 +70,9 @@ export function DealDetails({ dealStatus }: DealDetailsProps) {
                 <p className="text-xs font-bold text-slate-800 truncate">{deal.clientName}</p>
                 <span className="text-[9px] font-semibold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded-full shrink-0">Client</span>
               </div>
-              <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+              {deal.clientLocation && <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
                 <MapPin className="w-2.5 h-2.5" />{deal.clientLocation}
-              </p>
+              </p>}
             </div>
           </div>
 
@@ -77,18 +81,18 @@ export function DealDetails({ dealStatus }: DealDetailsProps) {
           </div>
 
           {/* Provider */}
-          <div className="flex items-center gap-3 p-2.5 rounded-xl bg-purple-50 border border-purple-100">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-purple-400 flex items-center justify-center text-white text-[10px] font-black shadow-sm">
+          <div className="flex items-center gap-3 p-2.5 rounded-xl bg-blue-50 border border-blue-100">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-400 flex items-center justify-center text-white text-[10px] font-black shadow-sm">
               {deal.providerInitials}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
                 <p className="text-xs font-bold text-slate-800 truncate">{deal.providerName}</p>
-                <span className="text-[9px] font-semibold text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded-full shrink-0">Provider</span>
+                <span className="text-[9px] font-semibold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded-full shrink-0">Provider</span>
               </div>
-              <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+              {deal.providerLocation && <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
                 <MapPin className="w-2.5 h-2.5" />{deal.providerLocation}
-              </p>
+              </p>}
             </div>
           </div>
         </div>
@@ -116,8 +120,8 @@ export function DealDetails({ dealStatus }: DealDetailsProps) {
           </div>
 
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
-              <span className="text-[10px] font-black text-[#8B5CF6]">₹</span>
+            <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+              <span className="text-[10px] font-black text-[#2563EB]">₹</span>
             </div>
             <div>
               <p className="text-[10px] text-slate-400">Deal Amount</p>
@@ -130,8 +134,8 @@ export function DealDetails({ dealStatus }: DealDetailsProps) {
               <Calendar className="w-3.5 h-3.5 text-slate-500" />
             </div>
             <div>
-              <p className="text-[10px] text-slate-400">Timeline</p>
-              <p className="text-xs font-semibold text-slate-700">{deal.startDate} → {deal.endDate}</p>
+              <p className="text-[10px] text-slate-400">Created</p>
+              <p className="text-xs font-semibold text-slate-700">{deal.startDate}</p>
             </div>
           </div>
         </div>

@@ -59,7 +59,7 @@ export function ChartContainer({
   minWidth,
   className = "",
   badge,
-  badgeColor = "#8B5CF6",
+  badgeColor = "#2563EB",
   headerDark = false,
   actions,
 }: ChartContainerProps) {
@@ -168,7 +168,7 @@ export function ChartContainer({
                     onClick={() => { toast.info("Full-screen mode"); setMenuOpen(false); }}
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50 transition-colors"
                   >
-                    <Maximize2 className="w-3.5 h-3.5 text-purple-500" /> Expand view
+                    <Maximize2 className="w-3.5 h-3.5 text-blue-500" /> Expand view
                   </button>
                   {onRefresh && (
                     <button
@@ -211,7 +211,7 @@ export function ChartContainer({
               {onRefresh && (
                 <button
                   onClick={onRefresh}
-                  className="px-4 py-2 text-xs font-bold text-white bg-[#8B5CF6] hover:bg-[#7C3AED] rounded-xl transition-colors"
+                  className="px-4 py-2 text-xs font-bold text-white bg-[#2563EB] hover:bg-[#2563EB] rounded-xl transition-colors"
                 >
                   Try again
                 </button>

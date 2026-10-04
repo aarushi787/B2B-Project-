@@ -113,7 +113,7 @@ export function PostRequirementPage() {
                   <button key={s} onClick={() => { setService(s); setActiveStep(Math.max(activeStep, 1)); }} style={{ 
                     padding: "10px 16px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
                     background: "#fff",
-                    border: service === s ? "2px solid #6366f1" : "1px solid #cbd5e1",
+                    border: service === s ? "2px solid #2563EB" : "1px solid #cbd5e1",
                     color: service === s ? "#4338ca" : "#334155"
                   }}>
                     {s}
@@ -176,7 +176,7 @@ export function PostRequirementPage() {
                     <button key={r} onClick={() => { setBudgetPreset(r); setMinBudget(String(BUDGET_PRESETS[r][0])); setMaxBudget(String(BUDGET_PRESETS[r][1])); setActiveStep(Math.max(activeStep, 3)); }} style={{ 
                       padding: "8px 24px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
                       background: "#fff",
-                      border: budgetPreset === r ? "2px solid #4f46e5" : "1px solid #cbd5e1",
+                      border: budgetPreset === r ? "2px solid #2563EB" : "1px solid #cbd5e1",
                       color: budgetPreset === r ? "#0f172a" : "#334155"
                     }}>
                       {r}
@@ -202,9 +202,9 @@ export function PostRequirementPage() {
                   {timelinePresets.map(t => (
                     <button key={t} onClick={() => { setTimeline(t); setActiveStep(Math.max(activeStep, 4)); }} style={{ 
                       padding: "8px 16px", borderRadius: 8, display: "flex", alignItems: "center", gap: 8, cursor: "pointer", background: "#fff",
-                      border: timeline === t ? "2px solid #4f46e5" : "1px solid #cbd5e1"
+                      border: timeline === t ? "2px solid #2563EB" : "1px solid #cbd5e1"
                     }}>
-                      <div style={{ width: 14, height: 14, borderRadius: "50%", background: timeline === t ? "#4f46e5" : "#e2e8f0" }} />
+                      <div style={{ width: 14, height: 14, borderRadius: "50%", background: timeline === t ? "#2563EB" : "#e2e8f0" }} />
                       <span style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>{t}</span>
                     </button>
                   ))}
@@ -224,8 +224,8 @@ export function PostRequirementPage() {
               </div>
               <div style={{ display: "flex", gap: 24 }}>
                 <div style={{ flex: 1, border: "1px dashed #cbd5e1", borderRadius: 8, background: "#eff6ff", padding: 32, textAlign: "center", cursor: "pointer" }} onClick={() => { toast("File upload coming soon", {icon: "🚧"}); setActiveStep(Math.max(activeStep, 5)); }}>
-                  <UploadCloud size={32} color="#6366f1" style={{ margin: "0 auto 8px" }} />
-                  <p style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", margin: 0 }}>Drag & drop files or <span style={{ color: "#6366f1" }}>Browse Files</span></p>
+                  <UploadCloud size={32} color="#2563EB" style={{ margin: "0 auto 8px" }} />
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", margin: 0 }}>Drag & drop files or <span style={{ color: "#2563EB" }}>Browse Files</span></p>
                 </div>
               </div>
             </div>
@@ -257,7 +257,7 @@ export function PostRequirementPage() {
                   onClick={handleSubmit} 
                   disabled={isSubmitting || !title || !service}
                   style={{ 
-                    background: (!title || !service) ? "#94a3b8" : "#4f46e5", 
+                    background: (!title || !service) ? "#94a3b8" : "#2563EB", 
                     color: "#fff", 
                     border: "none", 
                     borderRadius: 8, 

@@ -1,7 +1,7 @@
 // Purpose: This module (backend/src/routes/compliance.ts) is used to implement compliance verification APIs and related checks in a modular, maintainable way.
 import { Router, Response } from 'express';
 import pool from '../config/database.js';
-import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+import { adminMiddleware, authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { isValidPan, verifyGstNumber } from '../services/compliance.js';
 import { gstVerifySchema, panVerifySchema, validateRequest } from '../middleware/validation.js';
 import { logger } from '../utils/logger.js';
@@ -41,7 +41,7 @@ router.post('/pan/verify', authMiddleware, validateRequest(panVerifySchema), asy
   }
 });
 
-router.get('/aml-checks', authMiddleware, async (_req: AuthRequest, res: Response) => {
+router.get('/aml-checks', adminMiddleware, async (_req: AuthRequest, res: Response) => {
   try {
     const connection = await pool.getConnection();
     const [rows] = await connection.query(

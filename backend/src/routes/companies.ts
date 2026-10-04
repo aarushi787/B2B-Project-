@@ -2,7 +2,7 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import pool from '../config/database.js';
-import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+import { adminMiddleware, authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { isValidGst, isValidPan, isValidPhone } from '../services/compliance.js';
 import { validateRequest, companyCreateSchema, companyUpdateSchema, emptyBodySchema } from '../middleware/validation.js';
 import { logger } from '../utils/logger.js';
@@ -236,7 +236,7 @@ router.delete(
 // Verify company
 router.put(
   '/:id/verify',
-  authMiddleware,
+  adminMiddleware,
   withIdempotency({ required: false, ttlHours: 24 }),
   validateRequest(emptyBodySchema),
   async (req: AuthRequest, res: Response) => {

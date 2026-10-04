@@ -77,7 +77,7 @@ function Navbar() {
 function ComparisonIllustration() {
   const rows = [
     { name: "Company A", price: "₹52,000", time: "4 weeks", status: "Submitted", tone: "bg-blue-50 text-blue-700" },
-    { name: "Company B", price: "₹47,000", time: "5 weeks", status: "Shortlisted", tone: "bg-violet-50 text-violet-700", lowest: true },
+    { name: "Company B", price: "₹47,000", time: "5 weeks", status: "Shortlisted", tone: "bg-blue-50 text-blue-700", lowest: true },
     { name: "Company C", price: "₹58,500", time: "3 weeks", status: "Submitted", tone: "bg-blue-50 text-blue-700" },
   ];
   return (

@@ -95,6 +95,7 @@ export function initSocketServer(httpServer: HttpServer, corsOrigin: any) {
     if (auth.companyId) {
       socket.join(companyRoom(auth.companyId));
     }
+    if (String(auth.role).toLowerCase() === 'admin') socket.join('admins');
 
     socket.emit('socket:connected', {
       userId: auth.userId,
@@ -156,4 +157,8 @@ export function emitToUser(userId: string | null | undefined, event: string, pay
 export function emitToDeal(dealId: string | null | undefined, event: string, payload: unknown) {
   if (!ioInstance || !dealId) return;
   ioInstance.to(dealRoom(dealId)).emit(event, payload);
+}
+
+export function emitToAdmins(event: string, payload: unknown) {
+  ioInstance?.to('admins').emit(event, payload);
 }
