@@ -7,6 +7,7 @@ import { dealCreateSchema, dealStatusUpdateSchema, dealUpdateSchema, emptyBodySc
 import { requireCompanyRole } from '../middleware/rbac.js';
 import { withIdempotency } from '../middleware/idempotency.js';
 import { emitToCompany, emitToDeal } from '../realtime/socket.js';
+import { checkDealParties } from '../utils/dealParties.js';
 import { logger } from '../utils/logger.js';
 
 const router = Router();
@@ -234,6 +235,16 @@ router.post(
 
     if (!buyerId || !sellerId) {
       return res.status(400).json({ error: 'buyerId and sellerId/sellerIds[0] are required' });
+    }
+
+    const parties = checkDealParties({
+      buyerId,
+      sellerIds: req.body.sellerIds ?? [sellerId],
+      callerCompanyId: req.companyId,
+      isPlatformAdmin: req.role === 'admin',
+    });
+    if (!parties.ok) {
+      return res.status(parties.status).json({ error: parties.message });
     }
 
     const title = req.body.title ?? req.body.notes ?? 'Deal';

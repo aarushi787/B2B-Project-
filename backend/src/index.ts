@@ -4,6 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { errorHandler } from './middleware/auth.js';
+import { csrfProtection } from './middleware/csrf.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import { logger } from './utils/logger.js';
 import { errorResponse } from './utils/http.js';
@@ -44,9 +45,12 @@ const corsOrigin = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') 
 // Middleware
 app.set('trust proxy', 1);
 app.use(helmet());
-const corsFunc = function(origin: string | undefined, callback: (err: Error | null, origin?: boolean) => void) {
-  // Allow all origins for development and demo purposes
-  return callback(null, true);
+const corsFunc = function(origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+  // Non-browser clients (curl, server-to-server, health checks) send no Origin header.
+  if (!origin) return callback(null, true);
+  // Only allow explicitly configured origins; never reflect arbitrary origins with credentials.
+  if (corsOrigin.includes(origin)) return callback(null, true);
+  return callback(null, false);
 };
 
 app.use(cors({
@@ -54,23 +58,30 @@ app.use(cors({
   credentials: true,
 }));
 
-// Basic custom xss sanitizer middleware (for string bodies)
-app.use((req, res, next) => {
-  if (req.body && typeof req.body === 'object') {
-    for (const key in req.body) {
-      if (typeof req.body[key] === 'string') {
-        req.body[key] = sanitizeHtml(req.body[key]);
-      }
-    }
-  }
-  next();
-});
 app.use(express.json({
   verify: (req, _res, buffer) => {
     (req as any).rawBody = buffer;
   },
 }));
 app.use(express.urlencoded({ extended: true }));
+
+// XSS sanitizer: must run AFTER body parsing, otherwise req.body is still empty.
+const UNSANITIZED_KEYS = /password|token|secret|signature/i;
+const sanitizeValue = (value: unknown): unknown => {
+  if (typeof value === 'string') return sanitizeHtml(value);
+  if (Array.isArray(value)) return value.map(sanitizeValue);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, UNSANITIZED_KEYS.test(k) ? v : sanitizeValue(v)]));
+  }
+  return value;
+};
+app.use((req, _res, next) => {
+  if (req.body && typeof req.body === 'object') {
+    req.body = sanitizeValue(req.body);
+  }
+  next();
+});
+app.use('/api', csrfProtection(corsOrigin));
 app.use(requestLogger);
 app.use(normalizeErrorEnvelope);
 

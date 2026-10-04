@@ -42,7 +42,6 @@ export const userRegisterSchema = z.object({
   name: z.string().min(1, 'Name is required').max(200),
   firstName: z.string().min(1).max(100).optional(),
   lastName: z.string().min(1).max(100).optional(),
-  role: z.enum(['buyer', 'seller', 'admin']).optional(),
   phone: phoneSchema,
   companyName: z.string().min(1, 'Company name is required').max(255),
   companyId: uuidSchema.optional(),
@@ -280,7 +279,7 @@ export const adminCreateUserSchema = z.object({
   firstName: z.string().max(100).optional(),
   lastName: z.string().max(100).optional(),
   phone: phoneSchema.optional(),
-  role: z.enum(['buyer', 'seller', 'admin']).optional(),
+  role: z.enum(['user', 'admin', 'buyer', 'seller']).optional(), // buyer/seller accepted as legacy aliases of 'user'
 });
 
 export const adminUpdateUserSchema = z.object({
@@ -288,7 +287,7 @@ export const adminUpdateUserSchema = z.object({
   firstName: z.string().max(100).optional(),
   lastName: z.string().max(100).optional(),
   phone: phoneSchema.optional(),
-  role: z.enum(['buyer', 'seller', 'admin']).optional(),
+  role: z.enum(['user', 'admin', 'buyer', 'seller']).optional(), // buyer/seller accepted as legacy aliases of 'user'
   password: passwordSchema.optional(),
 });
 

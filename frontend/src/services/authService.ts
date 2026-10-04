@@ -9,7 +9,8 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   user: User;
-  token: string;
+  /** Sent as X-CSRF-Token on state-changing requests. The auth tokens themselves are httpOnly cookies. */
+  csrfToken: string;
 }
 
 export interface RegisterRequest {
@@ -24,7 +25,7 @@ export interface RegisterRequest {
   website?: string;
   address?: string;
   description?: string;
-  role: string;
+  role?: string; // ignored by the server: self-registered accounts are always regular users
 }
 
 export const authService = {

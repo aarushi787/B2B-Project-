@@ -2,13 +2,16 @@
 // Bridges the SaaS Dashboard UI with the B2B Nexus backend auth system.
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { apiClient } from '../services/apiClient';
+import { socketService } from '../services/socketService';
 
 export interface AuthUser {
   id: string;
   name: string;
   email: string;
   phone?: string;
-  role: 'buyer' | 'seller' | 'admin';
+  // Account role: only admin vs regular user. "Buyer"/"seller" is a role per deal (see lib/dealRole.ts).
+  // The API sends it uppercase (USER/ADMIN); compare case-insensitively.
+  role: 'user' | 'admin' | 'USER' | 'ADMIN';
   companyId?: string;
   companyName?: string;
 }
@@ -17,7 +20,7 @@ interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
   isAdmin: boolean;
-  login: (token: string, user?: AuthUser) => void;
+  login: (session: { user?: AuthUser; csrfToken?: string }) => void;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -49,22 +52,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchUser().finally(() => setLoading(false));
   }, []);
 
-  const login = (token: string, userOverride?: AuthUser) => {
-    apiClient.setToken(token);
+  // The server has already set the httpOnly auth cookies; we only keep the user and the in-memory CSRF token.
+  const login = ({ user: userOverride, csrfToken }: { user?: AuthUser; csrfToken?: string }) => {
+    apiClient.setCsrfToken(csrfToken);
     if (userOverride) setUser(userOverride);
     else fetchUser();
   };
 
   const logout = async () => {
     try { await apiClient.post('/auth/logout', {}); } catch {}
-    apiClient.clearToken();
+    apiClient.clearSession();
+    socketService.disconnect();
     setUser(null);
   };
 
   const refreshUser = async () => { await fetchUser(); };
 
+  // UI convenience only — the backend enforces admin access on every /api/admin request.
+  const isAdmin = user?.role?.toString().toLowerCase() === 'admin';
+
   return (
-    <AuthContext.Provider value={{ user, loading, isAdmin: true, login, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, isAdmin, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

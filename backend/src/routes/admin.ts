@@ -3,14 +3,15 @@ import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
 import pool from '../config/database.js';
-import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+import { adminMiddleware, AuthRequest } from '../middleware/auth.js';
 import { adminCreateUserSchema, adminUpdateUserSchema, validateRequest } from '../middleware/validation.js';
-import { requireCompanyRole } from '../middleware/rbac.js';
+import { toDbRole, normalizeAccountRole } from '../utils/roles.js';
 import { logger } from '../utils/logger.js';
 import { getQueue, isBullMqEnabled, DLQ_QUEUE, PAYMENT_RETRY_QUEUE } from '../services/queue.js';
 
 const router = Router();
-const adminAccess = [authMiddleware, requireCompanyRole(['ADMIN', 'OWNER'])] as const;
+// Platform admins only (users.role === 'admin'). Company-level OWNER/ADMIN roles must NOT grant access here.
+const adminAccess = [adminMiddleware] as const;
 
 // --- User Management ---
 
@@ -20,7 +21,7 @@ router.get('/users', ...adminAccess, async (_req: AuthRequest, res: Response) =>
     const connection = await pool.getConnection();
     const [users] = await connection.query('SELECT id, email, phone, firstName, lastName, role, createdAt FROM users');
     connection.release();
-    res.json(users);
+    res.json((users as any[]).map(u => ({ ...u, role: normalizeAccountRole(u.role) })));
   } catch (error) {
     logger.error('Admin get users error:', error);
     res.status(500).json({ error: 'Failed to fetch users' });
@@ -44,10 +45,10 @@ router.post('/users', ...adminAccess, validateRequest(adminCreateUserSchema), as
     const hashedPassword = await bcrypt.hash(password, 10);
     await connection.query(
       'INSERT INTO users (id, email, password, firstName, lastName, phone, role) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [id, email, hashedPassword, firstName, lastName, phone, role || 'buyer']
+      [id, email, hashedPassword, firstName, lastName, phone, toDbRole(role)]
     );
     connection.release();
-    res.status(201).json({ id, email, firstName, lastName, role });
+    res.status(201).json({ id, email, firstName, lastName, role: normalizeAccountRole(toDbRole(role)) });
   } catch (error) {
     logger.error('Admin create user error:', error);
     res.status(500).json({ error: 'Failed to create user' });
@@ -61,7 +62,7 @@ router.put('/users/:id', ...adminAccess, validateRequest(adminUpdateUserSchema),
     const connection = await pool.getConnection();
     
     let query = 'UPDATE users SET email = COALESCE(?, email), firstName = COALESCE(?, firstName), lastName = COALESCE(?, lastName), phone = COALESCE(?, phone), role = COALESCE(?, role)';
-    const params = [email, firstName, lastName, phone, role];
+    const params = [email, firstName, lastName, phone, role ? toDbRole(role) : null];
 
     if (password) {
       const hashedPassword = await bcrypt.hash(password, 10);

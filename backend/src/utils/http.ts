@@ -7,6 +7,8 @@ export type ErrorCode =
   | 'NOT_FOUND'
   | 'VALIDATION_ERROR'
   | 'BAD_REQUEST'
+  | 'CSRF_ORIGIN'
+  | 'CSRF_INVALID'
   | 'INTERNAL_ERROR';
 
 export class ApiError extends Error {

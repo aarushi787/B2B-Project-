@@ -60,9 +60,13 @@ services:
       - PORT=3000
       - DB_HOST=db
       - DB_USER=${DB_USER:-b2b_user}
-      - DB_PASS=${DB_PASS:-b2b_password}
+      - DB_PASSWORD=${DB_PASS:-b2b_password}
       - DB_NAME=${DB_NAME:-b2b_nexus}
-      - JWT_SECRET=${JWT_SECRET:-super_secret_jwt_key_override_in_prod}
+      # Required secrets: compose refuses to start without them (no weak defaults).
+      - JWT_SECRET=${JWT_SECRET:?set JWT_SECRET in .env (e.g. openssl rand -hex 32)}
+      - DATA_ENCRYPTION_KEY=${DATA_ENCRYPTION_KEY:?set DATA_ENCRYPTION_KEY in .env (e.g. openssl rand -hex 32)}
+      # Browser origin(s) allowed to call the API with cookies (comma-separated).
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost}
       - REDIS_URL=redis://redis:6379
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - AWS_ACCESS_KEY_ID=minioadmin

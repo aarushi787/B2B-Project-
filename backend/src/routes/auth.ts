@@ -1,4 +1,6 @@
 // Purpose: This module (backend/src/routes/auth.ts) is used to implement project functionality in a modular, maintainable way.
+import { normalizeAccountRole, toDbRole } from '../utils/roles.js';
+import { csrfTokenFor, csrfTokenForRequest } from '../middleware/csrf.js';
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
@@ -49,7 +51,7 @@ type DbRefreshToken = {
 };
 
 function toClientRole(role?: string) {
-  return (role || 'buyer').toUpperCase();
+  return normalizeAccountRole(role).toUpperCase();
 }
 
 function splitName(name?: string) {
@@ -108,13 +110,14 @@ async function issueSession(connection: any, req: Request, res: Response, user: 
   const accessToken = signAccessToken({
     userId: user.id,
     companyId: clientUser.companyId,
-    role: user.role.toLowerCase(),
+    role: normalizeAccountRole(user.role),
   });
   const refreshToken = createRefreshToken();
   await persistRefreshToken(connection, user.id, refreshToken, req);
   setAuthCookies(res, accessToken, refreshToken);
 
-  return { token: accessToken, user: clientUser };
+  // Tokens travel only in httpOnly cookies. The JSON carries the CSRF token (kept in memory by the client).
+  return { user: clientUser, csrfToken: csrfTokenFor(refreshToken) };
 }
 
 // Register
@@ -126,7 +129,6 @@ router.post('/register', authLimiter, validateRequest(userRegisterSchema), async
       password,
       firstName,
       lastName,
-      role,
       name,
       phone,
       companyName,
@@ -187,7 +189,8 @@ router.post('/register', authLimiter, validateRequest(userRegisterSchema), async
         normalizedPhone,
         resolvedFirstName ?? null,
         resolvedLastName ?? null,
-        (role || 'seller').toLowerCase(),
+        // Never trust a client-supplied role: self-registered accounts are always regular users.
+        toDbRole('user'),
         verifyToken
       ]
     );
@@ -262,6 +265,12 @@ router.post('/login', authLimiter, validateRequest(userLoginSchema), async (req:
   }
 });
 
+// CSRF token for the current session (the client calls this on page load).
+router.get('/csrf', (req: Request, res: Response) => {
+  res.set('Cache-Control', 'no-store');
+  return res.json({ csrfToken: csrfTokenForRequest(req) });
+});
+
 // Refresh (token rotation)
 router.post('/refresh', validateRequest(refreshTokenSchema), async (req: Request, res: Response) => {
   let connection;
@@ -305,11 +314,11 @@ router.post('/refresh', validateRequest(refreshTokenSchema), async (req: Request
     const accessToken = signAccessToken({
       userId: user.id,
       companyId: clientUser.companyId,
-      role: user.role.toLowerCase(),
+      role: normalizeAccountRole(user.role),
     });
 
     setAuthCookies(res, accessToken, nextRefreshToken);
-    return res.json({ token: accessToken, user: clientUser });
+    return res.json({ user: clientUser, csrfToken: csrfTokenFor(nextRefreshToken) });
   } catch (error) {
     logger.error('Refresh token error:', error);
     clearAuthCookies(res);
@@ -320,7 +329,8 @@ router.post('/refresh', validateRequest(refreshTokenSchema), async (req: Request
 });
 
 // Logout
-router.post('/logout', authMiddleware, validateRequest(refreshTokenSchema), async (req: AuthRequest, res: Response) => {
+// Logout is idempotent and works even when the short-lived access token has already expired.
+router.post('/logout', validateRequest(refreshTokenSchema), async (req: Request, res: Response) => {
   let connection;
   try {
     const refreshToken = getRefreshTokenFromRequest(req);
@@ -529,56 +539,3 @@ router.post('/verify-email', async (req: Request, res: Response) => {
 });
 
 export default router;
-
-// Password Reset Routes
-router.post('/request-password-reset', async (req: Request, res: Response) => {
-  let connection;
-  try {
-    const { email } = req.body;
-    if (!email) return res.status(400).json({ error: 'Email is required' });
-
-    connection = await pool.getConnection();
-    const [users] = await connection.query('SELECT id FROM users WHERE email = ?', [email]);
-    
-    if ((users as any[]).length > 0) {
-      const resetToken = uuidv4();
-      await connection.query('UPDATE users SET resetToken = ? WHERE email = ?', [resetToken, email]);
-      await sendPasswordResetEmail(email, resetToken);
-    }
-    
-    // Always return success to prevent email enumeration
-    res.json({ message: 'If an account exists, a password reset link has been sent.' });
-  } catch (error) {
-    logger.error('Password reset request error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    if (connection) connection.release();
-  }
-});
-
-router.post('/reset-password', async (req: Request, res: Response) => {
-  let connection;
-  try {
-    const { token, newPassword } = req.body;
-    if (!token || !newPassword || newPassword.length < 8) {
-      return res.status(400).json({ error: 'Invalid token or password' });
-    }
-
-    connection = await pool.getConnection();
-    const [users] = await connection.query('SELECT id FROM users WHERE resetToken = ?', [token]);
-    
-    if ((users as any[]).length === 0) {
-      return res.status(400).json({ error: 'Invalid or expired token' });
-    }
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await connection.query('UPDATE users SET password = ?, resetToken = NULL WHERE resetToken = ?', [hashedPassword, token]);
-    
-    res.json({ message: 'Password has been successfully reset.' });
-  } catch (error) {
-    logger.error('Password reset error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    if (connection) connection.release();
-  }
-});

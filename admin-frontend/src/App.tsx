@@ -3,11 +3,11 @@ import {
   Users, Building2, Handshake, DollarSign, Shield, FileText,
   AlertTriangle, Clock, X, CheckCircle, XCircle, Bell,
   Search, Settings, ChevronDown, ChevronRight, LayoutDashboard,
-  Flag, Eye, UserCheck, UserX, RefreshCw, Filter,
-  TrendingUp, BarChart2, Lock, Unlock, Activity, Zap,
-  AlertCircle, ShieldCheck, ShieldAlert, Download, MoreHorizontal,
-  LogOut, User, Star, Circle, ArrowUpRight, ArrowDownRight,
-  Layers, Info, SlidersHorizontal, BookOpen, CheckSquare, Square,
+  Flag, Eye, UserCheck, UserX,
+  TrendingUp, BarChart2, Lock, Activity, Zap,
+  AlertCircle, ShieldCheck, ShieldAlert, Download,
+  LogOut, User, ArrowUpRight, ArrowDownRight,
+  Info, BookOpen, CheckSquare, Square,
   PieChart as PieChartIcon, Globe, Target
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -19,7 +19,8 @@ import {
 import { apiClient } from "./services/apiClient";
 import { socketService } from "./services/socketService";
 
-export default function Admin() {
+type UserStatus = "Active" | "Suspended" | "Pending";
+type AdminRole = "Admin" | "Moderator" | "Viewer";
 type CompanyStatus = "Pending" | "Verified" | "Rejected";
 type DealStatus = "In Progress" | "Pending" | "Under Review" | "Completed" | "Flagged";
 type RiskLevel = "Low" | "Medium" | "High" | "Critical";
@@ -437,7 +438,7 @@ export function Admin() {
   const [showNotifs, setShowNotifs] = useState(false);
   const [search, setSearch] = useState("");
   const [liveRefresh, setLiveRefresh] = useState(true);
-  const [liveTime, setLiveTime] = useState(new Date().toLocaleTimeString());
+  const [, setLiveTime] = useState(new Date().toLocaleTimeString());
   const [notifications, setNotifications] = useState<Notification[]>(INIT_NOTIFS);
   const [users, setUsers] = useState<AdminUser[]>(INIT_USERS);
   const [userStatuses, setUserStatuses] = useState<Record<string | number, UserStatus>>(
@@ -846,7 +847,7 @@ export function Admin() {
                             <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} tickFormatter={(value) => `$${value / 1000}k`} />
                             <Tooltip 
                               contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                              formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
+                              formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Revenue']}
                             />
                             <Area type="monotone" dataKey="revenue" stroke="#8B5CF6" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
                           </AreaChart>
@@ -875,7 +876,7 @@ export function Admin() {
                             <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }} width={60} />
                             <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                             <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                              {PLATFORM_USAGE.map((entry, index) => (
+                              {PLATFORM_USAGE.map((_entry, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                               ))}
                             </Bar>
@@ -1575,3 +1576,5 @@ export function Admin() {
     </div>
   );
 }
+
+export default Admin;

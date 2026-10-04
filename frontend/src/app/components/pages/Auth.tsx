@@ -35,7 +35,7 @@ export function Auth() {
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [registerData, setRegisterData] = useState({
     name: "", email: "", phone: "", password: "", confirmPassword: "",
-    companyName: "", gstNumber: "", role: "buyer",
+    companyName: "", gstNumber: "",
   });
 
   const getPasswordStrength = (password: string) => {
@@ -59,8 +59,8 @@ export function Auth() {
     setError(""); setLoading(true);
     try {
       const res = await authService.login({ email: loginData.email, password: loginData.password });
-      login(res.token, res.user as any);
-      navigate("/app/dashboard");
+      login({ user: res.user as any, csrfToken: res.csrfToken });
+      navigate(String((res.user as any)?.role ?? "").toLowerCase() === "admin" ? "/admin" : "/app/dashboard");
     } catch (err: any) {
       setError(err.message?.replace("API Error: 401 Unauthorized - ", "") || "Login failed. Check your credentials.");
     } finally { setLoading(false); }
@@ -92,9 +92,9 @@ export function Auth() {
       const res = await authService.register({
         name: registerData.name, email: registerData.email, phone: registerData.phone,
         password: registerData.password, companyName: registerData.companyName,
-        gstNumber: registerData.gstNumber, role: registerData.role,
+        gstNumber: registerData.gstNumber,
       });
-      login(res.token, res.user as any);
+      login({ user: res.user as any, csrfToken: res.csrfToken });
       navigate("/app/dashboard");
     } catch (err: any) {
       const msg = err.message || "";
@@ -205,11 +205,11 @@ export function Auth() {
                   </button>
                   <button type="button" onClick={() => setLoginData({ email: "rahul@example.com", password: "password123" })}
                     style={{ width: "100%", textAlign: "left", padding: 8, backgroundColor: "#eff6ff", border: "1px solid #dbeafe", borderRadius: 4, fontSize: 12, color: "#1e40af", fontWeight: 500, cursor: "pointer" }}>
-                    <b>Acme Corp - Buyer</b> (rahul@example.com)
+                    <b>Acme Corp</b> (rahul@example.com)
                   </button>
                   <button type="button" onClick={() => setLoginData({ email: "maya@example.com", password: "password123" })}
                     style={{ width: "100%", textAlign: "left", padding: 8, backgroundColor: "#f5f3ff", border: "1px solid #ede9fe", borderRadius: 4, fontSize: 12, color: "#5b21b6", fontWeight: 500, cursor: "pointer" }}>
-                    <b>TechVista - Seller</b> (maya@example.com)
+                    <b>TechVista</b> (maya@example.com)
                   </button>
                 </div>
               </div>

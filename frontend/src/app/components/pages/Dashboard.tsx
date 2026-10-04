@@ -10,8 +10,7 @@ import { useAuth } from "../../../auth/AuthProvider";
 import { apiClient } from "../../../services/apiClient";
 import { socketService } from "../../../services/socketService";
 import { ActivityLogsModal } from "../ActivityLogsModal";
-
-interface Deal { id: string; title: string; status: string; total_amount: number; buyer_id?: string; seller_id?: string; created_at?: string; category?: string; }
+import { Deal } from "../../../types";
 interface Notification { id: string; title: string; message: string; type: string; created_at: string; read: boolean; source?: string; }
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; label: string }> = {
@@ -23,7 +22,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string; label: string }>
 };
 
 function StatusBadge({ status }: { status: string }) {
-  const s = STATUS_COLORS[status.toLowerCase().replace(" ", "_")] ?? { bg: "#f1f5f9", text: "#64748b", label: status };
+  const s = STATUS_COLORS[status?.toLowerCase().replace(" ", "_")] ?? { bg: "#f1f5f9", text: "#64748b", label: status || "Unknown" };
   return (
     <span style={{
       background: s.bg,
@@ -78,22 +77,48 @@ function KPICard({
 }
 
 export function Dashboard() {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [showActivityModal, setShowActivityModal] = useState(false);
+  
+  const [deals, setDeals] = useState<Deal[]>([]);
 
   useEffect(() => { 
-    // Simulate loading
-    setTimeout(() => setLoading(false), 500);
-  }, []);
+    if (user) {
+      fetchDashboardData();
+    }
+  }, [user]);
 
-  const staticActivities = [
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const dealsRes = await apiClient.get<Deal[] | {data: Deal[]}>('/deals');
+      setDeals(Array.isArray(dealsRes) ? dealsRes : (dealsRes.data || []));
+    } catch (error) {
+      toast.error("Failed to load dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const recentDeals = deals.slice(0, 4);
+  const staticActivities = recentDeals.length > 0 ? recentDeals.map(d => ({
+    icon: d.status === 'active' ? FileText : Inbox,
+    title: `${d.status === 'active' ? 'Requirement posted' : 'Proposal updated'} for '${d.title}'`,
+    source: `Recent update • ${d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'Today'}`,
+  })) : [
     { icon: Inbox, title: "New Proposal received for 'Web Application Redesign'", source: "Nexis Digital Logistics • 2 hours ago" },
     { icon: FileText, title: "Requirement posted for 'DevOps Infrastructure setup'", source: "Umbrella Group • 4 hours ago" },
     { icon: Search, title: "Enquiry sent regarding 'Database audit Services'", source: "TechVista Solutions • 1 day ago" },
     { icon: TrendingUp, title: "Profile updated with 2 new portfolio entries", source: "TechVista Administrator • 3 days ago" },
   ];
 
-  const staticDeadlines = [
+  const upcomingDeals = deals.filter(d => d.status !== 'closed' && d.status !== 'rejected').slice(0, 3);
+  const staticDeadlines = upcomingDeals.length > 0 ? upcomingDeals.map(d => ({
+    title: d.title,
+    due: "Pending Action",
+    status: d.status || "Active"
+  })) : [
     { title: "Security Audit RFI", due: "Due Jan 28", status: "Urgent" },
     { title: "Cloud Migration RFP Proposal", due: "Due Feb 02", status: "Active" },
     { title: "Mobile App Wireframes Feedback", due: "Due Feb 10", status: "Pending" },
@@ -105,6 +130,14 @@ export function Dashboard() {
     { title: "Kubernetes Migration & CI/CD Pipeline Setup", category: "Cloud & DevOps", date: "Jan 08, 2026", bids: "14 bids", status: "Active" },
     { title: "Corporate Website UI/UX Design System", category: "UI/UX Design", date: "Jan 02, 2026", bids: "8 bids", status: "Closed" },
   ];
+
+  const displayRequirements = deals.length > 0 ? deals.slice(0, 4).map(d => ({
+    title: d.title || "Untitled",
+    category: d.category || "General",
+    date: d.createdAt ? new Date(d.createdAt).toLocaleDateString() : "Today",
+    bids: "0 bids",
+    status: d.status || "Active"
+  })) : staticRequirements;
 
   return (
     <motion.div 
@@ -121,7 +154,7 @@ export function Dashboard() {
         <>
           {/* KPI Cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 20, marginBottom: 28 }}>
-            <KPICard label="Active Requirements" value="12" change="+8.4%" positive={true}  iconBg="#eff6ff" iconColor="#2563EB" icon={FileText} />
+            <KPICard label="Active Requirements" value={deals.length || "12"} change="+8.4%" positive={true}  iconBg="#eff6ff" iconColor="#2563EB" icon={FileText} />
             <KPICard label="Received Proposals"  value="34" change="+14.2%" positive={true}  iconBg="#dcfce7" iconColor="#16a34a" icon={Inbox} />
             <KPICard label="Pending Enquiries"   value="8" change="-2.1%"  positive={false} iconBg="#fef3c7" iconColor="#d97706" icon={Search} />
             <KPICard label="Profile Views"       value="1,247" change="+24.8%" positive={true}  iconBg="#f5f3ff" iconColor="#8b5cf6" icon={Eye} />
@@ -213,13 +246,13 @@ export function Dashboard() {
             </div>
 
             {/* Rows */}
-            {staticRequirements.map((r, i) => (
+            {displayRequirements.map((r, i) => (
               <div key={i} style={{
                 display: "grid",
                 gridTemplateColumns: "3fr 1.5fr 1fr 1fr 1fr",
                 padding: "16px 24px",
                 alignItems: "center",
-                borderBottom: i < staticRequirements.length - 1 ? "1px solid #f8fafc" : "none",
+                borderBottom: i < displayRequirements.length - 1 ? "1px solid #f8fafc" : "none",
               }}>
                 <span style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>{r.title}</span>
                 <span style={{ fontSize: 13, color: "#64748b" }}>{r.category}</span>

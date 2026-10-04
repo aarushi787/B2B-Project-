@@ -39,6 +39,8 @@ export const router = createBrowserRouter([
   { path: "/services", Component: ServicesPage },
   { path: "/explore",  Component: ExploreBusinesses },
   { path: "/auth",     Component: Auth },
+  // Platform admin console: standalone (outside the user Layout) and admin-only.
+  { path: "/admin",    element: <AdminGuard><Admin /></AdminGuard> },
   {
     path: "/app",
     Component: Layout,
@@ -51,7 +53,6 @@ export const router = createBrowserRouter([
       { path: "contracts",                    Component: Contracts },
       { path: "messaging",                    Component: Messaging },
       { path: "ledger",                       Component: Ledger },
-      { path: "admin",                        element: <AdminGuard><Admin /></AdminGuard> },
       { path: "marketplace",                  Component: Marketplace },
       { path: "investor",                     Component: Investor },
       { path: "settings",                     Component: Settings },
@@ -65,6 +66,7 @@ export const router = createBrowserRouter([
       // Opportunities
       { path: "opportunities/matching",       Component: MatchingRequirements },
       { path: "opportunities/send",           Component: SendProposal },
+      { path: "opportunities/send/:id",       Component: SendProposal },
       { path: "opportunities/sent",           Component: SentProposals },
       { path: "opportunities/received",       Component: ReceivedProposals },
       // Enquiries

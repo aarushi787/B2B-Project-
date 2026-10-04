@@ -22,5 +22,6 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/services/authService.ts", "src/services/companiesService.ts", "src/services/dealsService.ts", "src/services/geminiService.ts", "src/services/ledgerService.ts", "src/services/messagesService.ts", "src/services/productsService.ts"]
 }

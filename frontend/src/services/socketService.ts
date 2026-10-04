@@ -1,6 +1,5 @@
 // Purpose: This module (services/socketService.ts) is used to implement frontend Socket.IO connectivity and event helpers in a modular, maintainable way.
 import { io, Socket } from 'socket.io-client';
-import { apiClient } from './apiClient';
 
 type EventHandler<T = unknown> = (payload: T) => void;
 
@@ -17,12 +16,10 @@ class SocketService {
   connect(): Socket {
     if (this.socket?.connected) return this.socket;
 
-    const token = apiClient.getToken();
+    // Auth is the httpOnly cookie, sent automatically with credentials; no token is handled in JS.
     this.socket = io(this.socketUrl, {
       transports: ['websocket'],
       withCredentials: true,
-      auth: token ? { token } : {},
-      extraHeaders: token ? { Authorization: `Bearer ${token}` } : {},
     });
 
     return this.socket;

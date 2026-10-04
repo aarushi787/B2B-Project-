@@ -57,6 +57,13 @@ export function initSocketServer(httpServer: HttpServer, corsOrigin: any) {
       origin: corsOrigin,
       credentials: true,
     },
+    // CORS does not apply to raw websocket upgrades, so enforce the same Origin allowlist here
+    // (prevents cross-site websocket hijacking with the ambient auth cookie).
+    allowRequest: (req, callback) => {
+      const origin = req.headers.origin;
+      if (!origin) return callback(null, true);
+      corsOrigin(origin, (_err: Error | null, allowed?: boolean) => callback(null, !!allowed));
+    },
   });
 
   io.use((socket, next) => {

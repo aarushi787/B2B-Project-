@@ -451,7 +451,7 @@ function TableSkeleton() {
 const PAGE_SIZE = 8;
 
 export function Ledger() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<"All" | TxType>("All");
   const [statusFilter, setStatusFilter] = useState<"All" | TxStatus>("All");
@@ -475,7 +475,7 @@ export function Ledger() {
     try {
       // In a real app, we'd fetch specific company or all if admin
       let data = [];
-      if (user?.role === 'admin') {
+      if (isAdmin) {
         data = await apiClient.get<any[]>('/ledger');
       } else if (user?.companyId) {
         data = await apiClient.get<any[]>(`/ledger/company/${user.companyId}`);

@@ -37,7 +37,6 @@ const NAV_ITEMS = [
   { icon: FileText,        label: "Investor Portal",      path: "/app/investor",               group: "company" },
 
   // Admin & Settings
-  { icon: Shield,          label: "Admin Console",        path: "/app/admin",                  group: "settings" },
   { icon: Settings,        label: "Settings",             path: "/app/settings",               group: "settings" },
   { icon: Settings,        label: "Component Map",        path: "/app/component-map",          group: "settings" },
 ];
@@ -535,7 +534,7 @@ export function Layout() {
                       { icon: User, label: "Profile", path: "/app/settings" },
                       { icon: Settings, label: "Settings", path: "/app/settings" },
                       { icon: Sparkles, label: "Platform Tour", action: () => { setShowOnboarding(true); setAvatarOpen(false); } },
-                      ...(isAdmin ? [{ icon: Shield, label: "Super Admin Portal", path: "/app/admin" }] : []),
+                      ...(isAdmin ? [{ icon: Shield, label: "Admin Console", path: "/admin" }] : []),
                     ].map(item => (
                       item.action ? (
                         <button key={item.label} onClick={item.action}
