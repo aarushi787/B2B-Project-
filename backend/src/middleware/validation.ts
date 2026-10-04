@@ -291,6 +291,31 @@ export const adminUpdateUserSchema = z.object({
   password: passwordSchema.optional(),
 });
 
+// Requirements (RFQs) and proposals
+const deliverablesSchema = z.array(z.string().trim().min(1).max(300)).max(20);
+
+export const requirementCreateSchema = z.object({
+  title: z.string().trim().min(3, 'Title must be at least 3 characters').max(255),
+  description: z.string().trim().min(10, 'Please describe what you need (at least 10 characters)').max(5000),
+  category: z.string().trim().max(100).optional(),
+  budgetMin: nonNegativeNumberField().optional(),
+  budgetMax: nonNegativeNumberField().optional(),
+  timeline: z.string().trim().max(100).optional(),
+  currency: z.literal('INR').optional(),
+});
+
+export const requirementUpdateSchema = requirementCreateSchema.partial();
+
+export const proposalCreateSchema = z.object({
+  amount: positiveNumberField(),
+  timeline: z.string().trim().max(100).optional(),
+  message: z.string().trim().max(5000).optional(),
+  deliverables: deliverablesSchema.optional(),
+});
+
+// A counter-offer has the same shape as a proposal.
+export const offerSchema = proposalCreateSchema;
+
 // Ledger schema
 export const ledgerCreateSchema = z.object({
   companyId: uuidSchema,

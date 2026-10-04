@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { errorHandler } from './middleware/auth.js';
 import { csrfProtection } from './middleware/csrf.js';
+import { createOriginMatcher, parseOriginList } from './utils/origins.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import { logger } from './utils/logger.js';
 import { errorResponse } from './utils/http.js';
@@ -32,6 +33,7 @@ import complianceRoutes from './routes/compliance.js';
 import kycRoutes from './routes/kyc.js';
 import privacyRoutes from './routes/privacy.js';
 import adminRoutes from './routes/admin.js';
+import { requirementsRouter, proposalsRouter } from './routes/requirements.js';
 import recommendationsRoutes from './routes/recommendations.js';
 
 
@@ -40,7 +42,12 @@ initSentry();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const corsOrigin = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'];
+const corsOrigin = parseOriginList(process.env.CORS_ORIGIN);
+const isOriginAllowed = createOriginMatcher(corsOrigin);
+if (process.env.NODE_ENV === 'production' && !process.env.CORS_ORIGIN) {
+  logger.warn('cors_origin_not_set', { hint: 'Set CORS_ORIGIN to your frontend origin(s); browsers are currently limited to localhost.' });
+}
+const warnedOrigins = new Set<string>();
 
 // Middleware
 app.set('trust proxy', 1);
@@ -49,7 +56,11 @@ const corsFunc = function(origin: string | undefined, callback: (err: Error | nu
   // Non-browser clients (curl, server-to-server, health checks) send no Origin header.
   if (!origin) return callback(null, true);
   // Only allow explicitly configured origins; never reflect arbitrary origins with credentials.
-  if (corsOrigin.includes(origin)) return callback(null, true);
+  if (isOriginAllowed(origin)) return callback(null, true);
+  if (!warnedOrigins.has(origin) && warnedOrigins.size < 50) {
+    warnedOrigins.add(origin);
+    logger.warn('cors_origin_blocked', { origin, hint: 'Add this origin (or a pattern) to CORS_ORIGIN if it is your frontend.' });
+  }
   return callback(null, false);
 };
 
@@ -81,7 +92,7 @@ app.use((req, _res, next) => {
   }
   next();
 });
-app.use('/api', csrfProtection(corsOrigin));
+app.use('/api', csrfProtection(isOriginAllowed));
 app.use(requestLogger);
 app.use(normalizeErrorEnvelope);
 
@@ -122,6 +133,8 @@ app.use('/api/compliance', complianceRoutes);
 app.use('/api/kyc', kycRoutes);
 app.use('/api/privacy', privacyRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/requirements', requirementsRouter);
+app.use('/api/proposals', proposalsRouter);
 app.use('/api/recommendations', recommendationsRoutes);
 
 
