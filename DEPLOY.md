@@ -36,7 +36,7 @@ connect straight to Render using a short-lived token (no cookies needed).
 your own Vercel previews and nobody else's:
 
 ```
-https://b2-b-project.vercel.app,https://b2-b-project-*-guptaaarushi592-1933s-projects.vercel.app
+https://b2-b-project-theta.vercel.app,https://b2-b-project-*-guptaaarushi592-1933s-projects.vercel.app
 ```
 
 Optional, when you need the feature: `FILE_STORAGE_DRIVER=s3` + `R2_BUCKET`/`R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY`
