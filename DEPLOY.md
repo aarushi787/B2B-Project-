@@ -36,7 +36,7 @@ connect straight to Render using a short-lived token (no cookies needed).
 your own Vercel previews and nobody else's:
 
 ```
-https://b2-b-project.vercel.app,https://b2-b-project-*-guptaaarushi592-1933s-projects.vercel.app
+https://b2-b-project-theta.vercel.app,https://b2-b-project-*-guptaaarushi592-1933s-projects.vercel.app
 ```
 
 Optional, when you need the feature: `FILE_STORAGE_DRIVER=s3` + `R2_BUCKET`/`R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY`
@@ -84,6 +84,7 @@ Then in a browser: sign up, reload (you should stay signed in), open the app on 
 | `403 CSRF_INVALID` | Stale tab after a long idle; reload. The app retries once on its own. |
 | Everyone gets "too many attempts" | `TRUST_PROXY_HOPS` is wrong, so all users look like one IP. Use `2` behind Vercel, `1` on Render alone. |
 | First request after idle hangs or Vercel shows a proxy timeout | Render's free plan sleeps and takes 30-60s to wake. Use a paid plan, or ping `/api/health` every few minutes (UptimeRobot etc.). |
+| Render log: `Connections using insecure transport are prohibited` | The database connection was not encrypted. The app now enables TLS automatically for any remote database in production. If you still see it, check that `NODE_ENV=production` and that `DB_SSL` is not set to `false`. Providers with their own certificate authority (e.g. Aiven) also need `DB_SSL_CA` (the CA certificate, PEM or base64). |
 | Tables missing / 500 on new pages | Set `AUTO_INIT_DB=true` (or run `npm run db:init` once against the database). |
 | Document upload fails with "File storage is not configured" | Configure R2/S3 (above). Render's disk is wiped on every deploy. |
 | No live updates | Set `VITE_SOCKET_URL` on Vercel. The app works without them. |
