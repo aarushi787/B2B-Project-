@@ -6,6 +6,7 @@ import { createServer } from 'http';
 import { errorHandler } from './middleware/auth.js';
 import { csrfProtection } from './middleware/csrf.js';
 import { createOriginMatcher, parseOriginList } from './utils/origins.js';
+import { describeDatabase } from './utils/redact.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import { logger } from './utils/logger.js';
 import { errorResponse } from './utils/http.js';
@@ -170,7 +171,7 @@ server.listen(PORT, () => {
   logger.info('server_started', {
     port: PORT,
     nodeEnv: process.env.NODE_ENV || 'development',
-    database: process.env.DB_NAME || process.env.DATABASE_URL || 'b2b_nexus_marketplace',
+    database: describeDatabase(),
     corsOrigin,
     websocket: 'socket.io enabled',
   });

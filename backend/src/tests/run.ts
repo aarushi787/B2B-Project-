@@ -10,6 +10,7 @@ import { normalizeAccountRole, toDbRole } from '../utils/roles.js';
 import { csrfProtection, csrfTokenFor } from '../middleware/csrf.js';
 import { allowedActions, assertAllowed, dealFromAcceptedProposal, NegotiationError, parseDeliverables, sideOf, validateBudget, validateOffer } from '../services/negotiation.js';
 import { createOriginMatcher, frontendBaseUrl, parseOriginList } from '../utils/origins.js';
+import { describeDatabase } from '../utils/redact.js';
 import { encryptJson, decryptJson } from '../utils/encryption.js';
 
 test('access token round-trips its payload', () => {
@@ -237,4 +238,15 @@ test('csrf: wildcard-matched origins are accepted by the CSRF origin check too',
   let nexted = false;
   csrfProtection(matcher)(fakeReq, { status() { return this; }, json() { return this; } } as any, () => { nexted = true; });
   assert.equal(nexted, true);
+});
+
+test('logging: the database description never contains credentials', () => {
+  const url = 'mysql://someuser.root:SuperSecretPw1@gateway.example.tidbcloud.com:4000/test?ssl={"rejectUnauthorized":true}';
+  const described = describeDatabase({ DATABASE_URL: url });
+  assert.equal(described, 'gateway.example.tidbcloud.com:4000/test');
+  assert.ok(!described.includes('SuperSecretPw1') && !described.includes('someuser'));
+  // an unparseable URL must not be echoed back either
+  const bad = describeDatabase({ DATABASE_URL: 'not a url but has SuperSecretPw1' });
+  assert.ok(!bad.includes('SuperSecretPw1'));
+  assert.equal(describeDatabase({ DB_HOST: 'db', DB_PORT: '3307', DB_NAME: 'x' }), 'db:3307/x');
 });
