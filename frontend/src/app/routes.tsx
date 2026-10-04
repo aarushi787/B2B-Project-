@@ -23,9 +23,6 @@ const RequirementDetails = React.lazy(() => import("./components/pages/Requireme
 const MatchingRequirements = React.lazy(() => import("./components/pages/MatchingRequirements").then(m => ({ default: m.MatchingRequirements })));
 const SentProposals = React.lazy(() => import("./components/pages/SentProposals").then(m => ({ default: m.SentProposals })));
 const ReceivedProposals = React.lazy(() => import("./components/pages/ReceivedProposals").then(m => ({ default: m.ReceivedProposals })));
-const EnquiriesSent = React.lazy(() => import("./components/pages/EnquiriesSent").then(m => ({ default: m.EnquiriesSent })));
-const EnquiriesReceived = React.lazy(() => import("./components/pages/EnquiriesReceived").then(m => ({ default: m.EnquiriesReceived })));
-const EnquiriesArchived = React.lazy(() => import("./components/pages/EnquiriesArchived").then(m => ({ default: m.EnquiriesArchived })));
 const ServicesPage = React.lazy(() => import("./components/pages/ServicesPage").then(m => ({ default: m.ServicesPage })));
 const ExploreBusinesses = React.lazy(() => import("./components/pages/ExploreBusinesses").then(m => ({ default: m.ExploreBusinesses })));
 const ProposalDetails = React.lazy(() => import("./components/pages/ProposalDetails").then(m => ({ default: m.ProposalDetails })));
@@ -72,9 +69,9 @@ export const router = createBrowserRouter([
       { path: "opportunities/sent",           Component: SentProposals },
       { path: "opportunities/received",       Component: ReceivedProposals },
       // Enquiries
-      { path: "enquiries/sent",               Component: EnquiriesSent },
-      { path: "enquiries/received",           Component: EnquiriesReceived },
-      { path: "enquiries/archived",           Component: EnquiriesArchived },
+      { path: "enquiries/sent",               element: <Navigate to="/app/opportunities/sent" replace /> },
+      { path: "enquiries/received",           element: <Navigate to="/app/opportunities/received" replace /> },
+      { path: "enquiries/archived",           element: <Navigate to="/app/opportunities/sent" replace /> },
       // Notifications
       { path: "notifications",                Component: NotificationsPage },
       // Fallback

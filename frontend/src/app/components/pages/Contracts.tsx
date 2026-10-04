@@ -4,6 +4,17 @@ import { Card, GhostBtn, PrimaryBtn, StatusBadge } from "../ui/DesignSystem";
 import { apiClient } from "../../../services/apiClient";
 import { useAuth } from "../../../auth/AuthProvider";
 import { socketService } from "../../../services/socketService";
+const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (file.size > MAX_UPLOAD_BYTES) return reject(new Error('File is larger than 2 MB'));
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
 export function Contracts() {
   const { user } = useAuth();
   const [kycDocs, setKycDocs] = useState<any[]>([]);
@@ -51,11 +62,12 @@ export function Contracts() {
         fileName: file.name,
         mimeType: file.type,
         sizeBytes: file.size,
-        filePath: `uploads/kyc/${Date.now()}_${file.name}`
+        contentBase64: await fileToBase64(file),
       });
       await fetchDocs();
     } catch (err) {
       console.error("Failed to upload KYC", err);
+      alert(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setUploadingKyc(false);
     }
@@ -66,17 +78,18 @@ export function Contracts() {
     if (!file || !user?.companyId) return;
     setUploadingDoc(true);
     try {
-      await apiClient.post('/documents/upload', {
+      await apiClient.post('/kyc/upload', {
         companyId: user.companyId,
-        docType: 'GENERAL',
+        documentType: 'BUSINESS_REG',
         fileName: file.name,
         mimeType: file.type,
         sizeBytes: file.size,
-        filePath: `uploads/docs/${Date.now()}_${file.name}`
+        contentBase64: await fileToBase64(file),
       });
       await fetchDocs();
     } catch (err) {
       console.error("Failed to upload document", err);
+      alert(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setUploadingDoc(false);
     }
@@ -91,7 +104,8 @@ export function Contracts() {
   const govIdStatus = govIdDoc ? govIdDoc.status : 'PENDING';
   
   // Check if Business documents exist
-  const businessDocStatus = businessDocs.length > 0 ? 'VERIFIED' : 'PENDING';
+  const businessDoc = kycDocs.find(d => d.documentType === 'BUSINESS_REG');
+  const businessDocStatus = businessDoc ? businessDoc.status : 'PENDING';
 
   let completedSteps = 0;
   if (emailVerified) completedSteps++;
@@ -218,14 +232,14 @@ export function Contracts() {
             <input type="file" ref={docInputRef} style={{ display: "none" }} onChange={handleDocUpload} />
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginLeft: 56 }}>
-            {businessDocs.length === 0 ? (
+            {kycDocs.filter(d => d.documentType === 'BUSINESS_REG').length === 0 ? (
                <p style={{ fontSize: 13, color: "#64748b" }}>No documents uploaded yet.</p>
-            ) : businessDocs.map(doc => (
+            ) : kycDocs.filter(d => d.documentType === 'BUSINESS_REG').map(doc => (
               <div key={doc.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, border: "1px solid #e2e8f0", borderRadius: 8, background: "#f8fafc", width: 260 }}>
-                <File style={{ width: 24, height: 24, color: "#8B5CF6" }} />
+                <File style={{ width: 24, height: 24, color: "#2563EB" }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", margin: "0 0 2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{doc.fileName}</p>
-                  <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>{doc.status} • {new Date(doc.createdAt).toLocaleDateString()}</p>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", margin: "0 0 2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Business registration document</p>
+                  <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>{doc.status === 'PENDING' ? 'Waiting for admin approval' : doc.status === 'VERIFIED' ? 'Approved' : 'Rejected'} • {new Date(doc.createdAt).toLocaleDateString()}</p>
                 </div>
               </div>
             ))}

@@ -5,11 +5,8 @@ import { Bell, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export function NotificationsPage() {
-  const { notifications, setNotifications } = useOutletContext<any>();
-
-  const markAllAsRead = () => {
-    setNotifications((prev: any[]) => prev.map((n: any) => ({ ...n, read: true })));
-  };
+  const { notifications, markAllRead, markRead } = useOutletContext<any>();
+  const markAllAsRead = markAllRead;
 
   return (
     <div style={{ maxWidth: 1000, margin: "0 auto", fontFamily: "Inter, sans-serif" }}>
@@ -24,10 +21,12 @@ export function NotificationsPage() {
       </div>
 
       <Card>
+        {(!notifications || notifications.length === 0) && <p style={{ padding: 32, textAlign: "center", color: "#64748b", fontSize: 14 }}>No notifications yet. You will see proposals, offers, deals and document decisions here as they happen.</p>}
         <div style={{ display: "flex", flexDirection: "column" }}>
           {notifications?.map((n: any, i: number) => (
             <motion.div 
               key={n.id}
+              onClick={() => markRead(n.id)}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}

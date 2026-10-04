@@ -4,7 +4,7 @@ import type { ProposalStatus, RequirementStatus } from "../../../types";
 
 const PROPOSAL_STATUS: Record<ProposalStatus, { bg: string; text: string; label: string }> = {
   submitted:   { bg: "#eff6ff", text: "#1d4ed8", label: "Submitted" },
-  shortlisted: { bg: "#f5f3ff", text: "#6d28d9", label: "Shortlisted" },
+  shortlisted: { bg: "#EFF6FF", text: "#1D4ED8", label: "Shortlisted" },
   accepted:    { bg: "#dcfce7", text: "#166534", label: "Accepted" },
   rejected:    { bg: "#fee2e2", text: "#991b1b", label: "Rejected" },
   withdrawn:   { bg: "#f1f5f9", text: "#475569", label: "Withdrawn" },

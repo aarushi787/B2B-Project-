@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Activity, Filter, Search, Calendar } from 'lucide-react';
+import { X, Activity, Search } from 'lucide-react';
 import { Card } from './ui/DesignSystem';
 
 interface ActivityItem {
@@ -19,18 +19,10 @@ interface ActivityLogsModalProps {
 }
 
 export function ActivityLogsModal({ isOpen, onClose, activities }: ActivityLogsModalProps) {
+  const [query, setQuery] = useState("");
   if (!isOpen) return null;
 
-  // Generate some extended mock data to make it look full
-  const fullActivities = [
-    ...activities,
-    { icon: Activity, title: "System login from new IP", source: "Security System", time: "5 hours ago", type: "system" },
-    { icon: Activity, title: "Password changed successfully", source: "User Settings", time: "1 day ago", type: "system" },
-    { icon: Activity, title: "Contract #492 signed", source: "Contracts", time: "2 days ago", type: "business" },
-    { icon: Activity, title: "Invoice #901 paid", source: "Billing", time: "2 days ago", type: "finance" },
-    { icon: Activity, title: "Escrow funded for Project Omega", source: "Escrow", time: "3 days ago", type: "finance" },
-    { icon: Activity, title: "New user invited to workspace", source: "Team Management", time: "5 days ago", type: "system" }
-  ];
+  const fullActivities = activities.filter(a => !query.trim() || `${a.title} ${a.source}`.toLowerCase().includes(query.trim().toLowerCase()));
 
   return (
     <AnimatePresence>
@@ -50,8 +42,8 @@ export function ActivityLogsModal({ isOpen, onClose, activities }: ActivityLogsM
           {/* Header */}
           <div className="p-6 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
-                <Activity className="w-5 h-5 text-purple-600" />
+              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                <Activity className="w-5 h-5 text-blue-600" />
               </div>
               <div>
                 <h3 className="text-lg font-bold text-slate-900 leading-tight">Full Activity Logs</h3>
@@ -72,32 +64,27 @@ export function ActivityLogsModal({ isOpen, onClose, activities }: ActivityLogsM
                 <input 
                   type="text" 
                   placeholder="Search logs..." 
-                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
                 />
-              </div>
-              <div className="flex gap-2">
-                <button className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
-                  <Filter className="w-4 h-4" /> Filter
-                </button>
-                <button className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
-                  <Calendar className="w-4 h-4" /> Date Range
-                </button>
               </div>
             </div>
 
             {/* Timeline */}
             <Card className="p-6">
+              {fullActivities.length === 0 && <p className="text-sm text-slate-500">No activity yet.</p>}
               <div className="relative border-l-2 border-slate-100 ml-3 space-y-8">
                 {fullActivities.map((a, i) => (
                   <div key={i} className="relative pl-6">
                     <div className="absolute -left-[17px] top-0 w-8 h-8 rounded-full bg-white border-4 border-slate-50 flex items-center justify-center shadow-sm">
-                      <div className="w-2.5 h-2.5 rounded-full bg-purple-500" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
                     </div>
                     <div>
                       <div className="flex items-start justify-between">
                         <div>
                           <p className="text-sm font-bold text-slate-900">{a.title}</p>
-                          <p className="text-xs font-medium text-purple-600 mt-1">{a.source}</p>
+                          <p className="text-xs font-medium text-blue-600 mt-1">{a.source}</p>
                         </div>
                         <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-2 py-1 rounded-md">{a.time}</span>
                       </div>

@@ -1,193 +1,137 @@
 import { useEffect, useState } from "react";
-import toast from "react-hot-toast";
 import { Link } from "react-router";
 import { motion } from "motion/react";
-import {
-  FileText, Inbox, Search, Eye, TrendingUp, ArrowUpRight, ArrowDownRight,
-  Loader2, RefreshCw, Clock,
-} from "lucide-react";
+import { FileText, Inbox, Search, TrendingUp, Loader2 } from "lucide-react";
 import { useAuth } from "../../../auth/AuthProvider";
 import { apiClient } from "../../../services/apiClient";
+import { requirementsService, proposalsService } from "../../../services/requirementsService";
 import { socketService } from "../../../services/socketService";
+import { useLoad } from "../../../lib/useLoad";
+import { formatDate } from "../../../lib/format";
 import { ActivityLogsModal } from "../ActivityLogsModal";
-import { Deal } from "../../../types";
-interface Notification { id: string; title: string; message: string; type: string; created_at: string; read: boolean; source?: string; }
+import type { Deal } from "../../../types";
+
+interface ActivityRow { id: string; title: string; message?: string; createdAt: string; }
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; label: string }> = {
   active:       { bg: "#dcfce7", text: "#16a34a", label: "Active" },
+  open:         { bg: "#dcfce7", text: "#16a34a", label: "Open" },
   pending:      { bg: "#fef3c7", text: "#d97706", label: "Pending" },
-  under_review: { bg: "#fef3c7", text: "#d97706", label: "Under Review" },
+  awarded:      { bg: "#eff6ff", text: "#2563EB", label: "Awarded" },
   closed:       { bg: "#f1f5f9", text: "#64748b", label: "Closed" },
-  urgent:       { bg: "#fee2e2", text: "#dc2626", label: "Urgent" }
+  cancelled:    { bg: "#f1f5f9", text: "#64748b", label: "Cancelled" },
 };
 
 function StatusBadge({ status }: { status: string }) {
-  const s = STATUS_COLORS[status?.toLowerCase().replace(" ", "_")] ?? { bg: "#f1f5f9", text: "#64748b", label: status || "Unknown" };
+  const s = STATUS_COLORS[status?.toLowerCase()] ?? { bg: "#f1f5f9", text: "#64748b", label: status || "Unknown" };
   return (
-    <span style={{
-      background: s.bg,
-      color: s.text,
-      fontSize: 11,
-      fontWeight: 600,
-      padding: "3px 10px",
-      borderRadius: 20,
-      whiteSpace: "nowrap",
-    }}>
+    <span style={{ background: s.bg, color: s.text, fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, whiteSpace: "nowrap" }}>
       {s.label}
     </span>
   );
 }
 
-function KPICard({
-  label, value, change, positive, iconBg, iconColor, icon: Icon
-}: {
-  label: string;
-  value: string | number;
-  change: string;
-  positive: boolean;
-  iconBg: string;
-  iconColor: string;
-  icon: any;
+function KPICard({ label, value, iconBg, iconColor, icon: Icon }: {
+  label: string; value: string | number; iconBg: string; iconColor: string; icon: any;
 }) {
   return (
-    <div style={{
-      background: "#ffffff",
-      border: "1px solid #e2e8f0",
-      borderRadius: 12,
-      padding: "20px 24px",
-      display: "flex",
-      flexDirection: "column",
-      gap: 16,
-      position: "relative"
-    }}>
+    <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
         <p style={{ fontSize: 13, fontWeight: 600, color: "#64748b", margin: 0 }}>{label}</p>
         <div style={{ width: 36, height: 36, background: iconBg, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <Icon style={{ width: 18, height: 18, color: iconColor }} />
         </div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
-        <p style={{ fontSize: 28, fontWeight: 800, color: "#0f172a", margin: 0, lineHeight: "1.1" }}>{value}</p>
-        <span style={{ fontSize: 11, fontWeight: 700, color: positive ? "#16a34a" : "#dc2626", background: positive ? "#dcfce7" : "#fee2e2", padding: "2px 8px", borderRadius: 12 }}>
-          {change}
-        </span>
-      </div>
+      <p style={{ fontSize: 28, fontWeight: 800, color: "#0f172a", margin: 0, lineHeight: "1.1" }}>{value}</p>
     </div>
   );
 }
 
 export function Dashboard() {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
   const [showActivityModal, setShowActivityModal] = useState(false);
-  
-  const [deals, setDeals] = useState<Deal[]>([]);
 
-  useEffect(() => { 
-    if (user) {
-      fetchDashboardData();
-    }
-  }, [user]);
+  const { data, loading, error, reload } = useLoad(async () => {
+    const [mine, received, sent, deals, notifs] = await Promise.all([
+      requirementsService.list({ scope: "mine", limit: 100 }),
+      proposalsService.list({ scope: "received", limit: 1 }),
+      proposalsService.list({ scope: "sent", limit: 1 }),
+      apiClient.get<{ data: Deal[] } | Deal[]>("/deals"),
+      apiClient.get<ActivityRow[]>("/notifications").catch(() => [] as ActivityRow[]),
+    ]);
+    return {
+      requirements: mine.data,
+      receivedTotal: received.total,
+      sentTotal: sent.total,
+      deals: Array.isArray(deals) ? deals : deals.data || [],
+      activity: notifs,
+    };
+  }, [user?.companyId]);
 
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      const dealsRes = await apiClient.get<Deal[] | {data: Deal[]}>('/deals');
-      setDeals(Array.isArray(dealsRes) ? dealsRes : (dealsRes.data || []));
-    } catch (error) {
-      toast.error("Failed to load dashboard data");
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    socketService.connect();
+    const offs = ["proposals:updated", "proposals:new", "notifications:new", "deals:updated"].map(e => socketService.on(e, () => { void reload(); }));
+    return () => offs.forEach(o => o());
+  }, [reload]);
 
-  const recentDeals = deals.slice(0, 4);
-  const staticActivities = recentDeals.length > 0 ? recentDeals.map(d => ({
-    icon: d.status === 'active' ? FileText : Inbox,
-    title: `${d.status === 'active' ? 'Requirement posted' : 'Proposal updated'} for '${d.title}'`,
-    source: `Recent update • ${d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'Today'}`,
-  })) : [
-    { icon: Inbox, title: "New Proposal received for 'Web Application Redesign'", source: "Nexis Digital Logistics • 2 hours ago" },
-    { icon: FileText, title: "Requirement posted for 'DevOps Infrastructure setup'", source: "Umbrella Group • 4 hours ago" },
-    { icon: Search, title: "Enquiry sent regarding 'Database audit Services'", source: "TechVista Solutions • 1 day ago" },
-    { icon: TrendingUp, title: "Profile updated with 2 new portfolio entries", source: "TechVista Administrator • 3 days ago" },
-  ];
-
-  const upcomingDeals = deals.filter(d => d.status !== 'closed' && d.status !== 'rejected').slice(0, 3);
-  const staticDeadlines = upcomingDeals.length > 0 ? upcomingDeals.map(d => ({
-    title: d.title,
-    due: "Pending Action",
-    status: d.status || "Active"
-  })) : [
-    { title: "Security Audit RFI", due: "Due Jan 28", status: "Urgent" },
-    { title: "Cloud Migration RFP Proposal", due: "Due Feb 02", status: "Active" },
-    { title: "Mobile App Wireframes Feedback", due: "Due Feb 10", status: "Pending" },
-  ];
-
-  const staticRequirements = [
-    { title: "E-Commerce Mobile Application Development", category: "App Development", date: "Jan 15, 2026", bids: "9 bids", status: "Active" },
-    { title: "SOC 2 Type II Auditing and Advisory", category: "Cybersecurity", date: "Jan 12, 2026", bids: "3 bids", status: "Under Review" },
-    { title: "Kubernetes Migration & CI/CD Pipeline Setup", category: "Cloud & DevOps", date: "Jan 08, 2026", bids: "14 bids", status: "Active" },
-    { title: "Corporate Website UI/UX Design System", category: "UI/UX Design", date: "Jan 02, 2026", bids: "8 bids", status: "Closed" },
-  ];
-
-  const displayRequirements = deals.length > 0 ? deals.slice(0, 4).map(d => ({
-    title: d.title || "Untitled",
-    category: d.category || "General",
-    date: d.createdAt ? new Date(d.createdAt).toLocaleDateString() : "Today",
-    bids: "0 bids",
-    status: d.status || "Active"
-  })) : staticRequirements;
+  const requirements = data?.requirements ?? [];
+  const deals = data?.deals ?? [];
+  const activity = (data?.activity ?? []).map(n => ({
+    icon: Inbox,
+    title: n.title,
+    source: n.message || "",
+    time: formatDate(n.createdAt),
+  }));
+  const openRequirements = requirements.filter(r => r.status === "open");
+  const activeDeals = deals.filter(d => !["COMPLETED", "VOIDED"].includes((d.status || "").toUpperCase()));
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }} 
-      animate={{ opacity: 1, y: 0 }} 
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       style={{ maxWidth: 1200, margin: "0 auto", fontFamily: "Inter, sans-serif" }}
     >
-      {loading ? (
+      {error ? (
+        <div role="alert" style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 12, padding: 20, color: "#b91c1c", fontSize: 13 }}>
+          {error} <button onClick={() => void reload()} style={{ color: "#2563EB", background: "none", border: "none", cursor: "pointer", fontWeight: 700 }}>Retry</button>
+        </div>
+      ) : loading && !data ? (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 200 }}>
           <Loader2 style={{ width: 32, height: 32, color: "#94a3b8" }} className="animate-spin" />
         </div>
       ) : (
         <>
-          {/* KPI Cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 20, marginBottom: 28 }}>
-            <KPICard label="Active Requirements" value={deals.length || "12"} change="+8.4%" positive={true}  iconBg="#eff6ff" iconColor="#2563EB" icon={FileText} />
-            <KPICard label="Received Proposals"  value="34" change="+14.2%" positive={true}  iconBg="#dcfce7" iconColor="#16a34a" icon={Inbox} />
-            <KPICard label="Pending Enquiries"   value="8" change="-2.1%"  positive={false} iconBg="#fef3c7" iconColor="#d97706" icon={Search} />
-            <KPICard label="Profile Views"       value="1,247" change="+24.8%" positive={true}  iconBg="#f5f3ff" iconColor="#8b5cf6" icon={Eye} />
+            <KPICard label="Open Requirements" value={openRequirements.length} iconBg="#eff6ff" iconColor="#2563EB" icon={FileText} />
+            <KPICard label="Received Proposals" value={data?.receivedTotal ?? 0} iconBg="#dcfce7" iconColor="#16a34a" icon={Inbox} />
+            <KPICard label="Sent Proposals" value={data?.sentTotal ?? 0} iconBg="#fef3c7" iconColor="#d97706" icon={Search} />
+            <KPICard label="Active Deals" value={activeDeals.length} iconBg="#EFF6FF" iconColor="#2563EB" icon={TrendingUp} />
           </div>
 
-          {/* Middle row */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 20, marginBottom: 28 }}>
-            
-            {/* Recent Activity */}
             <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px", borderBottom: "1px solid #f1f5f9" }}>
                 <h2 style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", margin: 0 }}>Recent Activity</h2>
                 <button onClick={() => setShowActivityModal(true)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#2563EB" }}>See All</button>
               </div>
               <div>
-                {staticActivities.map((a, i) => (
+                {activity.length === 0 && <p style={{ padding: "16px 24px", fontSize: 13, color: "#64748b", margin: 0 }}>No recent activity.</p>}
+                {activity.slice(0, 5).map((a, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 16, padding: "16px 24px" }}>
                     <div style={{ width: 32, height: 32, background: "#eff6ff", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>
                       <a.icon style={{ width: 16, height: 16, color: "#2563EB" }} />
                     </div>
                     <div>
                       <p style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", margin: 0, lineHeight: "1.4" }}>{a.title}</p>
-                      <p style={{ fontSize: 11, color: "#64748b", margin: "4px 0 0" }}>{a.source}</p>
+                      <p style={{ fontSize: 11, color: "#64748b", margin: "4px 0 0" }}>{a.source ? `${a.source} - ` : ""}{a.time}</p>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Quick Actions + Deadlines */}
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-              
-              {/* Quick Actions */}
               <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 20 }}>
                 <h2 style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", margin: "0 0 16px" }}>Quick Actions</h2>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -210,26 +154,24 @@ export function Dashboard() {
                 </div>
               </div>
 
-              {/* Upcoming Deadlines */}
               <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 20 }}>
-                <h2 style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", margin: "0 0 16px" }}>Upcoming Deadlines</h2>
+                <h2 style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", margin: "0 0 16px" }}>Active Deals</h2>
+                {activeDeals.length === 0 && <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>No active deals.</p>}
                 <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                  {staticDeadlines.map((d, i) => (
-                    <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: i < staticDeadlines.length - 1 ? 16 : 0, borderBottom: i < staticDeadlines.length - 1 ? "1px solid #f1f5f9" : "none" }}>
+                  {activeDeals.slice(0, 3).map((d, i, arr) => (
+                    <Link key={d.id} to={`/app/deals/${d.id}`} style={{ textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: i < arr.length - 1 ? 16 : 0, borderBottom: i < arr.length - 1 ? "1px solid #f1f5f9" : "none" }}>
                       <div>
-                        <p style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", margin: 0 }}>{d.title}</p>
-                        <p style={{ fontSize: 11, color: "#64748b", margin: "4px 0 0" }}>{d.due}</p>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", margin: 0 }}>{d.title || "Untitled deal"}</p>
+                        <p style={{ fontSize: 11, color: "#64748b", margin: "4px 0 0" }}>Created {formatDate(d.createdAt)}</p>
                       </div>
-                      <StatusBadge status={d.status} />
-                    </div>
+                      <StatusBadge status={(d.status || "").toUpperCase() === "CONFIRMED" ? "active" : "pending"} />
+                    </Link>
                   ))}
                 </div>
               </div>
-
             </div>
           </div>
 
-          {/* Recent Requirements Table */}
           <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px", borderBottom: "1px solid #f1f5f9" }}>
               <h2 style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", margin: 0 }}>Recent Requirements</h2>
@@ -237,27 +179,21 @@ export function Dashboard() {
                 View All Requirements
               </Link>
             </div>
-
-            {/* Table header */}
             <div style={{ display: "grid", gridTemplateColumns: "3fr 1.5fr 1fr 1fr 1fr", padding: "12px 24px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9" }}>
               {["Requirement", "Category", "Posted Date", "Proposals", "Status"].map(h => (
                 <span key={h} style={{ fontSize: 12, fontWeight: 700, color: "#64748b" }}>{h}</span>
               ))}
             </div>
-
-            {/* Rows */}
-            {displayRequirements.map((r, i) => (
-              <div key={i} style={{
-                display: "grid",
-                gridTemplateColumns: "3fr 1.5fr 1fr 1fr 1fr",
-                padding: "16px 24px",
-                alignItems: "center",
-                borderBottom: i < displayRequirements.length - 1 ? "1px solid #f8fafc" : "none",
+            {requirements.length === 0 && <p style={{ padding: "16px 24px", fontSize: 13, color: "#64748b", margin: 0 }}>You have not posted any requirements yet.</p>}
+            {requirements.slice(0, 4).map((r, i, arr) => (
+              <div key={r.id} style={{
+                display: "grid", gridTemplateColumns: "3fr 1.5fr 1fr 1fr 1fr", padding: "16px 24px", alignItems: "center",
+                borderBottom: i < arr.length - 1 ? "1px solid #f8fafc" : "none",
               }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>{r.title}</span>
-                <span style={{ fontSize: 13, color: "#64748b" }}>{r.category}</span>
-                <span style={{ fontSize: 13, color: "#64748b" }}>{r.date}</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>{r.bids}</span>
+                <Link to={`/app/requirements/${r.id}`} style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", textDecoration: "none" }}>{r.title}</Link>
+                <span style={{ fontSize: 13, color: "#64748b" }}>{r.category || "General"}</span>
+                <span style={{ fontSize: 13, color: "#64748b" }}>{formatDate(r.createdAt)}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>{r.proposalCount ?? 0}</span>
                 <div><StatusBadge status={r.status} /></div>
               </div>
             ))}
@@ -265,11 +201,10 @@ export function Dashboard() {
         </>
       )}
 
-      {/* Activity Logs Modal Overlay */}
-      <ActivityLogsModal 
+      <ActivityLogsModal
         isOpen={showActivityModal}
         onClose={() => setShowActivityModal(false)}
-        activities={staticActivities.map(a => ({...a, time: a.source.split(" • ")[1]}))}
+        activities={activity}
       />
     </motion.div>
   );

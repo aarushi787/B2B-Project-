@@ -73,6 +73,8 @@ app.use(cors({
   credentials: true,
 }));
 
+// Document uploads carry the file as base64, so that one route accepts a bigger body than the rest of the API.
+app.use('/api/kyc', express.json({ limit: '3mb' }));
 app.use(express.json({
   verify: (req, _res, buffer) => {
     (req as any).rawBody = buffer;
@@ -81,7 +83,7 @@ app.use(express.json({
 app.use(express.urlencoded({ extended: true }));
 
 // XSS sanitizer: must run AFTER body parsing, otherwise req.body is still empty.
-const UNSANITIZED_KEYS = /password|token|secret|signature/i;
+const UNSANITIZED_KEYS = /password|token|secret|signature|contentBase64/i;
 const sanitizeValue = (value: unknown): unknown => {
   if (typeof value === 'string') return sanitizeHtml(value);
   if (Array.isArray(value)) return value.map(sanitizeValue);

@@ -115,7 +115,7 @@ export function ProposalDetails() {
             const mine = r.offeredBy === p.side;
             return (
               <li key={r.version}>
-                <Card style={{ padding: 18, borderLeft: `4px solid ${r.offeredBy === "proposer" ? "#2563EB" : "#7c3aed"}` }}>
+                <Card style={{ padding: 18, borderLeft: `4px solid ${r.offeredBy === "proposer" ? "#2563EB" : "#2563EB"}` }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
                     <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#0f172a" }}>
                       {formatINR(r.amount)} <span style={{ fontWeight: 500, color: "#475569" }}>· {mine ? "You" : r.authorCompanyName} {r.version === 1 ? "proposed" : "countered"}</span>

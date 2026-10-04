@@ -55,10 +55,10 @@ export function ExploreBusinesses() {
         const mapped = (res.data || res).map((c: any) => ({
           initials: c.name?.slice(0, 2).toUpperCase() || "B2B",
           name: c.name,
-          tagline: c.tagline || c.description || "Premium business services",
-          location: c.location || "Remote",
-          rating: c.rating || (4.5 + Math.random() * 0.5).toFixed(1),
-          tags: c.industries ? c.industries.split(',') : ["Business"],
+          tagline: c.tagline || c.description || "",
+          location: c.location || c.address || "Location not provided",
+          rating: c.rating ?? null,
+          tags: c.industries ? String(c.industries).split(',') : c.industry ? [c.industry] : [],
           verified: c.verified || false
         }));
         setBusinesses(mapped);
@@ -185,10 +185,10 @@ export function ExploreBusinesses() {
                   <p style={{ fontSize: 12, color: "#64748b", lineHeight: 1.5, margin: "0 0 10px" }}>{b.tagline}</p>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                     <span style={{ fontSize: 12, color: "#64748b" }}>📍 {b.location}</span>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "#d97706" }}>
+                    {b.rating != null && <span style={{ fontSize: 12, fontWeight: 600, color: "#d97706" }}>
                       <Star style={{ width: 11, height: 11, display: "inline", marginRight: 2 }} />
                       {b.rating}
-                    </span>
+                    </span>}
                   </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
                     {b.tags.map((tag: string) => (

@@ -42,7 +42,7 @@ const CheckoutForm = ({ dealId, amount, onSuccess }: { dealId: string, amount: n
         style={{
           width: "100%",
           padding: "14px",
-          background: "linear-gradient(to right, #4f46e5, #9333ea)",
+          background: "linear-gradient(to right, #2563EB, #2563EB)",
           color: "white",
           borderRadius: 12,
           fontWeight: 700,
@@ -92,7 +92,7 @@ export default function StripeCheckout({ dealId, amount, onComplete }: { dealId:
   if (!clientSecret) {
     return (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48 }}>
-        <Loader2 size={32} style={{ color: "#a855f7", marginBottom: 16 }} />
+        <Loader2 size={32} style={{ color: "#2563EB", marginBottom: 16 }} />
         <p style={{ color: "#64748b", fontWeight: 500, margin: 0 }}>Initializing secure payment gateway...</p>
       </div>
     );
@@ -115,7 +115,7 @@ export default function StripeCheckout({ dealId, amount, onComplete }: { dealId:
         <button onClick={() => {
            toast.success('Mock funds successfully secured in Escrow!');
            onComplete();
-        }} style={{ width: "100%", padding: "14px", background: "linear-gradient(to right, #4f46e5, #9333ea)", color: "white", borderRadius: 12, fontWeight: 700, border: "none", cursor: "pointer" }}>
+        }} style={{ width: "100%", padding: "14px", background: "linear-gradient(to right, #2563EB, #2563EB)", color: "white", borderRadius: 12, fontWeight: 700, border: "none", cursor: "pointer" }}>
            Simulate Escrow Deposit ($${amount.toLocaleString()})
         </button>
       </div>
@@ -139,7 +139,7 @@ export default function StripeCheckout({ dealId, amount, onComplete }: { dealId:
       
       {/* Stripe Elements Form */}
       <div style={{ marginBottom: 24 }}>
-        <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#4f46e5', borderRadius: '12px' } } }}>
+        <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#2563EB', borderRadius: '12px' } } }}>
           <CheckoutForm dealId={dealId} amount={amount} onSuccess={onComplete} />
         </Elements>
       </div>

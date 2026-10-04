@@ -1,4 +1,5 @@
 // Purpose: This module (backend/src/routes/auth.ts) is used to implement project functionality in a modular, maintainable way.
+import { notifyAdmins } from '../services/notify.js';
 import { normalizeAccountRole, toDbRole } from '../utils/roles.js';
 import { csrfTokenFor, csrfTokenForRequest } from '../middleware/csrf.js';
 import { frontendBaseUrl } from '../utils/origins.js';
@@ -229,6 +230,10 @@ router.post('/register', authLimiter, validateRequest(userRegisterSchema), async
     const createdUser = (createdUsers as any[])[0] as DbUser;
     const session = await issueSession(connection, req, res, createdUser);
 
+    void notifyAdmins({
+      kind: 'USER_REGISTERED', title: 'New user registered', message: `${createdUser.email} joined.`,
+      actorUserId: userId, actorCompanyId: createdCompanyId, resourceType: 'user', resourceId: userId,
+    });
     return res.status(201).json(session);
   } catch (error) {
     logger.error('Register error:', error);
