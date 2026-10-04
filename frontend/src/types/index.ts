@@ -36,6 +36,13 @@ export interface Company {
   status: string;
   createdAt: string;
   updatedAt: string;
+  reputation: number;
+  verified?: boolean;
+  gst?: string;
+  revenue: number;
+  capabilities: string[];
+  onTimeDelivery?: number;
+  dealCompletionRate?: number;
 }
 
 export interface Proposal {
@@ -46,4 +53,36 @@ export interface Proposal {
   message: string;
   status: string;
   createdAt: string;
+}
+
+export interface LedgerEntry {
+  id: string;
+  dealId?: string;
+  companyId?: string;
+  type: string;
+  amount: number;
+  description?: string;
+  status?: string;
+  timestamp: string;
+}
+
+export interface Message {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  dealId?: string;
+  content: string;
+  read?: boolean;
+  createdAt: string;
+}
+
+export interface Product {
+  id: string;
+  companyId: string;
+  name: string;
+  description?: string;
+  category?: string;
+  price?: number;
+  unit?: string;
+  createdAt?: string;
 }

@@ -2,7 +2,17 @@
 import pool from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { logger } from '../utils/logger.js';
+
+// Never ship a shared, publicly documented password. Use SEED_PASSWORD, or a random one printed once.
+if (process.env.NODE_ENV === 'production' && !process.env.SEED_PASSWORD) {
+  throw new Error('Refusing to seed production without SEED_PASSWORD');
+}
+const SEED_PASSWORD = process.env.SEED_PASSWORD || crypto.randomBytes(9).toString('base64url');
+if (!process.env.SEED_PASSWORD) {
+  logger.info(`Seed users password (set SEED_PASSWORD to override): ${SEED_PASSWORD}`);
+}
 
 async function seed() {
   const connection = await pool.getConnection();
@@ -11,14 +21,14 @@ async function seed() {
 
     // Users: Admins, Sellers, Buyers
     const users = [
-      { email: 'admin@example.com', password: 'password123', phone: '+919800000001', firstName: 'System', lastName: 'Admin', role: 'admin' },
-      { email: 'maya@example.com', password: 'password123', phone: '+919800000002', firstName: 'Maya', lastName: 'Sellers', role: 'seller' },
-      { email: 'rahul@example.com', password: 'password123', phone: '+919800000003', firstName: 'Rahul', lastName: 'Buyer', role: 'buyer' },
-      { email: 'priya@example.com', password: 'password123', phone: '+919800000004', firstName: 'Priya', lastName: 'Industrial', role: 'seller' },
-      { email: 'amit@example.com', password: 'password123', phone: '+919800000005', firstName: 'Amit', lastName: 'Tech', role: 'buyer' },
-      { email: 'sneha@example.com', password: 'password123', phone: '+919800000006', firstName: 'Sneha', lastName: 'Global', role: 'seller' },
-      { email: 'vikram@example.com', password: 'password123', phone: '+919800000007', firstName: 'Vikram', lastName: 'Logistics', role: 'buyer' },
-      { email: 'ananya@example.com', password: 'password123', phone: '+919800000008', firstName: 'Ananya', lastName: 'Support', role: 'admin' },
+      { email: 'admin@example.com', password: SEED_PASSWORD, phone: '+919800000001', firstName: 'System', lastName: 'Admin', role: 'admin' },
+      { email: 'maya@example.com', password: SEED_PASSWORD, phone: '+919800000002', firstName: 'Maya', lastName: 'Sellers', role: 'seller' },
+      { email: 'rahul@example.com', password: SEED_PASSWORD, phone: '+919800000003', firstName: 'Rahul', lastName: 'Buyer', role: 'buyer' },
+      { email: 'priya@example.com', password: SEED_PASSWORD, phone: '+919800000004', firstName: 'Priya', lastName: 'Industrial', role: 'seller' },
+      { email: 'amit@example.com', password: SEED_PASSWORD, phone: '+919800000005', firstName: 'Amit', lastName: 'Tech', role: 'buyer' },
+      { email: 'sneha@example.com', password: SEED_PASSWORD, phone: '+919800000006', firstName: 'Sneha', lastName: 'Global', role: 'seller' },
+      { email: 'vikram@example.com', password: SEED_PASSWORD, phone: '+919800000007', firstName: 'Vikram', lastName: 'Logistics', role: 'buyer' },
+      { email: 'ananya@example.com', password: SEED_PASSWORD, phone: '+919800000008', firstName: 'Ananya', lastName: 'Support', role: 'admin' },
     ];
 
     for (const u of users) {
@@ -98,17 +108,17 @@ async function seed() {
 
     // Additional Users: admin1, buyer1-5, seller1-5
     const additionalUsers = [
-      { email: 'admin1@test.com', password: 'password123', phone: '+919800000009', firstName: 'Admin', lastName: 'One', role: 'admin' },
-      { email: 'buyer1@test.com', password: 'password123', phone: '+919800000010', firstName: 'Buyer', lastName: 'One', role: 'buyer' },
-      { email: 'buyer2@test.com', password: 'password123', phone: '+919800000011', firstName: 'Buyer', lastName: 'Two', role: 'buyer' },
-      { email: 'buyer3@test.com', password: 'password123', phone: '+919800000012', firstName: 'Buyer', lastName: 'Three', role: 'buyer' },
-      { email: 'buyer4@test.com', password: 'password123', phone: '+919800000013', firstName: 'Buyer', lastName: 'Four', role: 'buyer' },
-      { email: 'buyer5@test.com', password: 'password123', phone: '+919800000014', firstName: 'Buyer', lastName: 'Five', role: 'buyer' },
-      { email: 'seller1@test.com', password: 'password123', phone: '+919800000015', firstName: 'Seller', lastName: 'One', role: 'seller' },
-      { email: 'seller2@test.com', password: 'password123', phone: '+919800000016', firstName: 'Seller', lastName: 'Two', role: 'seller' },
-      { email: 'seller3@test.com', password: 'password123', phone: '+919800000017', firstName: 'Seller', lastName: 'Three', role: 'seller' },
-      { email: 'seller4@test.com', password: 'password123', phone: '+919800000018', firstName: 'Seller', lastName: 'Four', role: 'seller' },
-      { email: 'seller5@test.com', password: 'password123', phone: '+919800000019', firstName: 'Seller', lastName: 'Five', role: 'seller' },
+      { email: 'admin1@test.com', password: SEED_PASSWORD, phone: '+919800000009', firstName: 'Admin', lastName: 'One', role: 'admin' },
+      { email: 'buyer1@test.com', password: SEED_PASSWORD, phone: '+919800000010', firstName: 'Buyer', lastName: 'One', role: 'buyer' },
+      { email: 'buyer2@test.com', password: SEED_PASSWORD, phone: '+919800000011', firstName: 'Buyer', lastName: 'Two', role: 'buyer' },
+      { email: 'buyer3@test.com', password: SEED_PASSWORD, phone: '+919800000012', firstName: 'Buyer', lastName: 'Three', role: 'buyer' },
+      { email: 'buyer4@test.com', password: SEED_PASSWORD, phone: '+919800000013', firstName: 'Buyer', lastName: 'Four', role: 'buyer' },
+      { email: 'buyer5@test.com', password: SEED_PASSWORD, phone: '+919800000014', firstName: 'Buyer', lastName: 'Five', role: 'buyer' },
+      { email: 'seller1@test.com', password: SEED_PASSWORD, phone: '+919800000015', firstName: 'Seller', lastName: 'One', role: 'seller' },
+      { email: 'seller2@test.com', password: SEED_PASSWORD, phone: '+919800000016', firstName: 'Seller', lastName: 'Two', role: 'seller' },
+      { email: 'seller3@test.com', password: SEED_PASSWORD, phone: '+919800000017', firstName: 'Seller', lastName: 'Three', role: 'seller' },
+      { email: 'seller4@test.com', password: SEED_PASSWORD, phone: '+919800000018', firstName: 'Seller', lastName: 'Four', role: 'seller' },
+      { email: 'seller5@test.com', password: SEED_PASSWORD, phone: '+919800000019', firstName: 'Seller', lastName: 'Five', role: 'seller' },
     ];
 
     for (const u of additionalUsers) {

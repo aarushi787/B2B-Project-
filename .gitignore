@@ -4,3 +4,13 @@ dist/
 .DS_Store
 artifacts/
 .tempmediaStorage/
+
+frontend/.vite/
+frontend/playwright-report/
+frontend/test-results/
+test-results/
+*.tsbuildinfo
+
+# local and production env files must never be committed (use .env.example for templates)
+.env.*
+!.env.example
