@@ -62,6 +62,9 @@ export class Session {
   put(path: string, data: unknown = {}): Promise<APIResponse> {
     return this.ctx.put(`${API_URL}${path}`, { data, headers: this.headers() });
   }
+  delete(path: string): Promise<APIResponse> {
+    return this.ctx.delete(`${API_URL}${path}`, { headers: this.headers() });
+  }
   dispose() {
     return this.ctx.dispose();
   }
