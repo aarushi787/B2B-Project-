@@ -1,4 +1,5 @@
 // Portfolio (Deals) — with Add Project Modal and backend integration
+import { CoverArt } from "../CoverArt";
 import { useState, useEffect } from "react";
 import { FolderPlus, Clock, ExternalLink, Calendar, CheckCircle2 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -97,10 +98,7 @@ export function Deals() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))", gap: 24 }}>
         {filtered.map((p) => (
           <Card key={p.id} className="deal-card" style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
-            {/* Image placeholder */}
-            <div style={{ height: 160, background: "#f8fafc", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ fontSize: 13, color: "#94a3b8", fontWeight: 500 }}>No Image</span>
-            </div>
+            <div style={{ borderBottom: "1px solid #e2e8f0" }}><CoverArt name={p.title} /></div>
             
             <div style={{ padding: 20, flex: 1, display: "flex", flexDirection: "column" }}>
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
