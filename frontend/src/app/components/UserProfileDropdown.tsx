@@ -26,7 +26,7 @@ export function UserProfileDropdown() {
   };
 
   return (
-    <div className="relative" ref={ref} style={{ fontFamily: "Inter, sans-serif" }}>
+    <div className="relative" ref={ref} style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <button
         onClick={() => setOpen(o => !o)}
         style={{
@@ -37,11 +37,11 @@ export function UserProfileDropdown() {
         }}
       >
         <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", border: "2px solid #e2e8f0" }}>
-          <span style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg,#2563EB,#22d3ee)", color: "#fff", fontSize: 13, fontWeight: 700 }}>{(user?.name || user?.email || "?").trim().charAt(0).toUpperCase()}</span>
+          <span style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg,#6921A5,#22d3ee)", color: "#fff", fontSize: 13, fontWeight: 700 }}>{(user?.name || user?.email || "?").trim().charAt(0).toUpperCase()}</span>
         </div>
         <div style={{ textAlign: "left", display: "none" }} className="md:block">
           <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", margin: 0, lineHeight: 1 }}>{user?.name || ""}</p>
-          <p style={{ fontSize: 10, fontWeight: 600, color: "#64748b", margin: "4px 0 0", lineHeight: 1 }}>{user?.companyName || ""}</p>
+          <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", margin: "4px 0 0", lineHeight: 1 }}>{user?.companyName || ""}</p>
         </div>
         <ChevronDown size={14} color="#64748b" style={{ transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }} />
       </button>
@@ -62,7 +62,7 @@ export function UserProfileDropdown() {
           >
             <div style={{ padding: "16px", borderBottom: "1px solid #f1f5f9", background: "#f8fafc" }}>
               <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", margin: 0 }}>{user?.name || ""}</p>
-              <p style={{ fontSize: 12, color: "#64748b", margin: "4px 0 0" }}>{user?.email || "jane@techcorp.com"}</p>
+              <p style={{ fontSize: 13, color: "#64748b", margin: "4px 0 0" }}>{user?.email || "jane@techcorp.com"}</p>
             </div>
             <div style={{ padding: 8 }}>
               <Link to="/app/dashboard" onClick={() => setOpen(false)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", fontSize: 13, fontWeight: 500, color: "#334155", textDecoration: "none", borderRadius: 8 }}>

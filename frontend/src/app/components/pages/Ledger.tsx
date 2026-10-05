@@ -47,12 +47,12 @@ const STATUS_STYLES: Record<TxStatus, { bg: string; text: string; border: string
   Completed: { bg: "bg-green-50", text: "text-green-700", border: "border-green-200", icon: CheckCircle2 },
   Pending: { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", icon: Clock },
   Failed: { bg: "bg-red-50", text: "text-red-700", border: "border-red-200", icon: XCircle },
-  Processing: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", icon: RefreshCw },
+  Processing: { bg: "bg-[#F3E8F8]", text: "text-[#6921A5]", border: "border-[#7BB8F7]", icon: RefreshCw },
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  Revenue: "#2563EB", "Operating Expenses": "#2563EB", Marketing: "#F59E0B",
-  Technology: "#3B82F6", Salaries: "#EC4899", Legal: "#EF4444",
+  Revenue: "#6921A5", "Operating Expenses": "#6921A5", Marketing: "#F59E0B",
+  Technology: "#6921A5", Salaries: "#EC4899", Legal: "#EF4444",
 };
 
 function fmt(n: number) {
@@ -91,7 +91,7 @@ function BalanceCard({ label, value, icon: Icon, iconBg, iconColor, trend, trend
       whileHover={{ y: -3, boxShadow: "0 12px 36px -8px rgba(0,0,0,0.10)" }}
       className={`rounded-2xl border shadow-sm p-5 cursor-default transition-all ${
         accent
-          ? "bg-gradient-to-br from-[#2563EB] to-[#0c8080] text-white border-blue-400"
+          ? "bg-gradient-to-br from-[#6921A5] to-[#0c8080] text-white border-[#7BB8F7]"
           : "bg-white border-slate-100"
       }`}
     >
@@ -99,7 +99,7 @@ function BalanceCard({ label, value, icon: Icon, iconBg, iconColor, trend, trend
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${accent ? "bg-white/20" : iconBg}`}>
           <Icon className={`w-5 h-5 ${accent ? "text-white" : iconColor}`} />
         </div>
-        <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+        <div className={`flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full ${
           accent ? "bg-white/20 text-white" :
           trendUp === true ? "bg-green-100 text-green-700" :
           trendUp === false ? "bg-red-100 text-red-700" :
@@ -124,7 +124,7 @@ function StatusBadge({ status }: { status: TxStatus }) {
   const s = STATUS_STYLES[status];
   const Icon = s.icon;
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${s.bg} ${s.text} ${s.border}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold border ${s.bg} ${s.text} ${s.border}`}>
       <Icon className="w-3 h-3" />
       {status}
     </span>
@@ -173,7 +173,7 @@ function DetailPanel({ tx, onClose }: { tx: Transaction; onClose: () => void }) 
             </div>
             <div>
               <p className="text-sm font-bold text-slate-900">{tx.type === "Credit" ? "Incoming" : "Outgoing"} Transfer</p>
-              <p className="text-[10px] text-slate-400">{tx.dealId}</p>
+              <p className="text-[11px] text-slate-400">{tx.dealId}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
@@ -184,20 +184,20 @@ function DetailPanel({ tx, onClose }: { tx: Transaction; onClose: () => void }) 
         <div className="flex-1 overflow-y-auto">
           {/* Amount hero */}
           <div className={`px-6 py-6 ${tx.type === "Credit" ? "bg-green-50" : "bg-red-50"}`}>
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">{tx.type === "Credit" ? "Amount Received" : "Amount Paid"}</p>
+            <p className="text-[12px] font-semibold text-slate-500 uppercase tracking-wider mb-1">{tx.type === "Credit" ? "Amount Received" : "Amount Paid"}</p>
             <p className={`text-3xl font-black ${tx.type === "Credit" ? "text-green-700" : "text-red-700"}`}>
               {tx.type === "Credit" ? "+" : "−"}{fmt(tx.amount)}
             </p>
             <div className="flex items-center gap-2 mt-2">
               <StatusBadge status={tx.status} />
-              <span className="text-[10px] text-slate-400">{tx.date} · {tx.time}</span>
+              <span className="text-[11px] text-slate-400">{tx.date} · {tx.time}</span>
             </div>
           </div>
 
           <div className="p-6 space-y-5">
             {/* Details grid */}
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Transaction Details</p>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Transaction Details</p>
               <div className="space-y-3">
                 {[
                   { label: "Deal Reference", value: tx.dealReference },
@@ -207,8 +207,8 @@ function DetailPanel({ tx, onClose }: { tx: Transaction; onClose: () => void }) 
                   { label: "Processing Fee", value: tx.fee > 0 ? fmt(tx.fee) : "No fee" },
                 ].map(r => (
                   <div key={r.label} className="flex items-start justify-between gap-4">
-                    <span className="text-[11px] text-slate-400 shrink-0">{r.label}</span>
-                    <span className="text-[11px] font-semibold text-slate-700 text-right">{r.value}</span>
+                    <span className="text-[12px] text-slate-400 shrink-0">{r.label}</span>
+                    <span className="text-[12px] font-semibold text-slate-700 text-right">{r.value}</span>
                   </div>
                 ))}
               </div>
@@ -216,14 +216,14 @@ function DetailPanel({ tx, onClose }: { tx: Transaction; onClose: () => void }) 
 
             {/* Description */}
             <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</p>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</p>
               <p className="text-xs text-slate-700 leading-relaxed">{tx.description}</p>
             </div>
 
             {/* Notes */}
             {tx.notes && (
               <div className="p-3.5 bg-amber-50 rounded-xl border border-amber-100">
-                <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                <p className="text-[11px] font-bold text-amber-600 uppercase tracking-wider mb-1.5 flex items-center gap-1">
                   <Info className="w-3 h-3" /> Notes
                 </p>
                 <p className="text-xs text-slate-700 leading-relaxed">{tx.notes}</p>
@@ -232,7 +232,7 @@ function DetailPanel({ tx, onClose }: { tx: Transaction; onClose: () => void }) 
 
             {/* Status History */}
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Status History</p>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Status History</p>
               <div className="space-y-0">
                 {tx.statusHistory.map((h, i) => {
                   const s = STATUS_STYLES[h.status];
@@ -246,9 +246,9 @@ function DetailPanel({ tx, onClose }: { tx: Transaction; onClose: () => void }) 
                         {i < tx.statusHistory.length - 1 && <div className="w-px flex-1 bg-slate-100 my-1" style={{ minHeight: 16 }} />}
                       </div>
                       <div className="pb-4 flex-1">
-                        <p className={`text-[11px] font-bold ${s.text}`}>{h.status}</p>
-                        <p className="text-[10px] text-slate-400">{h.timestamp}</p>
-                        <p className="text-[10px] text-slate-500 mt-0.5">{h.note}</p>
+                        <p className={`text-[12px] font-bold ${s.text}`}>{h.status}</p>
+                        <p className="text-[11px] text-slate-400">{h.timestamp}</p>
+                        <p className="text-[11px] text-slate-500 mt-0.5">{h.note}</p>
                       </div>
                     </div>
                   );
@@ -257,14 +257,14 @@ function DetailPanel({ tx, onClose }: { tx: Transaction; onClose: () => void }) 
             </div>
 
             {/* Linked Deal */}
-            <div className="p-3.5 bg-blue-50 border border-blue-100 rounded-xl flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[#2563EB]/10 flex items-center justify-center shrink-0">
-                <Layers className="w-4 h-4 text-[#2563EB]" />
+            <div className="p-3.5 bg-[#F3E8F8] border border-[#7BB8F7] rounded-xl flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-[#6921A5]/10 flex items-center justify-center shrink-0">
+                <Layers className="w-4 h-4 text-[#6921A5]" />
               </div>
               <div className="flex-1">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Linked Deal</p>
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Linked Deal</p>
                 <p className="text-xs font-semibold text-slate-800">{tx.dealReference}</p>
-                <p className="text-[10px] text-[#2563EB]">{tx.dealId}</p>
+                <p className="text-[11px] text-[#6921A5]">{tx.dealId}</p>
               </div>
               <ChevronRight className="w-4 h-4 text-slate-300" />
             </div>
@@ -281,7 +281,7 @@ function DetailPanel({ tx, onClose }: { tx: Transaction; onClose: () => void }) 
           </button>
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 text-xs font-bold text-white bg-[#2563EB] hover:bg-[#2563EB] rounded-xl transition-colors"
+            className="flex-1 py-2.5 text-xs font-bold text-white bg-[#6921A5] hover:bg-[#6921A5] rounded-xl transition-colors"
           >
             Close
           </button>
@@ -471,7 +471,7 @@ export function Ledger() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="min-h-screen bg-[#F8FAFC]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <Toaster position="top-right" richColors />
       <AnimatePresence>
         {selectedTx && <DetailPanel tx={selectedTx} onClose={() => setSelectedTx(null)} />}
@@ -483,12 +483,12 @@ export function Ledger() {
           <div className="h-14 flex items-center justify-between gap-4">
             {/* Left */}
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#2563EB] to-blue-400 flex items-center justify-center shadow-sm">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#6921A5] to-blue-400 flex items-center justify-center shadow-sm">
                 <Wallet className="w-4 h-4 text-white" />
               </div>
               <div>
                 <h1 className="text-base font-bold text-slate-900 leading-none">Financial Ledger</h1>
-                <p className="text-[10px] text-slate-400 mt-0.5">{transactions.length} transactions · Apr 2026</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">{transactions.length} transactions · Apr 2026</p>
               </div>
             </div>
 
@@ -498,10 +498,10 @@ export function Ledger() {
               <div className="hidden lg:flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
                 <Clock className="w-3.5 h-3.5 text-slate-400" />
                 <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-                  className="text-[11px] text-slate-600 bg-transparent focus:outline-none w-28" />
+                  className="text-[12px] text-slate-600 bg-transparent focus:outline-none w-28" />
                 <span className="text-slate-300 text-xs">→</span>
                 <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-                  className="text-[11px] text-slate-600 bg-transparent focus:outline-none w-28" />
+                  className="text-[12px] text-slate-600 bg-transparent focus:outline-none w-28" />
               </div>
 
               {/* Search */}
@@ -512,7 +512,7 @@ export function Ledger() {
                   placeholder="Search transactions..."
                   value={search}
                   onChange={e => { setSearch(e.target.value); setPage(1); }}
-                  className="pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 focus:border-[#2563EB] w-48 transition-all"
+                  className="pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#6921A5]/30 focus:border-[#6921A5] w-48 transition-all"
                 />
               </div>
 
@@ -521,7 +521,7 @@ export function Ledger() {
                 <motion.button
                   whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                   onClick={() => setShowExportMenu(o => !o)}
-                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-[#2563EB] hover:bg-[#2563EB] rounded-xl transition-all shadow-sm shadow-blue-500/20"
+                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-[#6921A5] hover:bg-[#6921A5] rounded-xl transition-all shadow-sm shadow-blue-500/20"
                 >
                   <Download className="w-3.5 h-3.5" /> Export <ChevronDown className="w-3 h-3 ml-0.5" />
                 </motion.button>
@@ -552,7 +552,7 @@ export function Ledger() {
 
         {/* ── Balance Cards ───────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <BalanceCard label="Current Balance" value={balance} icon={Wallet} iconBg="bg-blue-50" iconColor="text-[#2563EB]" trend="+12.5% vs last month" trendUp={true} accent delay={0} />
+          <BalanceCard label="Current Balance" value={balance} icon={Wallet} iconBg="bg-[#F3E8F8]" iconColor="text-[#6921A5]" trend="+12.5% vs last month" trendUp={true} accent delay={0} />
           <BalanceCard label="Total Inflow" value={totalIn} icon={ArrowDownRight} iconBg="bg-green-50" iconColor="text-green-600" trend="+8.3% vs last month" trendUp={true} delay={0.07} />
           <BalanceCard label="Total Outflow" value={totalOut} icon={ArrowUpRight} iconBg="bg-red-50" iconColor="text-red-500" trend="-4.1% vs last month" trendUp={false} delay={0.14} />
           <BalanceCard label="Pending Amount" value={pending} icon={Clock} iconBg="bg-amber-50" iconColor="text-amber-500" trend="2 transactions" delay={0.21} />
@@ -563,14 +563,14 @@ export function Ledger() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-sm font-bold text-slate-900">How to Use</h3>
-              <p className="text-[10px] text-slate-400">Standard financial workflow</p>
+              <p className="text-[11px] text-slate-400">Standard financial workflow</p>
             </div>
-            <span className="text-[10px] font-semibold text-[#2563EB] bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">3 Steps</span>
+            <span className="text-[11px] font-semibold text-[#6921A5] bg-[#F3E8F8] px-2.5 py-1 rounded-lg border border-[#7BB8F7]">3 Steps</span>
           </div>
           <div className="flex items-start gap-0">
             {[
-              { icon: Activity, label: "View Transactions", desc: "Explore all entries", color: "#2563EB" },
-              { icon: SlidersHorizontal, label: "Apply Filters", desc: "Type, status, date", color: "#2563EB" },
+              { icon: Activity, label: "View Transactions", desc: "Explore all entries", color: "#6921A5" },
+              { icon: SlidersHorizontal, label: "Apply Filters", desc: "Type, status, date", color: "#6921A5" },
               { icon: Download, label: "Export Data", desc: "CSV or PDF report", color: "#22C55E" },
             ].map((s, i, arr) => (
               <React.Fragment key={s.label}>
@@ -586,8 +586,8 @@ export function Ledger() {
                   >
                     <s.icon className="w-5 h-5" style={{ color: s.color }} />
                   </motion.div>
-                  <p className="text-[11px] font-bold text-slate-700 text-center">{s.label}</p>
-                  <p className="text-[10px] text-slate-400 text-center mt-0.5">{s.desc}</p>
+                  <p className="text-[12px] font-bold text-slate-700 text-center">{s.label}</p>
+                  <p className="text-[11px] text-slate-400 text-center mt-0.5">{s.desc}</p>
                   <div className="mt-2 w-6 h-1 rounded-full" style={{ backgroundColor: `${s.color}40` }} />
                 </motion.div>
                 {i < arr.length - 1 && (
@@ -606,22 +606,22 @@ export function Ledger() {
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
             <div className="px-5 pt-5 pb-4 border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
-                  <TrendingUp className="w-4 h-4 text-[#2563EB]" />
+                <div className="w-8 h-8 rounded-xl bg-[#F3E8F8] flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-[#6921A5]" />
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-slate-900">Revenue vs Expenses</h2>
-                  <p className="text-[10px] text-slate-400">Oct 2025 – Apr 2026</p>
+                  <p className="text-[11px] text-slate-400">Oct 2025 – Apr 2026</p>
                 </div>
               </div>
               <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
                 <button
                   onClick={() => setChartType("area")}
-                  className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartType === "area" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500"}`}
+                  className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all ${chartType === "area" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500"}`}
                 >Area</button>
                 <button
                   onClick={() => setChartType("bar")}
-                  className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartType === "bar" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500"}`}
+                  className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all ${chartType === "bar" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500"}`}
                 >Bar</button>
               </div>
             </div>
@@ -634,35 +634,35 @@ export function Ledger() {
                     <AreaChart data={MONTHLY_DATA} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
                       <defs key="ledger-main-defs">
                         <linearGradient id="ledgerGradRev" x1="0" y1="0" x2="0" y2="1">
-                          <stop key="rev-s0" offset="5%" stopColor="#2563EB" stopOpacity={0.18} />
-                          <stop key="rev-s1" offset="95%" stopColor="#2563EB" stopOpacity={0} />
+                          <stop key="rev-s0" offset="5%" stopColor="#6921A5" stopOpacity={0.18} />
+                          <stop key="rev-s1" offset="95%" stopColor="#6921A5" stopOpacity={0} />
                         </linearGradient>
                         <linearGradient id="ledgerGradExp" x1="0" y1="0" x2="0" y2="1">
                           <stop key="exp-s0" offset="5%" stopColor="#EF4444" stopOpacity={0.14} />
                           <stop key="exp-s1" offset="95%" stopColor="#EF4444" stopOpacity={0} />
                         </linearGradient>
                         <linearGradient id="ledgerGradNet" x1="0" y1="0" x2="0" y2="1">
-                          <stop key="net-s0" offset="5%" stopColor="#2563EB" stopOpacity={0.12} />
-                          <stop key="net-s1" offset="95%" stopColor="#2563EB" stopOpacity={0} />
+                          <stop key="net-s0" offset="5%" stopColor="#6921A5" stopOpacity={0.12} />
+                          <stop key="net-s1" offset="95%" stopColor="#6921A5" stopOpacity={0} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid key="lm-cg" strokeDasharray="3 3" stroke="#F1F5F9" />
-                      <XAxis key="lm-xa" dataKey="month" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
-                      <YAxis key="lm-ya" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} tickFormatter={v => fmt(v)} width={64} />
+                      <XAxis key="lm-xa" dataKey="month" tick={{ fontSize: 11, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
+                      <YAxis key="lm-ya" tick={{ fontSize: 11, fill: "#94A3B8" }} axisLine={false} tickLine={false} tickFormatter={v => fmt(v)} width={64} />
                       <Tooltip key="lm-tt" content={<CustomTooltip />} />
-                      <Legend key="lm-lg" wrapperStyle={{ fontSize: 11, color: "#94A3B8", paddingTop: 8 }} />
-                      <Area key="lm-area-rev" type="monotone" dataKey="revenue" stroke="#2563EB" strokeWidth={2} fill="url(#ledgerGradRev)" name="Revenue" dot={false} activeDot={{ r: 5 }} />
+                      <Legend key="lm-lg" wrapperStyle={{ fontSize: 12, color: "#94A3B8", paddingTop: 8 }} />
+                      <Area key="lm-area-rev" type="monotone" dataKey="revenue" stroke="#6921A5" strokeWidth={2} fill="url(#ledgerGradRev)" name="Revenue" dot={false} activeDot={{ r: 5 }} />
                       <Area key="lm-area-exp" type="monotone" dataKey="expenses" stroke="#EF4444" strokeWidth={2} fill="url(#ledgerGradExp)" name="Expenses" dot={false} activeDot={{ r: 5 }} />
-                      <Area key="lm-area-net" type="monotone" dataKey="net" stroke="#2563EB" strokeWidth={2} fill="url(#ledgerGradNet)" name="Net" dot={false} activeDot={{ r: 5 }} strokeDasharray="4 3" />
+                      <Area key="lm-area-net" type="monotone" dataKey="net" stroke="#6921A5" strokeWidth={2} fill="url(#ledgerGradNet)" name="Net" dot={false} activeDot={{ r: 5 }} strokeDasharray="4 3" />
                     </AreaChart>
                   ) : (
                     <BarChart data={MONTHLY_DATA} margin={{ top: 4, right: 8, left: 0, bottom: 0 }} barGap={2}>
                       <CartesianGrid key="lb-cg" strokeDasharray="3 3" stroke="#F1F5F9" />
-                      <XAxis key="lb-xa" dataKey="month" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
-                      <YAxis key="lb-ya" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} tickFormatter={v => fmt(v)} width={64} />
+                      <XAxis key="lb-xa" dataKey="month" tick={{ fontSize: 11, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
+                      <YAxis key="lb-ya" tick={{ fontSize: 11, fill: "#94A3B8" }} axisLine={false} tickLine={false} tickFormatter={v => fmt(v)} width={64} />
                       <Tooltip key="lb-tt" content={<CustomTooltip />} />
-                      <Legend key="lb-lg" wrapperStyle={{ fontSize: 11, color: "#94A3B8", paddingTop: 8 }} />
-                      <Bar key="lb-bar-rev" dataKey="revenue" fill="#2563EB" name="Revenue" radius={[4, 4, 0, 0]} />
+                      <Legend key="lb-lg" wrapperStyle={{ fontSize: 12, color: "#94A3B8", paddingTop: 8 }} />
+                      <Bar key="lb-bar-rev" dataKey="revenue" fill="#6921A5" name="Revenue" radius={[4, 4, 0, 0]} />
                       <Bar key="lb-bar-exp" dataKey="expenses" fill="#EF4444" name="Expenses" radius={[4, 4, 0, 0]} opacity={0.8} />
                     </BarChart>
                   )}
@@ -675,7 +675,7 @@ export function Ledger() {
 
         {/* ── Filters & Controls ─────────────────────────────────── */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 shrink-0">
+          <div className="flex items-center gap-1.5 text-[12px] font-bold text-slate-500 shrink-0">
             <Filter className="w-3.5 h-3.5" /> Filters
           </div>
 
@@ -686,11 +686,11 @@ export function Ledger() {
                 key={t}
                 whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                 onClick={() => { setTypeFilter(t); setPage(1); }}
-                className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all ${
+                className={`px-3 py-1.5 rounded-full text-[12px] font-bold border transition-all ${
                   typeFilter === t
                     ? t === "Credit" ? "bg-green-500 text-white border-green-500" :
                       t === "Debit" ? "bg-red-500 text-white border-red-500" :
-                      "bg-[#2563EB] text-white border-[#2563EB]"
+                      "bg-[#6921A5] text-white border-[#6921A5]"
                     : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
                 }`}
               >
@@ -708,7 +708,7 @@ export function Ledger() {
                 key={s}
                 whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                 onClick={() => { setStatusFilter(s as any); setPage(1); }}
-                className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all ${
+                className={`px-3 py-1.5 rounded-full text-[12px] font-bold border transition-all ${
                   statusFilter === s
                     ? "bg-slate-800 text-white border-slate-800"
                     : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
@@ -725,7 +725,7 @@ export function Ledger() {
           <select
             value={categoryFilter}
             onChange={e => { setCategoryFilter(e.target.value); setPage(1); }}
-            className="px-3 py-1.5 text-[11px] font-semibold border border-slate-200 rounded-full bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20 cursor-pointer"
+            className="px-3 py-1.5 text-[12px] font-semibold border border-slate-200 rounded-full bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#6921A5]/20 cursor-pointer"
           >
             {categories.map(c => <option key={c} value={c}>{c === "All" ? "All Categories" : c}</option>)}
           </select>
@@ -735,7 +735,7 @@ export function Ledger() {
             <div className="relative" ref={sortRef}>
               <button
                 onClick={() => setSortOpen(o => !o)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold border border-slate-200 rounded-full bg-white text-slate-600 hover:border-slate-300 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold border border-slate-200 rounded-full bg-white text-slate-600 hover:border-slate-300 transition-colors"
               >
                 <ChevronsUpDown className="w-3 h-3" /> {SORT_LABELS[sortKey]} <ChevronDown className="w-3 h-3" />
               </button>
@@ -751,7 +751,7 @@ export function Ledger() {
                       <button
                         key={k}
                         onClick={() => { setSortKey(k); setSortOpen(false); setPage(1); }}
-                        className={`w-full text-left px-4 py-2 text-xs transition-colors flex items-center gap-2 ${sortKey === k ? "text-[#2563EB] bg-blue-50" : "text-slate-600 hover:bg-slate-50"}`}
+                        className={`w-full text-left px-4 py-2 text-xs transition-colors flex items-center gap-2 ${sortKey === k ? "text-[#6921A5] bg-[#F3E8F8]" : "text-slate-600 hover:bg-slate-50"}`}
                       >
                         {sortKey === k && <CheckCircle2 className="w-3 h-3" />}
                         {v}
@@ -777,7 +777,7 @@ export function Ledger() {
               ))}
             </div>
 
-            <span className="text-[10px] text-slate-400 font-medium hidden sm:block">
+            <span className="text-[11px] text-slate-400 font-medium hidden sm:block">
               {filtered.length} of {transactions.length} transactions
             </span>
           </div>
@@ -793,7 +793,7 @@ export function Ledger() {
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-slate-900">Transaction History</h2>
-                  <p className="text-[10px] text-slate-400">Click any row to view details</p>
+                  <p className="text-[11px] text-slate-400">Click any row to view details</p>
                 </div>
               </div>
               <button
@@ -813,7 +813,7 @@ export function Ledger() {
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-100">
                       {["Date", "Type", "Amount", "Deal Reference", "Category", "Status", "Description", ""].map(h => (
-                        <th key={h} className="text-left py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                        <th key={h} className="text-left py-3 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -828,17 +828,17 @@ export function Ledger() {
                           exit={{ opacity: 0 }}
                           transition={{ delay: i * 0.04 }}
                           onClick={() => setSelectedTx(tx)}
-                          className="border-b border-slate-50 cursor-pointer hover:bg-blue-50/30 transition-colors group"
+                          className="border-b border-slate-50 cursor-pointer hover:bg-[#F3E8F8]/30 transition-colors group"
                         >
                           {/* Date */}
                           <td className="py-3.5 px-4 whitespace-nowrap">
                             <p className="font-semibold text-slate-800">{tx.date}</p>
-                            <p className="text-[10px] text-slate-400">{tx.time}</p>
+                            <p className="text-[11px] text-slate-400">{tx.time}</p>
                           </td>
 
                           {/* Type */}
                           <td className="py-3.5 px-4">
-                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold border ${
                               tx.type === "Credit"
                                 ? "bg-green-50 text-green-700 border-green-200"
                                 : "bg-red-50 text-red-700 border-red-200"
@@ -853,18 +853,18 @@ export function Ledger() {
                             <p className={`font-black text-sm ${tx.type === "Credit" ? "text-green-700" : "text-red-600"}`}>
                               {tx.type === "Credit" ? "+" : "−"}{fmt(tx.amount)}
                             </p>
-                            {tx.fee > 0 && <p className="text-[9px] text-slate-400">Fee: {fmt(tx.fee)}</p>}
+                            {tx.fee > 0 && <p className="text-[11px] text-slate-400">Fee: {fmt(tx.fee)}</p>}
                           </td>
 
                           {/* Deal */}
                           <td className="py-3.5 px-4">
                             <p className="font-semibold text-slate-700 max-w-[160px] truncate">{tx.dealReference}</p>
-                            <p className="text-[10px] text-[#2563EB]">{tx.dealId}</p>
+                            <p className="text-[11px] text-[#6921A5]">{tx.dealId}</p>
                           </td>
 
                           {/* Category */}
                           <td className="py-3.5 px-4">
-                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border"
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border"
                               style={{
                                 color: CATEGORY_COLORS[tx.category] ?? "#64748B",
                                 backgroundColor: `${CATEGORY_COLORS[tx.category] ?? "#64748B"}12`,
@@ -880,12 +880,12 @@ export function Ledger() {
 
                           {/* Description */}
                           <td className="py-3.5 px-4 max-w-[200px]">
-                            <p className="text-slate-500 truncate text-[11px]">{tx.description}</p>
+                            <p className="text-slate-500 truncate text-[12px]">{tx.description}</p>
                           </td>
 
                           {/* Action */}
                           <td className="py-3.5 px-4">
-                            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#2563EB] transition-colors" />
+                            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#6921A5] transition-colors" />
                           </td>
                         </motion.tr>
                       ))}
@@ -897,7 +897,7 @@ export function Ledger() {
 
             {/* Pagination */}
             <div className="px-5 py-3.5 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[12px] text-slate-500">
                 Showing <span className="font-bold text-slate-700">{Math.min((page - 1) * PAGE_SIZE + 1, filtered.length)}–{Math.min(page * PAGE_SIZE, filtered.length)}</span> of <span className="font-bold text-slate-700">{filtered.length}</span>
               </p>
               <div className="flex items-center gap-1.5">
@@ -914,9 +914,9 @@ export function Ledger() {
                     key={p}
                     whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                     onClick={() => setPage(p)}
-                    className={`w-8 h-8 flex items-center justify-center rounded-xl text-[11px] font-bold transition-all ${
+                    className={`w-8 h-8 flex items-center justify-center rounded-xl text-[12px] font-bold transition-all ${
                       p === page
-                        ? "bg-[#2563EB] text-white shadow-sm shadow-blue-500/20"
+                        ? "bg-[#6921A5] text-white shadow-sm shadow-blue-500/20"
                         : "border border-slate-200 text-slate-500 hover:bg-white hover:text-slate-700"
                     }`}
                   >
@@ -942,10 +942,10 @@ export function Ledger() {
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={MONTHLY_DATA}>
                   <CartesianGrid key="cv-bar-cg" strokeDasharray="3 3" stroke="#F1F5F9" />
-                  <XAxis key="cv-bar-xa" dataKey="month" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
-                  <YAxis key="cv-bar-ya" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} tickFormatter={v => fmt(v)} width={64} />
+                  <XAxis key="cv-bar-xa" dataKey="month" tick={{ fontSize: 11, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
+                  <YAxis key="cv-bar-ya" tick={{ fontSize: 11, fill: "#94A3B8" }} axisLine={false} tickLine={false} tickFormatter={v => fmt(v)} width={64} />
                   <Tooltip key="cv-bar-tt" content={<CustomTooltip />} />
-                  <Bar key="cv-bar-net" dataKey="net" fill="#2563EB" name="Net Income" radius={[6, 6, 0, 0]} />
+                  <Bar key="cv-bar-net" dataKey="net" fill="#6921A5" name="Net Income" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -955,15 +955,15 @@ export function Ledger() {
                 <AreaChart data={MONTHLY_DATA}>
                   <defs key="ledger-cv-defs">
                     <linearGradient id="ledgerGradRev2" x1="0" y1="0" x2="0" y2="1">
-                      <stop key="cv-s0" offset="5%" stopColor="#2563EB" stopOpacity={0.2} />
-                      <stop key="cv-s1" offset="95%" stopColor="#2563EB" stopOpacity={0} />
+                      <stop key="cv-s0" offset="5%" stopColor="#6921A5" stopOpacity={0.2} />
+                      <stop key="cv-s1" offset="95%" stopColor="#6921A5" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid key="cv-area-cg" strokeDasharray="3 3" stroke="#F1F5F9" />
-                  <XAxis key="cv-area-xa" dataKey="month" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
-                  <YAxis key="cv-area-ya" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} tickFormatter={v => fmt(v)} width={64} />
+                  <XAxis key="cv-area-xa" dataKey="month" tick={{ fontSize: 11, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
+                  <YAxis key="cv-area-ya" tick={{ fontSize: 11, fill: "#94A3B8" }} axisLine={false} tickLine={false} tickFormatter={v => fmt(v)} width={64} />
                   <Tooltip key="cv-area-tt" content={<CustomTooltip />} />
-                  <Area key="cv-area-rev" type="monotone" dataKey="revenue" stroke="#2563EB" strokeWidth={2.5} fill="url(#ledgerGradRev2)" name="Revenue" dot={false} />
+                  <Area key="cv-area-rev" type="monotone" dataKey="revenue" stroke="#6921A5" strokeWidth={2.5} fill="url(#ledgerGradRev2)" name="Revenue" dot={false} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -974,12 +974,12 @@ export function Ledger() {
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
-                <Download className="w-4 h-4 text-blue-600" />
+              <div className="w-8 h-8 rounded-xl bg-[#F3E8F8] flex items-center justify-center">
+                <Download className="w-4 h-4 text-[#6921A5]" />
               </div>
               <div>
                 <h3 className="text-sm font-bold text-slate-900">Export & Reports</h3>
-                <p className="text-[10px] text-slate-400">Generate and download financial reports</p>
+                <p className="text-[11px] text-slate-400">Generate and download financial reports</p>
               </div>
             </div>
           </div>
@@ -987,7 +987,7 @@ export function Ledger() {
             {[
               { label: "Export CSV", desc: "Raw transaction data", icon: FileSpreadsheet, color: "#22C55E", action: () => handleExport("csv") },
               { label: "Download PDF Report", desc: "Formatted ledger report", icon: FileText, color: "#EF4444", action: () => handleExport("pdf") },
-              { label: "Send via Email", desc: "Share with stakeholders", icon: Banknote, color: "#2563EB", action: () => toast.success("Report sent via email!") },
+              { label: "Send via Email", desc: "Share with stakeholders", icon: Banknote, color: "#6921A5", action: () => toast.success("Report sent via email!") },
             ].map(b => (
               <motion.button
                 key={b.label}
@@ -1001,7 +1001,7 @@ export function Ledger() {
                 </div>
                 <div>
                   <p className="text-xs font-bold text-slate-800">{b.label}</p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">{b.desc}</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">{b.desc}</p>
                 </div>
               </motion.button>
             ))}

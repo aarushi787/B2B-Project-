@@ -9,7 +9,7 @@ export const AdminGuard: React.FC<{ children: React.ReactNode }> = ({ children }
   if (loading) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh" }}>
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+        <Loader2 className="w-8 h-8 text-[#6921A5] animate-spin" />
       </div>
     );
   }

@@ -84,15 +84,15 @@ export function MatchingRequirements() {
                 </div>
                 <div style={{ flex: "0 0 auto", textAlign: "right", display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end" }}>
                   <span style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>{budgetLabel(r.budgetMin, r.budgetMax)}</span>
-                  {r.timeline && <span style={{ fontSize: 12, color: "#475569" }}>{r.timeline}</span>}
+                  {r.timeline && <span style={{ fontSize: 13, color: "#475569" }}>{r.timeline}</span>}
                   {r.myProposalId ? (
-                    <Link to={`/app/opportunities/proposals/${r.myProposalId}`} style={{ fontSize: 13, fontWeight: 600, color: "#1d4ed8" }}>
+                    <Link to={`/app/opportunities/proposals/${r.myProposalId}`} style={{ fontSize: 13, fontWeight: 600, color: "#6921A5" }}>
                       View your proposal
                     </Link>
                   ) : (
                     <Link
                       to={`/app/opportunities/send/${r.id}`}
-                      style={{ background: "#2563EB", color: "#fff", fontSize: 13, fontWeight: 600, padding: "8px 16px", borderRadius: 8, textDecoration: "none" }}
+                      style={{ background: "#6921A5", color: "#fff", fontSize: 13, fontWeight: 600, padding: "8px 16px", borderRadius: 8, textDecoration: "none" }}
                     >
                       Send proposal
                     </Link>

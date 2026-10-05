@@ -38,7 +38,7 @@ function SendProposalForm({ requirementId }: { requirementId: string }) {
         <PageHeader title="Send a proposal" />
         <Card style={{ padding: 24 }}>
           <p style={{ margin: 0, fontSize: 14, color: "#334155" }}>You posted this requirement, so you cannot send a proposal to it.</p>
-          <Link to={`/app/requirements/${req.id}`} style={{ display: "inline-block", marginTop: 12, fontSize: 14, fontWeight: 600, color: "#1d4ed8" }}>View proposals you received</Link>
+          <Link to={`/app/requirements/${req.id}`} style={{ display: "inline-block", marginTop: 12, fontSize: 14, fontWeight: 600, color: "#6921A5" }}>View proposals you received</Link>
         </Card>
       </div>
     );
@@ -96,7 +96,7 @@ function SendProposalForm({ requirementId }: { requirementId: string }) {
           <div>
             <label htmlFor="amount" style={labelStyle}>Your price (₹) *</label>
             <input id="amount" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="e.g. 50000 or 1.5L" aria-invalid={!!errors.amount} aria-describedby="amount-error" style={{ ...fieldStyle, borderColor: errors.amount ? "#dc2626" : "#cbd5e1" }} />
-            {errors.amount && <p id="amount-error" role="alert" style={{ margin: "6px 0 0", fontSize: 12, color: "#b91c1c" }}>{errors.amount}</p>}
+            {errors.amount && <p id="amount-error" role="alert" style={{ margin: "6px 0 0", fontSize: 13, color: "#b91c1c" }}>{errors.amount}</p>}
           </div>
           <div>
             <label htmlFor="timeline" style={labelStyle}>Delivery timeline</label>
@@ -105,7 +105,7 @@ function SendProposalForm({ requirementId }: { requirementId: string }) {
           <div>
             <label htmlFor="message" style={labelStyle}>Your approach *</label>
             <textarea id="message" value={message} onChange={(e) => setMessage(e.target.value)} rows={6} maxLength={5000} aria-invalid={!!errors.message} aria-describedby="message-error" placeholder="How will you do the work, and why are you a good fit?" style={{ ...fieldStyle, resize: "vertical", borderColor: errors.message ? "#dc2626" : "#cbd5e1" }} />
-            {errors.message && <p id="message-error" role="alert" style={{ margin: "6px 0 0", fontSize: 12, color: "#b91c1c" }}>{errors.message}</p>}
+            {errors.message && <p id="message-error" role="alert" style={{ margin: "6px 0 0", fontSize: 13, color: "#b91c1c" }}>{errors.message}</p>}
           </div>
           <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
             <legend style={labelStyle}>Deliverables</legend>
@@ -121,7 +121,7 @@ function SendProposalForm({ requirementId }: { requirementId: string }) {
                 </div>
               ))}
               {deliverables.length < 10 && (
-                <button type="button" onClick={() => setDeliverables((all) => [...all, ""])} style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "#1d4ed8", fontSize: 13, fontWeight: 600, cursor: "pointer", padding: 0 }}>
+                <button type="button" onClick={() => setDeliverables((all) => [...all, ""])} style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "#6921A5", fontSize: 13, fontWeight: 600, cursor: "pointer", padding: 0 }}>
                   <Plus size={14} aria-hidden="true" /> Add deliverable
                 </button>
               )}
@@ -129,7 +129,7 @@ function SendProposalForm({ requirementId }: { requirementId: string }) {
           </fieldset>
           <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
             <button type="button" onClick={() => navigate(-1)} style={{ background: "#fff", border: "1px solid #cbd5e1", color: "#334155", fontSize: 14, fontWeight: 600, padding: "10px 18px", borderRadius: 8, cursor: "pointer" }}>Cancel</button>
-            <button type="submit" disabled={submitting} style={{ background: "#2563EB", color: "#fff", border: "none", fontSize: 14, fontWeight: 600, padding: "10px 22px", borderRadius: 8, cursor: submitting ? "not-allowed" : "pointer", opacity: submitting ? 0.7 : 1 }}>
+            <button type="submit" disabled={submitting} style={{ background: "#6921A5", color: "#fff", border: "none", fontSize: 14, fontWeight: 600, padding: "10px 22px", borderRadius: 8, cursor: submitting ? "not-allowed" : "pointer", opacity: submitting ? 0.7 : 1 }}>
               {submitting ? "Sending…" : "Send proposal"}
             </button>
           </div>

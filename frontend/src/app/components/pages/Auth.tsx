@@ -21,18 +21,24 @@ const registerSchema = z.object({
 
 type AuthMode = "login" | "register" | "forgot-password" | "reset-password";
 
+// Dev convenience only: set VITE_TEST_PASSWORD in frontend/.env.local. Never set it in production builds.
+const DEV_TEST_PASSWORD: string = import.meta.env.DEV ? (import.meta.env.VITE_TEST_PASSWORD ?? "") : "";
+
 export function Auth() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [mode, setMode] = useState<AuthMode>("login");
+  // A password-reset email links to /auth?mode=reset-password&token=..., so open straight on that form.
+  const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const linkToken = urlParams.get("mode") === "reset-password" ? urlParams.get("token") ?? "" : "";
+  const [mode, setMode] = useState<AuthMode>(linkToken ? "reset-password" : "login");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  const [resetData, setResetData] = useState({ email: "", token: "", newPassword: "" });
-  const [loginData, setLoginData] = useState({ email: "", password: "" });
+  const [resetData, setResetData] = useState({ email: "", token: linkToken, newPassword: "" });
+  const [loginData, setLoginData] = useState({ email: "", password: DEV_TEST_PASSWORD });
   const [registerData, setRegisterData] = useState({
     name: "", email: "", phone: "", password: "", confirmPassword: "",
     companyName: "", gstNumber: "",
@@ -49,7 +55,7 @@ export function Auth() {
       { strength: 0, label: "", color: "" },
       { strength: 1, label: "Weak", color: "bg-red-500" },
       { strength: 2, label: "Fair", color: "bg-yellow-500" },
-      { strength: 3, label: "Good", color: "bg-blue-500" },
+      { strength: 3, label: "Good", color: "bg-[#6921A5]" },
       { strength: 4, label: "Strong", color: "bg-green-500" },
     ][s];
   };
@@ -130,17 +136,17 @@ export function Auth() {
   const pwStrength = getPasswordStrength(mode === "login" ? loginData.password : registerData.password);
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(to bottom right, #f8fafc, #ffffff, #f1f5f9)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", fontFamily: "Inter, sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(rgba(73,47,119,0.8), rgba(73,47,119,0.8)), url(https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=2000&q=80) center/cover", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <div style={{ width: "100%", maxWidth: 448 }}>
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 8, width: "100%" }}>
             <img src="/logo.png" alt="B2BForCorporates Logo" style={{ height: 64, width: "auto", objectFit: "contain" }} />
           </div>
-          <p style={{ color: "#64748b", fontSize: 14 }}>Enterprise Collaboration Platform</p>
+          <p style={{ color: "#DBC5E7", fontSize: 14, fontFamily: "Fraunces, serif" }}>Enterprise Collaboration Platform</p>
         </div>
 
-        <div style={{ backgroundColor: "#ffffff", borderRadius: 16, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)", border: "1px solid #f1f5f9", padding: 32 }}>
+        <div style={{ backgroundColor: "#ffffff", borderRadius: 4, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)", border: "1px solid #f1f5f9", padding: 32 }}>
           {/* Tabs */}
           {(mode === "login" || mode === "register") && (
             <div style={{ display: "flex", borderRadius: 12, backgroundColor: "#f1f5f9", padding: 4, marginBottom: 24 }}>
@@ -183,7 +189,7 @@ export function Auth() {
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
                   <label style={{ display: "block", fontSize: 14, fontWeight: 500, color: "#334155" }}>Password</label>
-                  <button type="button" onClick={() => { setMode("forgot-password"); setError(""); setSuccessMsg(""); }} style={{ fontSize: 12, color: "#2563EB", background: "none", border: "none", cursor: "pointer" }}>Forgot password?</button>
+                  <button type="button" onClick={() => { setMode("forgot-password"); setError(""); setSuccessMsg(""); }} style={{ fontSize: 13, color: "#6921A5", background: "none", border: "none", cursor: "pointer" }}>Forgot password?</button>
                 </div>
                 <div style={{ position: "relative" }}>
                   <Lock size={16} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
@@ -198,21 +204,25 @@ export function Auth() {
               </div>
 
               <div style={{ paddingTop: 8 }}>
-                <p style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Test accounts (fills the email; enter the password you were given)</p>
+                <p style={{ fontSize: 13, color: "#64748b", fontWeight: 600, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Test accounts (fills the email and, in dev, the password)</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <button type="button" onClick={() => setLoginData({ email: "test.buyer@example.com", password: "" })}
-                    style={{ width: "100%", textAlign: "left", padding: 8, backgroundColor: "#eff6ff", border: "1px solid #dbeafe", borderRadius: 4, fontSize: 12, color: "#1e40af", fontWeight: 500, cursor: "pointer" }}>
+                  <button type="button" onClick={() => setLoginData({ email: "test.buyer@example.com", password: DEV_TEST_PASSWORD })}
+                    style={{ width: "100%", textAlign: "left", padding: 8, backgroundColor: "#F3E8F8", border: "1px solid #DBC5E7", borderRadius: 4, fontSize: 13, color: "#6921A5", fontWeight: 500, cursor: "pointer" }}>
                     <b>Test buyer</b> (test.buyer@example.com)
                   </button>
-                  <button type="button" onClick={() => setLoginData({ email: "test.seller@example.com", password: "" })}
-                    style={{ width: "100%", textAlign: "left", padding: 8, backgroundColor: "#EFF6FF", border: "1px solid #DBEAFE", borderRadius: 4, fontSize: 12, color: "#1E40AF", fontWeight: 500, cursor: "pointer" }}>
+                  <button type="button" onClick={() => setLoginData({ email: "test.seller@example.com", password: DEV_TEST_PASSWORD })}
+                    style={{ width: "100%", textAlign: "left", padding: 8, backgroundColor: "#F3E8F8", border: "1px solid #DBC5E7", borderRadius: 4, fontSize: 13, color: "#6921A5", fontWeight: 500, cursor: "pointer" }}>
                     <b>Test seller</b> (test.seller@example.com)
+                  </button>
+                  <button type="button" onClick={() => setLoginData({ email: "admin@example.com", password: DEV_TEST_PASSWORD })}
+                    style={{ width: "100%", textAlign: "left", padding: 8, backgroundColor: "#F3E8F8", border: "1px solid #DBC5E7", borderRadius: 4, fontSize: 13, color: "#6921A5", fontWeight: 500, cursor: "pointer" }}>
+                    <b>Admin</b> (admin@example.com)
                   </button>
                 </div>
               </div>
 
               <button type="submit" disabled={loading}
-                style={{ width: "100%", padding: "10px", backgroundColor: "#2563EB", color: "#ffffff", fontWeight: 500, borderRadius: 8, border: "none", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: loading ? 0.6 : 1 }}>
+                style={{ width: "100%", padding: "10px", backgroundColor: "#6921A5", color: "#ffffff", fontWeight: 500, borderRadius: 8, border: "none", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: loading ? 0.6 : 1 }}>
                 {loading ? <><Loader2 size={16} /> Signing in...</> : "Sign In"}
               </button>
             </form>
@@ -228,7 +238,7 @@ export function Auth() {
                 </div>
               </div>
               <button type="submit" disabled={loading}
-                style={{ width: "100%", padding: "10px", backgroundColor: "#2563EB", color: "#ffffff", fontWeight: 500, borderRadius: 8, border: "none", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: loading ? 0.6 : 1 }}>
+                style={{ width: "100%", padding: "10px", backgroundColor: "#6921A5", color: "#ffffff", fontWeight: 500, borderRadius: 8, border: "none", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: loading ? 0.6 : 1 }}>
                 {loading ? <><Loader2 size={16} /> Sending...</> : "Send Reset Link"}
               </button>
               <button type="button" onClick={() => { setMode("login"); setError(""); setSuccessMsg(""); }}
@@ -258,7 +268,7 @@ export function Auth() {
                 </div>
               </div>
               <button type="submit" disabled={loading}
-                style={{ width: "100%", padding: "10px", backgroundColor: "#2563EB", color: "#ffffff", fontWeight: 500, borderRadius: 8, border: "none", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: loading ? 0.6 : 1 }}>
+                style={{ width: "100%", padding: "10px", backgroundColor: "#6921A5", color: "#ffffff", fontWeight: 500, borderRadius: 8, border: "none", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: loading ? 0.6 : 1 }}>
                 {loading ? <><Loader2 size={16} /> Resetting...</> : "Reset Password"}
               </button>
               <button type="button" onClick={() => { setMode("login"); setError(""); setSuccessMsg(""); }}
@@ -287,7 +297,7 @@ export function Auth() {
                       style={{ width: "100%", padding: "10px 16px 10px 36px", border: `1px solid ${fieldErrors[key] ? '#ef4444' : '#e2e8f0'}`, borderRadius: 8, fontSize: 14, outline: "none", boxSizing: "border-box" }}
                       placeholder={placeholder} />
                   </div>
-                  {fieldErrors[key] && <p style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>{fieldErrors[key]}</p>}
+                  {fieldErrors[key] && <p style={{ color: "#ef4444", fontSize: 13, marginTop: 4 }}>{fieldErrors[key]}</p>}
                 </div>
               ))}
 
@@ -311,7 +321,7 @@ export function Auth() {
                       {show ? <EyeOff size={16}/> : <Eye size={16}/>}
                     </button>
                   </div>
-                  {fieldErrors[key] && <p style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>{fieldErrors[key]}</p>}
+                  {fieldErrors[key] && <p style={{ color: "#ef4444", fontSize: 13, marginTop: 4 }}>{fieldErrors[key]}</p>}
                 </div>
               ))}
 
@@ -319,22 +329,22 @@ export function Auth() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   <div style={{ display: "flex", gap: 4 }}>
                     {[1,2,3,4].map(i => (
-                      <div key={i} style={{ height: 4, flex: 1, borderRadius: 2, backgroundColor: i <= pwStrength.strength ? (pwStrength.color === "bg-red-500" ? "#ef4444" : pwStrength.color === "bg-yellow-500" ? "#eab308" : pwStrength.color === "bg-blue-500" ? "#3b82f6" : "#22c55e") : "#e2e8f0" }}/>
+                      <div key={i} style={{ height: 4, flex: 1, borderRadius: 2, backgroundColor: i <= pwStrength.strength ? (pwStrength.color === "bg-red-500" ? "#ef4444" : pwStrength.color === "bg-yellow-500" ? "#eab308" : pwStrength.color === "bg-[#6921A5]" ? "#6921A5" : "#22c55e") : "#e2e8f0" }}/>
                     ))}
                   </div>
-                  {pwStrength.label && <p style={{ fontSize: 12, color: "#64748b", margin: 0 }}>Strength: <span style={{ fontWeight: 500 }}>{pwStrength.label}</span></p>}
+                  {pwStrength.label && <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>Strength: <span style={{ fontWeight: 500 }}>{pwStrength.label}</span></p>}
                 </div>
               )}
 
               <button type="submit" disabled={loading}
-                style={{ width: "100%", padding: "10px", backgroundColor: "#2563EB", color: "#ffffff", fontWeight: 500, borderRadius: 8, border: "none", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: loading ? 0.6 : 1 }}>
+                style={{ width: "100%", padding: "10px", backgroundColor: "#6921A5", color: "#ffffff", fontWeight: 500, borderRadius: 8, border: "none", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: loading ? 0.6 : 1 }}>
                 {loading ? <><Loader2 size={16} /> Creating account...</> : "Create Account"}
               </button>
             </form>
           )}
         </div>
 
-        <p style={{ textAlign: "center", fontSize: 12, color: "#94a3b8", marginTop: 24 }}>
+        <p style={{ textAlign: "center", fontSize: 13, color: "#94a3b8", marginTop: 24 }}>
           © 2026 B2BForCorporates · Enterprise Collaboration Platform
         </p>
       </div>

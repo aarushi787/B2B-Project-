@@ -42,8 +42,8 @@ export function ActivityLogsModal({ isOpen, onClose, activities }: ActivityLogsM
           {/* Header */}
           <div className="p-6 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                <Activity className="w-5 h-5 text-blue-600" />
+              <div className="w-10 h-10 rounded-xl bg-[#F3E8F8] flex items-center justify-center">
+                <Activity className="w-5 h-5 text-[#6921A5]" />
               </div>
               <div>
                 <h3 className="text-lg font-bold text-slate-900 leading-tight">Full Activity Logs</h3>
@@ -66,7 +66,7 @@ export function ActivityLogsModal({ isOpen, onClose, activities }: ActivityLogsM
                   placeholder="Search logs..." 
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-[#7BB8F7] focus:ring-1 focus:ring-[#7BB8F7]"
                 />
               </div>
             </div>
@@ -78,13 +78,13 @@ export function ActivityLogsModal({ isOpen, onClose, activities }: ActivityLogsM
                 {fullActivities.map((a, i) => (
                   <div key={i} className="relative pl-6">
                     <div className="absolute -left-[17px] top-0 w-8 h-8 rounded-full bg-white border-4 border-slate-50 flex items-center justify-center shadow-sm">
-                      <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#6921A5]" />
                     </div>
                     <div>
                       <div className="flex items-start justify-between">
                         <div>
                           <p className="text-sm font-bold text-slate-900">{a.title}</p>
-                          <p className="text-xs font-medium text-blue-600 mt-1">{a.source}</p>
+                          <p className="text-xs font-medium text-[#6921A5] mt-1">{a.source}</p>
                         </div>
                         <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-2 py-1 rounded-md">{a.time}</span>
                       </div>

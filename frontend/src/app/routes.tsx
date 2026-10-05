@@ -29,6 +29,7 @@ const ProposalDetails = React.lazy(() => import("./components/pages/ProposalDeta
 const SendProposal = React.lazy(() => import("./components/pages/SendProposal").then(m => ({ default: m.SendProposal })));
 const PostRequirementPage = React.lazy(() => import("./components/pages/PostRequirementPage").then(m => ({ default: m.PostRequirementPage })));
 const NotificationsPage = React.lazy(() => import("./components/pages/NotificationsPage").then(m => ({ default: m.NotificationsPage })));
+const VerifyEmail = React.lazy(() => import("./components/pages/VerifyEmail").then(m => ({ default: m.VerifyEmail })));
 const VerificationPage = React.lazy(() => import("./components/pages/VerificationPage").then(m => ({ default: m.VerificationPage })));
 
 export const router = createBrowserRouter([
@@ -37,6 +38,7 @@ export const router = createBrowserRouter([
   { path: "/services", Component: ServicesPage },
   { path: "/explore",  Component: ExploreBusinesses },
   { path: "/auth",     Component: Auth },
+  { path: "/verify-email", Component: VerifyEmail },
   // Platform admin console: standalone (outside the user Layout) and admin-only.
   { path: "/admin",    element: <AdminGuard><Admin /></AdminGuard> },
   {

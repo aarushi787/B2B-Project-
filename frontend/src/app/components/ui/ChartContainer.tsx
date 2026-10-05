@@ -59,7 +59,7 @@ export function ChartContainer({
   minWidth,
   className = "",
   badge,
-  badgeColor = "#2563EB",
+  badgeColor = "#6921A5",
   headerDark = false,
   actions,
 }: ChartContainerProps) {
@@ -109,7 +109,7 @@ export function ChartContainer({
         <div className="flex items-center gap-2.5 min-w-0">
           {badge && (
             <span
-              className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shrink-0 uppercase tracking-wide"
+              className="text-[11px] font-black px-2 py-0.5 rounded-full text-white shrink-0 uppercase tracking-wide"
               style={{ backgroundColor: badgeColor }}
             >
               {badge}
@@ -117,7 +117,7 @@ export function ChartContainer({
           )}
           <div className="min-w-0">
             <h3 className={`text-sm font-bold truncate ${headerText}`}>{title}</h3>
-            {subtitle && <p className={`text-[10px] truncate ${headerSub}`}>{subtitle}</p>}
+            {subtitle && <p className={`text-[11px] truncate ${headerSub}`}>{subtitle}</p>}
           </div>
         </div>
 
@@ -162,13 +162,13 @@ export function ChartContainer({
                     onClick={() => { toast.success("Data copied to clipboard"); setMenuOpen(false); }}
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50 transition-colors"
                   >
-                    <Copy className="w-3.5 h-3.5 text-blue-500" /> Copy data
+                    <Copy className="w-3.5 h-3.5 text-[#6921A5]" /> Copy data
                   </button>
                   <button
                     onClick={() => { toast.info("Full-screen mode"); setMenuOpen(false); }}
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50 transition-colors"
                   >
-                    <Maximize2 className="w-3.5 h-3.5 text-blue-500" /> Expand view
+                    <Maximize2 className="w-3.5 h-3.5 text-[#6921A5]" /> Expand view
                   </button>
                   {onRefresh && (
                     <button
@@ -206,12 +206,12 @@ export function ChartContainer({
               </div>
               <div className="text-center">
                 <p className="text-xs font-bold text-slate-700 mb-1">Failed to load chart</p>
-                <p className="text-[10px] text-slate-400">{error}</p>
+                <p className="text-[11px] text-slate-400">{error}</p>
               </div>
               {onRefresh && (
                 <button
                   onClick={onRefresh}
-                  className="px-4 py-2 text-xs font-bold text-white bg-[#2563EB] hover:bg-[#2563EB] rounded-xl transition-colors"
+                  className="px-4 py-2 text-xs font-bold text-white bg-[#6921A5] hover:bg-[#6921A5] rounded-xl transition-colors"
                 >
                   Try again
                 </button>
@@ -227,8 +227,8 @@ export function ChartContainer({
               style={{ minHeight }}
             >
               <BarChart2 className="w-8 h-8 text-slate-200" />
-              <p className="text-[11px] font-semibold text-slate-400">Container too small</p>
-              <p className="text-[10px] text-slate-300">Min width: {minWidth}px · Current: {dims.w}px</p>
+              <p className="text-[12px] font-semibold text-slate-400">Container too small</p>
+              <p className="text-[11px] text-slate-300">Min width: {minWidth}px · Current: {dims.w}px</p>
             </motion.div>
           ) : (
             <motion.div key="content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full">

@@ -166,7 +166,7 @@ export function Messaging() {
             <input
               type="text"
               placeholder="Search conversations..."
-              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7BB8F7] text-xs"
             />
           </div>
         </div>
@@ -179,11 +179,11 @@ export function Messaging() {
               key={conversation.id}
               onClick={() => setSelectedConvId(conversation.id)}
               className={`w-full p-3 flex items-start gap-3 hover:bg-gray-50 transition-colors border-b border-gray-100 ${
-                selectedConvId === conversation.id ? "bg-blue-50" : ""
+                selectedConvId === conversation.id ? "bg-[#F3E8F8]" : ""
               }`}
             >
               <div className="relative shrink-0">
-                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                <div className="w-10 h-10 bg-[#6921A5] rounded-full flex items-center justify-center text-white text-xs font-bold">
                   {conversation.avatar}
                 </div>
                 {conversation.online && (
@@ -193,14 +193,14 @@ export function Messaging() {
               <div className="flex-1 text-left min-w-0">
                 <div className="flex items-center justify-between mb-0.5">
                   <h3 className="text-xs font-bold text-gray-900 truncate">{conversation.name}</h3>
-                  <span className="text-[10px] text-gray-400 flex-shrink-0 ml-1">
+                  <span className="text-[11px] text-gray-400 flex-shrink-0 ml-1">
                     {conversation.timestamp}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-gray-500 truncate">{conversation.lastMessage}</p>
                   {conversation.unread > 0 && (
-                    <span className="ml-1.5 bg-blue-600 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center flex-shrink-0">
+                    <span className="ml-1.5 bg-[#6921A5] text-white text-[11px] font-bold rounded-full w-4 h-4 flex items-center justify-center flex-shrink-0">
                       {conversation.unread}
                     </span>
                   )}
@@ -219,7 +219,7 @@ export function Messaging() {
             <div className="p-4 border-b border-gray-200 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                  <div className="w-9 h-9 bg-[#6921A5] rounded-full flex items-center justify-center text-white text-xs font-bold">
                     {selectedConv?.avatar}
                   </div>
                   {selectedConv?.online && (
@@ -228,7 +228,7 @@ export function Messaging() {
                 </div>
                 <div>
                   <h3 className="text-xs font-bold text-gray-900">{selectedConv?.name}</h3>
-                  <p className="text-[10px] text-gray-400">
+                  <p className="text-[11px] text-gray-400">
                     {selectedConv?.online ? "Active now" : "Offline"}
                   </p>
                 </div>
@@ -259,7 +259,7 @@ export function Messaging() {
                       <div
                         className={`rounded-2xl px-4 py-2.5 ${
                           isMe
-                            ? "bg-blue-600 text-white"
+                            ? "bg-[#6921A5] text-white"
                             : "bg-gray-100 text-gray-900"
                         }`}
                       >
@@ -270,11 +270,11 @@ export function Messaging() {
                           isMe ? "justify-end" : "justify-start"
                         }`}
                       >
-                        <span className="text-[10px] text-gray-400">
+                        <span className="text-[11px] text-gray-400">
                           {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                         {isMe && (
-                          <span className="text-[10px] text-gray-400">
+                          <span className="text-[11px] text-gray-400">
                             {message.read ? "· Read" : "· Delivered"}
                           </span>
                         )}
@@ -315,13 +315,13 @@ export function Messaging() {
                     onKeyPress={handleKeyPress}
                     placeholder="Type a message..."
                     rows={1}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-xs"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7BB8F7] resize-none text-xs"
                   />
                 </div>
                 <button
                   onClick={handleSendMessage}
                   disabled={!messageInput.trim()}
-                  className="p-2.5 bg-blue-600 text-white rounded-xl hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2.5 bg-[#6921A5] text-white rounded-xl hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Send className="w-4 h-4" />
                 </button>

@@ -21,7 +21,7 @@ const SERVICES = [
 
 function Navbar() {
   return (
-    <nav style={{ position: "sticky", top: 0, zIndex: 50, background: "#ffffff", borderBottom: "1px solid #e2e8f0", fontFamily: "Inter, sans-serif" }}>
+    <nav style={{ position: "sticky", top: 0, zIndex: 50, background: "#ffffff", borderBottom: "1px solid #e2e8f0", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", gap: 32, height: 60 }}>
         <a href="/landing" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
           <img src="/logo.png" alt="B2B Logo" style={{ height: "32px", width: "auto", objectFit: "contain" }} />
@@ -37,7 +37,7 @@ function Navbar() {
             { label: "Explore Businesses",href: "/explore" },
             { label: "Help",            href: "/landing#help" },
           ].map(l => (
-            <a key={l.label} href={l.href} style={{ fontSize: 14, fontWeight: l.active ? 600 : 500, color: l.active ? "#2563EB" : "#64748b", textDecoration: l.active ? "underline" : "none", textUnderlineOffset: 4 }}>
+            <a key={l.label} href={l.href} style={{ fontSize: 14, fontWeight: l.active ? 600 : 500, color: l.active ? "#6921A5" : "#64748b", textDecoration: l.active ? "underline" : "none", textUnderlineOffset: 4 }}>
               {l.label}
             </a>
           ))}
@@ -85,7 +85,7 @@ export function ServicesPage() {
   const filtered = servicesData.filter(s => s.name.toLowerCase().includes(query.toLowerCase()));
 
   return (
-    <div style={{ minHeight: "100vh", background: "#ffffff", fontFamily: "Inter, sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "#ffffff", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <Navbar />
 
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "48px 24px" }}>
@@ -115,19 +115,19 @@ export function ServicesPage() {
             >
               <div style={{ fontSize: 28, marginBottom: 16 }}>{s.icon}</div>
               <h3 style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", margin: "0 0 6px" }}>{s.name}</h3>
-              <p style={{ fontSize: 12, color: "#64748b", margin: "0 0 10px", lineHeight: 1.5 }}>{s.desc}</p>
-              <span style={{ fontSize: 12, fontWeight: 600, color: "#2563EB" }}>{s.providers} providers</span>
+              <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 10px", lineHeight: 1.5 }}>{s.desc}</p>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "#6921A5" }}>{s.providers} providers</span>
             </div>
           ))}
 
           {/* Custom CTA card */}
-          <div style={{ background: "#eff6ff", border: "2px solid #2563EB", borderRadius: 12, padding: 24, cursor: "pointer" }}>
-            <div style={{ width: 40, height: 40, background: "#2563EB", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+          <div style={{ background: "#F3E8F8", border: "2px solid #6921A5", borderRadius: 12, padding: 24, cursor: "pointer" }}>
+            <div style={{ width: 40, height: 40, background: "#6921A5", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
               <span style={{ color: "#fff", fontSize: 20 }}>✦</span>
             </div>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: "#2563EB", margin: "0 0 6px" }}>Request Custom Services</h3>
-            <p style={{ fontSize: 12, color: "#3b82f6", margin: "0 0 10px", lineHeight: 1.5 }}>Have a complex or custom enterprise requirement? Speak to our integration team directly.</p>
-            <a href="/auth" style={{ fontSize: 13, fontWeight: 600, color: "#2563EB", textDecoration: "none" }}>Contact Support →</a>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: "#6921A5", margin: "0 0 6px" }}>Request Custom Services</h3>
+            <p style={{ fontSize: 13, color: "#6921A5", margin: "0 0 10px", lineHeight: 1.5 }}>Have a complex or custom enterprise requirement? Speak to our integration team directly.</p>
+            <a href="/auth" style={{ fontSize: 13, fontWeight: 600, color: "#6921A5", textDecoration: "none" }}>Contact Support →</a>
           </div>
         </div>
       </div>
@@ -139,7 +139,7 @@ export function ServicesPage() {
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
               <span style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>✦ ConnectPro</span>
             </div>
-            <p style={{ fontSize: 12, color: "#64748b", maxWidth: 220, lineHeight: 1.6 }}>Enterprise-grade secure marketplace matching international operators with premium vetted suppliers.</p>
+            <p style={{ fontSize: 13, color: "#64748b", maxWidth: 220, lineHeight: 1.6 }}>Enterprise-grade secure marketplace matching international operators with premium vetted suppliers.</p>
           </div>
           {[
             { heading: "PLATFORM", links: ["About Us", "How It Works", "Pricing Models", "Success Stories"] },
@@ -148,13 +148,13 @@ export function ServicesPage() {
             { heading: "LEGAL", links: ["Terms of Service", "Privacy Governance", "Global Compliance", "Cookie Preferences"] },
           ].map(col => (
             <div key={col.heading}>
-              <p style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>{col.heading}</p>
-              {col.links.map(l => <p key={l} style={{ fontSize: 12, color: "#64748b", margin: "0 0 8px", cursor: "pointer" }}>{l}</p>)}
+              <p style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>{col.heading}</p>
+              {col.links.map(l => <p key={l} style={{ fontSize: 13, color: "#64748b", margin: "0 0 8px", cursor: "pointer" }}>{l}</p>)}
             </div>
           ))}
         </div>
         <div style={{ maxWidth: 1200, margin: "32px auto 0", borderTop: "1px solid #1e293b", paddingTop: 24 }}>
-          <p style={{ fontSize: 12, color: "#475569" }}>© 2026 ConnectPro Technologies Group, Inc. All rights reserved.</p>
+          <p style={{ fontSize: 13, color: "#475569" }}>© 2026 ConnectPro Technologies Group, Inc. All rights reserved.</p>
         </div>
       </footer>
     </div>

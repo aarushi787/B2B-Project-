@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, MapPin, Star, CheckCircle, Mail, Globe, Phone, ShieldCheck } from 'lucide-react';
+import { X, MapPin, Star, CheckCircle, Globe, ShieldCheck } from 'lucide-react';
+import { TrustBadges, type Trust } from './TrustBadges';
 
 interface BusinessProfile {
   id?: string;
@@ -8,9 +9,11 @@ interface BusinessProfile {
   name: string;
   tagline: string;
   location: string;
-  rating: string;
+  rating: string | number | null;
   tags: string[];
   verified: boolean;
+  website?: string | null;
+  trust?: Trust;
 }
 
 interface BusinessProfileModalProps {
@@ -37,7 +40,7 @@ export function BusinessProfileModal({ business, onClose }: BusinessProfileModal
           className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[95vh]"
         >
           {/* Header Cover Image */}
-          <div className="relative h-48 bg-gradient-to-r from-blue-600 to-blue-900">
+          <div className="relative h-48 bg-gradient-to-r from-[#6921A5] to-[#492F77]">
             <button 
               onClick={onClose} 
               className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur-md transition-colors"
@@ -51,7 +54,7 @@ export function BusinessProfileModal({ business, onClose }: BusinessProfileModal
             <div className="flex justify-between items-end -mt-16 mb-6">
               <div className="flex items-end gap-6">
                 <div className="w-32 h-32 rounded-2xl bg-white p-2 shadow-lg relative">
-                  <div className="w-full h-full bg-blue-50 rounded-xl flex items-center justify-center text-3xl font-black text-blue-600">
+                  <div className="w-full h-full bg-[#F3E8F8] rounded-xl flex items-center justify-center text-3xl font-black text-[#6921A5]">
                     {business.initials}
                   </div>
                   {business.verified && (
@@ -66,12 +69,13 @@ export function BusinessProfileModal({ business, onClose }: BusinessProfileModal
                   <h2 className="text-3xl font-black text-slate-900 leading-tight">{business.name}</h2>
                   <div className="flex items-center gap-4 mt-2 text-sm text-slate-600 font-medium">
                     <span className="flex items-center gap-1.5"><MapPin className="w-4 h-4 text-slate-400" /> {business.location}</span>
-                    <span className="flex items-center gap-1.5 text-amber-600"><Star className="w-4 h-4 fill-current" /> {business.rating} Rating</span>
+                    {business.rating != null && <span className="flex items-center gap-1.5 text-amber-600"><Star className="w-4 h-4 fill-current" /> {business.rating} Rating</span>}
                   </div>
+                  <div className="mt-3"><TrustBadges trust={business.trust} /></div>
                 </div>
               </div>
               <div className="mb-2 flex gap-3">
-                <button className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md shadow-blue-600/20 transition-all">
+                <button className="px-6 py-2.5 bg-[#6921A5] hover:bg-[#6921A5] text-white font-bold rounded-xl shadow-md shadow-blue-600/20 transition-all">
                   Contact Provider
                 </button>
               </div>
@@ -85,7 +89,7 @@ export function BusinessProfileModal({ business, onClose }: BusinessProfileModal
                 <section>
                   <h3 className="text-lg font-bold text-slate-900 mb-3">About Us</h3>
                   <p className="text-slate-600 leading-relaxed">
-                    {business.tagline}. We specialize in delivering high-quality B2B services tailored to your corporate needs. Our team consists of industry veterans dedicated to ensuring the success of your projects through innovative solutions and reliable execution.
+                    {business.tagline || "This business has not added a description yet."}
                   </p>
                 </section>
                 
@@ -100,48 +104,35 @@ export function BusinessProfileModal({ business, onClose }: BusinessProfileModal
                   </div>
                 </section>
 
-                <section>
-                  <h3 className="text-lg font-bold text-slate-900 mb-3">Portfolio Highlights</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="h-40 bg-slate-100 rounded-2xl border border-slate-200 flex flex-col items-center justify-center p-4 text-center">
-                      <div className="text-slate-400 mb-2">📸</div>
-                      <p className="text-sm font-semibold text-slate-600">Project Alpha</p>
-                    </div>
-                    <div className="h-40 bg-slate-100 rounded-2xl border border-slate-200 flex flex-col items-center justify-center p-4 text-center">
-                      <div className="text-slate-400 mb-2">📸</div>
-                      <p className="text-sm font-semibold text-slate-600">Project Beta</p>
-                    </div>
-                  </div>
-                </section>
+
               </div>
 
               {/* Sidebar Column */}
               <div className="space-y-6">
                 <div className="p-6 bg-slate-50 border border-slate-100 rounded-2xl space-y-4">
                   <h3 className="font-bold text-slate-900">Contact Details</h3>
-                  <div className="flex items-center gap-3 text-sm text-slate-600">
-                    <Globe className="w-4 h-4 text-slate-400" />
-                    <a href="#" className="hover:text-blue-600 transition-colors">www.{business.name.replace(/\s+/g, '').toLowerCase()}.com</a>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm text-slate-600">
-                    <Mail className="w-4 h-4 text-slate-400" />
-                    <span>hello@{business.name.replace(/\s+/g, '').toLowerCase()}.com</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm text-slate-600">
-                    <Phone className="w-4 h-4 text-slate-400" />
-                    <span>+91 98765 43210</span>
-                  </div>
+                  {business.website ? (
+                    <div className="flex items-center gap-3 text-sm text-slate-600">
+                      <Globe className="w-4 h-4 text-slate-400" />
+                      <a href={/^https?:\/\//i.test(business.website) ? business.website : `https://${business.website}`} target="_blank" rel="noopener noreferrer" className="hover:text-[#6921A5] transition-colors break-all">{business.website}</a>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500">This business has not shared contact details. Send a proposal or an enquiry through the platform.</p>
+                  )}
                 </div>
 
-                <div className="p-6 bg-green-50 border border-green-100 rounded-2xl space-y-3">
-                  <div className="flex items-center gap-2 text-green-700 font-bold">
-                    <ShieldCheck className="w-5 h-5" />
-                    Verified Partner
+                {business.verified && (
+                  <div className="p-6 bg-[#F3E8F8] border border-[#DBC5E7] rounded-2xl space-y-3">
+                    <div className="flex items-center gap-2 text-[#6921A5] font-bold">
+                      <ShieldCheck className="w-5 h-5" />
+                      Verified business
+                    </div>
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      A platform admin reviewed this business's documents and approved it.
+                      {business.trust?.gst === "valid" ? " Its GST number also passes the format and check-digit test." : ""}
+                    </p>
                   </div>
-                  <p className="text-xs text-green-800/80 leading-relaxed">
-                    This business has completed our rigorous KYC and background verification process.
-                  </p>
-                </div>
+                )}
               </div>
             </div>
           </div>

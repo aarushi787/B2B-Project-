@@ -75,7 +75,7 @@ export function Deals() {
   const filtered = deals.filter(p => p.notes?.toLowerCase().includes(search.toLowerCase()) || p.title?.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", fontFamily: "Inter, sans-serif" }}>
+    <div style={{ maxWidth: 1200, margin: "0 auto", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       {/* Toolbar */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
         <SearchInput placeholder="Search Portfolios..." value={search} onChange={setSearch} />
@@ -115,13 +115,13 @@ export function Deals() {
               <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <Calendar style={{ width: 14, height: 14, color: "#94a3b8" }} />
-                  <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>
+                  <span style={{ fontSize: 13, color: "#64748b", fontWeight: 500 }}>
                     {new Date(p.createdAt).toLocaleDateString()}
                   </span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <CheckCircle2 style={{ width: 14, height: 14, color: "#94a3b8" }} />
-                  <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Verified</span>
+                  <span style={{ fontSize: 13, color: "#64748b", fontWeight: 500 }}>Verified</span>
                 </div>
               </div>
 
@@ -140,7 +140,7 @@ export function Deals() {
       {filtered.length > 0 && (
         <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 40 }}>
           <button style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid #e2e8f0", background: "#fff", color: "#374151", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>Prev</button>
-          <button style={{ width: 34, height: 34, borderRadius: 6, border: "2px solid #2563EB", background: "#2563EB", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>1</button>
+          <button style={{ width: 34, height: 34, borderRadius: 6, border: "2px solid #6921A5", background: "#6921A5", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>1</button>
           <button style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid #e2e8f0", background: "#fff", color: "#374151", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>Next</button>
         </div>
       )}
