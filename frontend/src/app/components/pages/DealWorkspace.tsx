@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Toaster, toast } from "sonner";
+import toast from "react-hot-toast";
 import { ActivityChat } from "../ActivityChat";
 import { DealDetails } from "../DealDetails";
 import { useParams } from "react-router";
@@ -169,7 +169,6 @@ export function DealWorkspace() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-800" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <Toaster position="top-right" richColors />
 
       <div className="bg-white border-b border-slate-200 shadow-sm mb-6 rounded-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4">

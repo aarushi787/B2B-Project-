@@ -13,7 +13,7 @@ import {
   LineChart, Line, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar
 } from "recharts";
-import { toast, Toaster } from "sonner";
+import toast from "react-hot-toast";
 import { apiClient } from "../../../services/apiClient";
 import { socketService } from "../../../services/socketService";
 import { useAuth } from "../../../auth/AuthProvider";
@@ -274,7 +274,7 @@ function DetailPanel({ tx, onClose }: { tx: Transaction; onClose: () => void }) 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-slate-100 flex gap-3 shrink-0">
           <button
-            onClick={() => { toast.success("Transaction exported!"); onClose(); }}
+            onClick={() => { downloadCsv(`transaction_${tx.id}.csv`, [tx]); toast.success("Transaction exported."); onClose(); }}
             className="flex-1 py-2.5 text-xs font-bold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center gap-1.5"
           >
             <Download className="w-3.5 h-3.5" /> Export
@@ -320,6 +320,23 @@ function TableSkeleton() {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const PAGE_SIZE = 8;
+
+const csvCell = (v: unknown) => {
+  let t = String(v ?? "");
+  if (/^[=+\-@\t\r]/.test(t)) t = `'${t}`; // a spreadsheet would run this as a formula
+  return /[",\n\r]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+};
+
+function downloadCsv(filename: string, rows: Transaction[]) {
+  const csv = [
+    ["Date", "Time", "Type", "Amount", "Deal reference", "Category", "Status", "Description"],
+    ...rows.map((t) => [t.date, t.time, t.type, t.amount, t.dealReference, t.category, t.status, t.description]),
+  ].map((r) => r.map(csvCell).join(",")).join("\r\n");
+  const url = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
 
 export function Ledger() {
   const { user, isAdmin } = useAuth();
@@ -389,7 +406,7 @@ export function Ledger() {
     socketService.connect();
     const unsub = socketService.on('ledger:updated', () => {
       fetchTransactions();
-      toast.info("Ledger updated in real-time");
+      toast("Ledger updated");
     });
     
     return () => unsub();
@@ -445,22 +462,11 @@ export function Ledger() {
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const categories = ["All", ...Array.from(new Set(transactions.map(t => t.category)))];
 
-  const handleExport = (format: "csv" | "pdf") => {
+  const handleExport = () => {
     setShowExportMenu(false);
-    toast.loading(`Preparing ${format.toUpperCase()}...`, { id: "export" });
-    setTimeout(() => {
-      if (format === "csv") {
-        const csv = [
-          ["Date", "Time", "Type", "Amount", "Deal Reference", "Category", "Status", "Description"],
-          ...filtered.map(t => [t.date, t.time, t.type, t.amount, t.dealReference, t.category, t.status, t.description]),
-        ].map(r => r.join(",")).join("\n");
-        const blob = new Blob([csv], { type: "text/csv" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a"); a.href = url; a.download = `ledger_${Date.now()}.csv`; a.click();
-        URL.revokeObjectURL(url);
-      }
-      toast.success(`${format.toUpperCase()} ready! Download started.`, { id: "export" });
-    }, 1800);
+    if (filtered.length === 0) { toast.error("There are no transactions to export."); return; }
+    downloadCsv(`ledger_${new Date().toISOString().slice(0, 10)}.csv`, filtered);
+    toast.success(`Exported ${filtered.length} transaction${filtered.length === 1 ? "" : "s"}.`);
   };
 
   const SORT_LABELS: Record<SortKey, string> = {
@@ -472,7 +478,6 @@ export function Ledger() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <Toaster position="top-right" richColors />
       <AnimatePresence>
         {selectedTx && <DetailPanel tx={selectedTx} onClose={() => setSelectedTx(null)} />}
       </AnimatePresence>
@@ -533,11 +538,8 @@ export function Ledger() {
                       exit={{ opacity: 0, y: 6, scale: 0.97 }}
                       className="absolute right-0 top-full mt-2 w-44 bg-white rounded-xl shadow-lg border border-slate-200 py-1 z-50"
                     >
-                      <button onClick={() => handleExport("csv")} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors">
+                      <button onClick={() => handleExport()} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors">
                         <FileSpreadsheet className="w-3.5 h-3.5 text-green-600" /> Export CSV
-                      </button>
-                      <button onClick={() => handleExport("pdf")} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors">
-                        <FileText className="w-3.5 h-3.5 text-red-500" /> Download PDF Report
                       </button>
                     </motion.div>
                   )}
@@ -571,7 +573,7 @@ export function Ledger() {
             {[
               { icon: Activity, label: "View Transactions", desc: "Explore all entries", color: "#6921A5" },
               { icon: SlidersHorizontal, label: "Apply Filters", desc: "Type, status, date", color: "#6921A5" },
-              { icon: Download, label: "Export Data", desc: "CSV or PDF report", color: "#22C55E" },
+              { icon: Download, label: "Export Data", desc: "Download as CSV", color: "#22C55E" },
             ].map((s, i, arr) => (
               <React.Fragment key={s.label}>
                 <motion.div
@@ -983,11 +985,9 @@ export function Ledger() {
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-1 gap-3">
             {[
-              { label: "Export CSV", desc: "Raw transaction data", icon: FileSpreadsheet, color: "#22C55E", action: () => handleExport("csv") },
-              { label: "Download PDF Report", desc: "Formatted ledger report", icon: FileText, color: "#EF4444", action: () => handleExport("pdf") },
-              { label: "Send via Email", desc: "Share with stakeholders", icon: Banknote, color: "#6921A5", action: () => toast.success("Report sent via email!") },
+              { label: "Export CSV", desc: "Raw transaction data", icon: FileSpreadsheet, color: "#22C55E", action: () => handleExport() },
             ].map(b => (
               <motion.button
                 key={b.label}

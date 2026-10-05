@@ -1,4 +1,4 @@
-import { Search, Send, MoreVertical, Paperclip, Smile, Phone, Video } from "lucide-react";
+import { Search, Send } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../../auth/AuthProvider";
 import { apiClient } from "../../../services/apiClient";
@@ -33,31 +33,29 @@ export function Messaging() {
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [query, setQuery] = useState("");
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const selectedRef = useRef<string | null>(null);
+  selectedRef.current = selectedConvId;
+  const nameCache = useRef(new Map<string, string>());
+
+  // One subscription for the life of the page. The socket is shared with the whole app, so it is never closed here.
   useEffect(() => {
-    if (user?.companyId) {
-      fetchData();
-      
-      const unsubNewMsg = socketService.on<Message>('messages:new', (msg) => {
-        setMessages(prev => [...prev, msg]);
-        refreshConversations();
-      });
+    if (!user?.companyId) return;
+    void fetchData();
+    const unsubNewMsg = socketService.on<Message>('messages:new', (msg) => {
+      setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+      void refreshConversations();
+    });
+    const unsubTyping = socketService.on<{ senderId: string; isTyping: boolean }>('messages:typing', (payload) => {
+      if (payload.senderId === selectedRef.current) setIsTyping(payload.isTyping);
+    });
+    return () => { unsubNewMsg(); unsubTyping(); };
+  }, [user?.companyId]);
 
-      const unsubTyping = socketService.on<{senderId: string, isTyping: boolean}>('messages:typing', (payload) => {
-        if (payload.senderId === selectedConvId) {
-          setIsTyping(payload.isTyping);
-        }
-      });
-
-      return () => {
-        unsubNewMsg();
-        unsubTyping();
-        socketService.disconnect();
-      };
-    }
-  }, [user?.companyId, selectedConvId]);
+  useEffect(() => { setIsTyping(false); }, [selectedConvId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -66,8 +64,9 @@ export function Messaging() {
   const fetchData = async () => {
     try {
       const allMsgs = await apiClient.get<Message[]>(`/messages/company/${user?.companyId}`);
-      setMessages(allMsgs.reverse()); // Assuming backend sends descending, we want ascending for chat
-      await buildConversations(allMsgs);
+      const ordered = [...allMsgs].reverse(); // the API sends newest first; a chat reads oldest first
+      setMessages(ordered);
+      await buildConversations(ordered);
     } catch (error) {
       console.error("Failed to fetch messages:", error);
     }
@@ -76,7 +75,7 @@ export function Messaging() {
   const refreshConversations = async () => {
     try {
       const allMsgs = await apiClient.get<Message[]>(`/messages/company/${user?.companyId}`);
-      await buildConversations(allMsgs.reverse());
+      await buildConversations([...allMsgs].reverse());
     } catch (error) {}
   };
 
@@ -93,11 +92,14 @@ export function Messaging() {
     const convs: Conversation[] = [];
     for (const [otherId, threadMsgs] of Array.from(threads.entries())) {
       const lastMsg = threadMsgs[threadMsgs.length - 1];
-      let compName = "Unknown Company";
-      try {
-        const comp = await apiClient.get<any>(`/companies/${otherId}`);
-        if (comp) compName = comp.name;
-      } catch(e) {}
+      let compName = nameCache.current.get(otherId) ?? "";
+      if (!compName) {
+        try {
+          const comp = await apiClient.get<any>(`/companies/${otherId}`);
+          if (comp?.name) { compName = comp.name; nameCache.current.set(otherId, compName); }
+        } catch { /* fall through to the placeholder */ }
+      }
+      compName = compName || "Unknown company";
       
       convs.push({
         id: otherId,
@@ -110,7 +112,7 @@ export function Messaging() {
       });
     }
     setConversations(convs);
-    if (convs.length > 0 && !selectedConvId) {
+    if (convs.length > 0 && !selectedRef.current) {
       setSelectedConvId(convs[0].id);
     }
   };
@@ -132,7 +134,7 @@ export function Messaging() {
         content: messageInput
       };
       const sentMsg = await apiClient.post<Message>('/messages/send', payload);
-      setMessages(prev => [...prev, sentMsg]);
+      setMessages(prev => (prev.some((m) => m.id === sentMsg.id) ? prev : [...prev, sentMsg]));
       setMessageInput("");
       socketService.sendTyping(selectedConvId, undefined, false);
       refreshConversations();
@@ -164,7 +166,10 @@ export function Messaging() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
             <input
-              type="text"
+              type="search"
+              aria-label="Search conversations"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
               placeholder="Search conversations..."
               className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7BB8F7] text-xs"
             />
@@ -174,7 +179,7 @@ export function Messaging() {
         <div className="flex-1 overflow-y-auto">
           {conversations.length === 0 ? (
             <div className="p-4 text-xs text-gray-500 text-center">No messages yet.</div>
-          ) : conversations.map((conversation) => (
+          ) : conversations.filter((c) => c.name.toLowerCase().includes(query.trim().toLowerCase())).map((conversation) => (
             <button
               key={conversation.id}
               onClick={() => setSelectedConvId(conversation.id)}
@@ -192,15 +197,15 @@ export function Messaging() {
               </div>
               <div className="flex-1 text-left min-w-0">
                 <div className="flex items-center justify-between mb-0.5">
-                  <h3 className="text-xs font-bold text-gray-900 truncate">{conversation.name}</h3>
-                  <span className="text-[11px] text-gray-400 flex-shrink-0 ml-1">
+                  <h3 className="text-sm font-bold text-gray-900 truncate">{conversation.name}</h3>
+                  <span className="text-xs text-gray-400 flex-shrink-0 ml-1">
                     {conversation.timestamp}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-gray-500 truncate">{conversation.lastMessage}</p>
+                  <p className="text-sm text-gray-500 truncate">{conversation.lastMessage}</p>
                   {conversation.unread > 0 && (
-                    <span className="ml-1.5 bg-[#6921A5] text-white text-[11px] font-bold rounded-full w-4 h-4 flex items-center justify-center flex-shrink-0">
+                    <span className="ml-1.5 bg-[#6921A5] text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center flex-shrink-0">
                       {conversation.unread}
                     </span>
                   )}
@@ -228,21 +233,10 @@ export function Messaging() {
                 </div>
                 <div>
                   <h3 className="text-xs font-bold text-gray-900">{selectedConv?.name}</h3>
-                  <p className="text-[11px] text-gray-400">
+                  <p className="text-xs text-gray-400">
                     {selectedConv?.online ? "Active now" : "Offline"}
                   </p>
                 </div>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
-                  <Phone className="w-4 h-4" />
-                </button>
-                <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
-                  <Video className="w-4 h-4" />
-                </button>
-                <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
-                  <MoreVertical className="w-4 h-4" />
-                </button>
               </div>
             </div>
 
@@ -263,18 +257,18 @@ export function Messaging() {
                             : "bg-gray-100 text-gray-900"
                         }`}
                       >
-                        <p className="text-xs leading-relaxed">{message.content}</p>
+                        <p className="text-sm leading-relaxed">{message.content}</p>
                       </div>
                       <div
                         className={`flex items-center gap-1 mt-1 ${
                           isMe ? "justify-end" : "justify-start"
                         }`}
                       >
-                        <span className="text-[11px] text-gray-400">
+                        <span className="text-xs text-gray-400">
                           {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                         {isMe && (
-                          <span className="text-[11px] text-gray-400">
+                          <span className="text-xs text-gray-400">
                             {message.read ? "· Read" : "· Delivered"}
                           </span>
                         )}
@@ -302,26 +296,21 @@ export function Messaging() {
             {/* Message Input */}
             <div className="p-4 border-t border-gray-200">
               <div className="flex items-end gap-2">
-                <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
-                  <Paperclip className="w-4 h-4" />
-                </button>
-                <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
-                  <Smile className="w-4 h-4" />
-                </button>
                 <div className="flex-1">
                   <textarea
                     value={messageInput}
                     onChange={handleTyping}
-                    onKeyPress={handleKeyPress}
+                    onKeyDown={handleKeyPress}
                     placeholder="Type a message..."
                     rows={1}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7BB8F7] resize-none text-xs"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7BB8F7] resize-none text-sm"
                   />
                 </div>
                 <button
+                  aria-label="Send message"
                   onClick={handleSendMessage}
                   disabled={!messageInput.trim()}
-                  className="p-2.5 bg-[#6921A5] text-white rounded-xl hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2.5 bg-[#6921A5] text-white rounded-xl hover:bg-[#492F77] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Send className="w-4 h-4" />
                 </button>

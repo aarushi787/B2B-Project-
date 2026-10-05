@@ -1,8 +1,8 @@
 // My Services — with Add New Service Modal and backend integration
 import { useState, useEffect } from "react";
-import { PlusSquare, Tag, PauseCircle, XCircle } from "lucide-react";
+import { PlusSquare, XCircle } from "lucide-react";
 import toast from "react-hot-toast";
-import { StatusBadge, Card, SearchInput, FilterPill, PrimaryBtn, Modal, Input, TextArea, GhostBtn } from "../ui/DesignSystem";
+import { StatusBadge, Card, SearchInput, PrimaryBtn, Modal, Input, TextArea, GhostBtn } from "../ui/DesignSystem";
 import { apiClient } from "../../../services/apiClient";
 import { socketService } from "../../../services/socketService";
 import { useAuth } from "../../../auth/AuthProvider";
@@ -38,12 +38,13 @@ export function Marketplace() {
     });
     
     return () => unsub();
-  }, []);
+  }, [user?.companyId]);
 
   const fetchServices = async () => {
     try {
       // Assuming products represent services in the backend
-      const data = await apiClient.get<ServiceItem[]>('/products');
+      if (!user?.companyId) { setServices([]); return; }
+      const data = await apiClient.get<ServiceItem[]>(`/products/merchant/${user.companyId}`);
       setServices(data || []);
     } catch (error) {
       toast.error("Failed to fetch services");
@@ -53,6 +54,7 @@ export function Marketplace() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!window.confirm("Delete this service? This cannot be undone.")) return;
     try {
       await apiClient.delete(`/products/${id}`);
       setServices(prev => prev.filter(s => s.id !== id));
@@ -63,17 +65,18 @@ export function Marketplace() {
   };
 
   const handleAddService = async () => {
-    if (!formData.name || !formData.price) {
-      return toast.error("Name and price are required");
+    const price = parseFloat(formData.price);
+    if (!formData.name.trim() || !Number.isFinite(price) || price < 0) {
+      return toast.error("Enter a name and a valid price");
     }
+    if (!user?.companyId) return toast.error("Create your company profile first");
     setIsSaving(true);
     try {
       const newService = await apiClient.post<ServiceItem>('/products', {
         name: formData.name,
         category: formData.category,
         description: formData.description,
-        price: parseFloat(formData.price),
-        merchantId: user?.companyId || "no-company-id"
+        price,
       });
       toast.success("Service added successfully!");
       setServices([newService, ...services]);
@@ -93,7 +96,6 @@ export function Marketplace() {
       {/* Toolbar */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
         <SearchInput placeholder="Search Services..." value={search} onChange={setSearch} />
-        <FilterPill label="All Categories" />
         <div style={{ flex: 1 }} />
         <PrimaryBtn onClick={() => setAddModalOpen(true)}>
           <PlusSquare style={{ width: 16, height: 16 }} /> Add New Service
@@ -131,39 +133,18 @@ export function Marketplace() {
             {/* Bottom stats row */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 0", borderTop: "1px solid #f1f5f9" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
-                <span style={{ fontSize: 13, color: "#64748b" }}>Price: <b style={{ color: "#0f172a" }}>${s.price || 0}</b></span>
-                <span style={{ width: 1, height: 16, background: "#e2e8f0" }} />
-                <span style={{ fontSize: 13, color: "#64748b" }}>0 Enquiries</span>
-                <span style={{ width: 1, height: 16, background: "#e2e8f0" }} />
-                <span style={{ fontSize: 13, color: "#64748b" }}>0 Projects Completed</span>
-                <span style={{ width: 1, height: 16, background: "#e2e8f0" }} />
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>0.0 ★</span>
+                <span style={{ fontSize: 13, color: "#64748b" }}>Price: <b style={{ color: "#0f172a" }}>{typeof s.price === "number" ? `₹${s.price.toLocaleString("en-IN")}` : "On request"}</b></span>
               </div>
               
               <div style={{ display: "flex", gap: 8 }}>
-                <button style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 6, cursor: "pointer", color: "#64748b" }}>
-                  <Tag style={{ width: 14, height: 14 }} />
-                </button>
-                <button style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 6, cursor: "pointer", color: "#64748b" }}>
-                  <PauseCircle style={{ width: 14, height: 14 }} />
-                </button>
-                <button onClick={() => handleDelete(s.id)} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 6, cursor: "pointer", color: "#ef4444" }}>
-                  <XCircle style={{ width: 14, height: 14 }} />
+                <button aria-label={`Delete ${s.name}`} title="Delete" onClick={() => handleDelete(s.id)} style={{ width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 6, cursor: "pointer", color: "#ef4444" }}>
+                  <XCircle style={{ width: 18, height: 18 }} />
                 </button>
               </div>
             </div>
           </Card>
         ))}
       </div>
-
-      {/* Pagination */}
-      {filtered.length > 0 && (
-        <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 32 }}>
-          <button style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid #e2e8f0", background: "#fff", color: "#374151", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>Prev</button>
-          <button style={{ width: 34, height: 34, borderRadius: 6, border: "2px solid #6921A5", background: "#6921A5", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>1</button>
-          <button style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid #e2e8f0", background: "#fff", color: "#374151", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>Next</button>
-        </div>
-      )}
 
       {/* Add New Service Modal */}
       <Modal isOpen={isAddModalOpen} onClose={() => setAddModalOpen(false)} title="Add New Service">

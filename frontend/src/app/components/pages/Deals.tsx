@@ -1,9 +1,10 @@
-// Portfolio (Deals) — with Add Project Modal and backend integration
+// Deals — the real deals your company is a party to
 import { CoverArt } from "../CoverArt";
 import { useState, useEffect } from "react";
-import { FolderPlus, Clock, ExternalLink, Calendar, CheckCircle2 } from "lucide-react";
+import { FolderPlus, Clock, Calendar } from "lucide-react";
+import { Link } from "react-router";
 import toast from "react-hot-toast";
-import { StatusBadge, Card, SearchInput, FilterPill, PrimaryBtn, GhostBtn, Modal, Input, TextArea } from "../ui/DesignSystem";
+import { StatusBadge, Card, SearchInput, FilterPill, PrimaryBtn, GhostBtn } from "../ui/DesignSystem";
 import { apiClient } from "../../../services/apiClient";
 import { socketService } from "../../../services/socketService";
 
@@ -20,11 +21,6 @@ export function Deals() {
   const [search, setSearch] = useState("");
   const [deals, setDeals] = useState<DealItem[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Modal State
-  const [isAddModalOpen, setAddModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ title: "", amount: "", description: "" });
-  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     fetchDeals();
@@ -48,31 +44,6 @@ export function Deals() {
     }
   };
 
-  const handleAddProject = async () => {
-    if (!formData.title || !formData.amount) {
-      return toast.error("Title and amount are required");
-    }
-    setIsSaving(true);
-    try {
-      const newDeal = await apiClient.post<DealItem>('/deals', {
-        title: formData.title,
-        notes: formData.description,
-        totalAmount: parseFloat(formData.amount),
-        status: 'COMPLETED',
-        buyerId: "d850de54-4f77-4251-953f-e3662013175d",
-        sellerId: "d850de54-4f77-4251-953f-e3662013175d"
-      });
-      toast.success("Project added successfully!");
-      setDeals([newDeal, ...deals]);
-      setAddModalOpen(false);
-      setFormData({ title: "", amount: "", description: "" });
-    } catch (error) {
-      toast.error("Not authorized or failed to add project");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   const filtered = deals.filter(p => p.notes?.toLowerCase().includes(search.toLowerCase()) || p.title?.toLowerCase().includes(search.toLowerCase()));
 
   return (
@@ -82,15 +53,13 @@ export function Deals() {
         <SearchInput placeholder="Search Portfolios..." value={search} onChange={setSearch} />
         <FilterPill label="All Types" />
         <div style={{ flex: 1 }} />
-        <PrimaryBtn onClick={() => setAddModalOpen(true)}>
-          <FolderPlus style={{ width: 16, height: 16 }} /> Add Project
-        </PrimaryBtn>
+        <Link to="/app/requirements/new" style={{ textDecoration: "none" }}><PrimaryBtn><FolderPlus style={{ width: 16, height: 16 }} /> Post a requirement</PrimaryBtn></Link>
       </div>
 
       {loading && <div style={{ padding: 40, textAlign: "center" }}>Loading portfolio...</div>}
       {!loading && filtered.length === 0 && (
         <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>
-          No projects found. Click 'Add Project' to create one.
+          No deals yet. A deal starts when you accept a proposal on a requirement you posted.
         </div>
       )}
 
@@ -117,45 +86,16 @@ export function Deals() {
                     {new Date(p.createdAt).toLocaleDateString()}
                   </span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <CheckCircle2 style={{ width: 14, height: 14, color: "#94a3b8" }} />
-                  <span style={{ fontSize: 13, color: "#64748b", fontWeight: 500 }}>Verified</span>
-                </div>
               </div>
 
-              <div style={{ display: "flex", gap: 12 }}>
-                <GhostBtn onClick={() => toast("Case study is being generated...", { icon: "📄" })} style={{ flex: 1, color: "#0f172a", padding: "8px 0" }}>View Case Study</GhostBtn>
-                <button onClick={() => toast("Opening external link...", { icon: "🔗" })} style={{ width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, cursor: "pointer", color: "#64748b" }}>
-                  <ExternalLink style={{ width: 16, height: 16 }} />
-                </button>
-              </div>
+              <Link to={`/app/deals/${p.id}`} style={{ textDecoration: "none" }}>
+                <GhostBtn style={{ width: "100%", color: "#0f172a", padding: "10px 0" }}>Open deal</GhostBtn>
+              </Link>
             </div>
           </Card>
         ))}
       </div>
 
-      {/* Pagination */}
-      {filtered.length > 0 && (
-        <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 40 }}>
-          <button style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid #e2e8f0", background: "#fff", color: "#374151", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>Prev</button>
-          <button style={{ width: 34, height: 34, borderRadius: 6, border: "2px solid #6921A5", background: "#6921A5", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>1</button>
-          <button style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid #e2e8f0", background: "#fff", color: "#374151", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>Next</button>
-        </div>
-      )}
-
-      {/* Add Project Modal */}
-      <Modal isOpen={isAddModalOpen} onClose={() => setAddModalOpen(false)} title="Add New Project">
-        <Input label="Project Title *" placeholder="e.g. Acme Corp Migration" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
-        <Input label="Deal Amount *" type="number" placeholder="e.g. 50000" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} />
-        <TextArea label="Project Description" placeholder="Summarize the project outcome and deliverables..." value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
-        
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 16 }}>
-          <GhostBtn onClick={() => setAddModalOpen(false)}>Cancel</GhostBtn>
-          <PrimaryBtn onClick={handleAddProject} disabled={isSaving}>
-            {isSaving ? "Saving..." : "Add Project"}
-          </PrimaryBtn>
-        </div>
-      </Modal>
     </div>
   );
 }
