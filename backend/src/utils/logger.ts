@@ -6,7 +6,7 @@ const level = process.env.LOG_LEVEL || 'info';
 const baseLogger = pino({
   level,
   base: {
-    service: 'b2b-nexus-backend',
+    service: 'b2bforcorporates-backend',
     env: process.env.NODE_ENV || 'development',
   },
   redact: {

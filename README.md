@@ -1,6 +1,6 @@
 # B2BForCorporates
 
-Enterprise collaboration platform — SaaS Dashboard UI + B2B Nexus backend engine.
+Enterprise collaboration platform — SaaS Dashboard UI + B2BForCorporates backend engine.
 
 > Deploying to Vercel + Render? Follow [DEPLOY.md](DEPLOY.md).
 
@@ -76,7 +76,7 @@ cd admin-frontend && npm run build
 CI (`.github/workflows/ci.yml`) builds all three apps, runs the unit tests, then runs the Playwright suite against a throwaway MySQL service. The E2E tests create real accounts, so never point them at a database you care about.
 
 ## Docker
-`docker-compose.yml` runs the backend on port 3000 with database `b2b_nexus` (overridable with `DB_NAME`). Local `npm run dev` uses port 5000 and database `b2bforcorporates`.
+`docker-compose.yml` runs the backend on port 3000 with database `b2bforcorporates` (overridable with `DB_NAME`). Local `npm run dev` uses port 5000 and database `b2bforcorporates`.
 
 ## Stack
 | Layer | Technology |
@@ -100,7 +100,7 @@ b2bforcorporates/
 │       ├── auth/      # AuthProvider + useAuth hook
 │       ├── services/  # API client + all backend service wrappers
 │       └── types/     # TypeScript types
-└── backend/           # Express + TypeScript (B2B Nexus engine)
+└── backend/           # Express + TypeScript (B2BForCorporates engine)
     └── src/
         ├── routes/    # 17 API route modules (120+ endpoints)
         ├── config/    # DB connection + schema init

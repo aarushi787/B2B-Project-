@@ -23,11 +23,8 @@ function Navbar() {
     <nav style={{ position: "sticky", top: 0, zIndex: 50, background: "#fff", borderBottom: "1px solid #e2e8f0", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", gap: 32, height: 60 }}>
         <a href="/landing" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
-          <img src="/logo.png" alt="B2B Logo" style={{ height: "32px", width: "auto", objectFit: "contain" }} />
-          <div>
-            <div style={{ fontWeight: 800, fontSize: 13, color: "#0f172a" }}>B2B</div>
-            <div style={{ fontWeight: 700, fontSize: 8, color: "#0f172a", textTransform: "uppercase" }}>CORPORATES</div>
-          </div>
+          <img src="/logo.png" alt="B2BForCorporates logo" style={{ height: "32px", width: "auto", objectFit: "contain" }} />
+          <span style={{ fontFamily: "Fraunces, Georgia, serif", fontWeight: 500, fontSize: 18, color: "#6921A5", letterSpacing: "-0.01em" }}>B2BForCorporates</span>
         </a>
         <div style={{ display: "flex", alignItems: "center", gap: 24, flex: 1 }}>
           {[

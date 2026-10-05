@@ -1,7 +1,7 @@
 {
-  "name": "b2b-nexus-backend",
+  "name": "b2bforcorporates-backend",
   "version": "1.0.0",
-  "description": "B2B Nexus Marketplace Backend API",
+  "description": "B2BForCorporates Backend API",
   "main": "dist/index.js",
   "type": "module",
   "engines": {
