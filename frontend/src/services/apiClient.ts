@@ -6,7 +6,13 @@
 // browser treats auth cookies as first-party), http://localhost:5000/api in development.
 
 const env = (import.meta as any).env ?? {};
-export const API_BASE_URL: string = (env.VITE_API_BASE_URL || (env.PROD ? '/api' : 'http://localhost:5000/api')).replace(/\/+$/, '');
+const isLocalAddress = (url: string) => /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/i.test(url);
+const pageIsLocal = typeof window !== 'undefined' && ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
+// A localhost API address only makes sense on a developer's own machine. If one was baked into a deployed build (a
+// dev .env value pasted into the host's settings), every visitor's browser would try to reach ITS OWN localhost.
+// So on a real site it is ignored and the same-origin "/api" is used instead.
+const configuredApi: string = env.VITE_API_BASE_URL && !(isLocalAddress(env.VITE_API_BASE_URL) && !pageIsLocal) ? env.VITE_API_BASE_URL : '';
+export const API_BASE_URL: string = (configuredApi || (env.PROD ? '/api' : 'http://localhost:5000/api')).replace(/\/+$/, '');
 const LEGACY_TOKEN_KEY = 'b2bforcorporates_token';
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 // Endpoints where a 401 means "bad credentials/no session", not "your access token expired".
