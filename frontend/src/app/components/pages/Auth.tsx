@@ -348,7 +348,7 @@ export function Auth() {
         </div>
 
         <p style={{ textAlign: "center", fontSize: 13, color: "#94a3b8", marginTop: 24 }}>
-          © 2026 B2BForCorporates · Enterprise Collaboration Platform
+          © {new Date().getFullYear()} B2BForCorporates · <Link to="/terms" style={{ color: "inherit" }}>Terms</Link> · <Link to="/privacy" style={{ color: "inherit" }}>Privacy</Link> · <Link to="/help" style={{ color: "inherit" }}>Help</Link>
         </p>
       </div>
     </div>

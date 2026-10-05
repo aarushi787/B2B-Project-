@@ -17,7 +17,8 @@
     "db:init": "node dist/config/init.js",
     "db:seed": "tsx src/scripts/seed.ts",
     "db:check": "tsx src/scripts/checkDb.ts",
-    "db:reset-password": "tsx src/scripts/resetPassword.ts"
+    "db:reset-password": "tsx src/scripts/resetPassword.ts",
+    "email:test": "tsx src/scripts/emailTest.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1141.0",

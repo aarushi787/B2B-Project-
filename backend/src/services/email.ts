@@ -41,17 +41,40 @@ async function initTransporter() {
   return transporter;
 }
 
-export const sendNotificationEmail = async (to: string, subject: string, message: string, ctaLink?: string, ctaText?: string) => {
+export interface SendResult { sent: boolean; messageId?: string; previewUrl?: string; error?: string }
+
+const defaultFrom = () => process.env.EMAIL_FROM || '"B2BForCorporates" <notifications@b2bforcorporates.com>';
+
+/** The one way mail leaves the app. Never throws: callers get a result and decide what a failure means. */
+export const sendEmail = async (to: string, subject: string, html: string, text?: string): Promise<SendResult> => {
   if (!emailEnabled()) {
     logger.warn('email_skipped_no_smtp', { hint: 'Set SMTP_PASS (and SMTP_HOST/SMTP_USER/EMAIL_FROM) to send email in production.' });
-    return;
+    return { sent: false, error: 'Email is not set up (SMTP_PASS is missing).' };
   }
-  const t = await initTransporter();
+  try {
+    const t = await initTransporter();
+    const info = await t.sendMail({ from: defaultFrom(), to, subject, html, text: text ?? html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() });
+    const previewUrl = process.env.SMTP_PASS ? undefined : (nodemailer.getTestMessageUrl(info) || undefined);
+    logger.info(`Email sent to ${to}. Message ID: ${info.messageId}`);
+    if (previewUrl) logger.info(`Preview URL: ${previewUrl}`);
+    return { sent: true, messageId: info.messageId, previewUrl };
+  } catch (error) {
+    logger.error(`Failed to send email to ${to}`, { error });
+    return { sent: false, error: error instanceof Error ? error.message : String(error) };
+  }
+};
+
+/** Checks the SMTP login without sending anything. */
+export const verifyMailer = async (): Promise<{ ok: boolean; error?: string }> => {
+  try { await (await initTransporter()).verify(); return { ok: true }; }
+  catch (error) { return { ok: false, error: error instanceof Error ? error.message : String(error) }; }
+};
+
+export const sendNotificationEmail = async (to: string, subject: string, message: string, ctaLink?: string, ctaText?: string) => {
   const safeSubject = escapeHtml(subject);
   const safeMessage = escapeHtml(message);
   const safeLink = ctaLink && /^https?:\/\//.test(ctaLink) ? escapeHtml(ctaLink) : '';
-  
-  const htmlContent = `
+  const html = `
     <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px;">
       <h2 style="color: #6921A5; margin-bottom: 20px;">${safeSubject}</h2>
       <p style="color: #334155; line-height: 1.5; margin-bottom: 24px;">${safeMessage}</p>
@@ -60,24 +83,7 @@ export const sendNotificationEmail = async (to: string, subject: string, message
       <p style="color: #94a3b8; font-size: 12px;">This is an automated notification from B2BForCorporates.</p>
     </div>
   `;
-
-  const mailOptions = {
-    from: process.env.EMAIL_FROM || '"B2BForCorporates" <notifications@b2bforcorporates.com>',
-    to,
-    subject,
-    text: message + (ctaLink ? `\n\nLink: ${ctaLink}` : ''),
-    html: htmlContent,
-  };
-
-  try {
-    const info = await t.sendMail(mailOptions);
-    logger.info(`Email sent to ${to}. Message ID: ${info.messageId}`);
-    if (!process.env.SMTP_PASS) {
-      logger.info(`Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
-    }
-  } catch (error) {
-    logger.error('Error sending notification email', { error });
-  }
+  return sendEmail(to, subject, html, message + (ctaLink ? `\n\nLink: ${ctaLink}` : ''));
 };
 
 export const sendPasswordResetEmail = async (to: string, resetToken: string) => {

@@ -15,7 +15,6 @@ import bcrypt from 'bcryptjs';
 import pool from '../config/database.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { authLimiter } from '../middleware/rateLimit.js';
-import { sendPasswordResetEmail } from '../services/email.js';
 import { isValidGst, isValidPan, isValidPhone } from '../services/compliance.js';
 import { logger } from '../utils/logger.js';
 import {
@@ -41,7 +40,7 @@ import {
   signSocketToken,
   SOCKET_TOKEN_TTL_SECONDS,
 } from '../services/tokens.js';
-import { sendEmail } from '../utils/mailer.js';
+import { sendEmail } from '../services/email.js';
 
 const router = Router();
 
