@@ -35,6 +35,9 @@ const BREADCRUMB_MAP: Record<string, string> = {
   "/app/enquiries/received": "Received Enquiries",
   "/app/enquiries/archived": "Archived Enquiries",
   "/app/messaging": "Messages",
+  "/app/ledger": "Ledger",
+  "/app/reviews": "Reviews",
+  "/app/notifications": "Notifications",
 };
 
 export function Layout() {

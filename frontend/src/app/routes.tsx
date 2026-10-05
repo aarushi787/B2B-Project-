@@ -8,6 +8,7 @@ import { AdminGuard } from "../auth/AdminGuard";
 const Terms = React.lazy(() => import("./components/pages/InfoPages").then(m => ({ default: m.Terms })));
 const Privacy = React.lazy(() => import("./components/pages/InfoPages").then(m => ({ default: m.Privacy })));
 const Help = React.lazy(() => import("./components/pages/InfoPages").then(m => ({ default: m.Help })));
+const ReviewsPage = React.lazy(() => import("./components/pages/ReviewsPage").then(m => ({ default: m.ReviewsPage })));
 const Dashboard = React.lazy(() => import("./components/pages/Dashboard").then(m => ({ default: m.Dashboard })));
 const Companies = React.lazy(() => import("./components/pages/Companies").then(m => ({ default: m.Companies })));
 const DealWorkspace = React.lazy(() => import("./components/pages/DealWorkspace").then(m => ({ default: m.DealWorkspace })));
@@ -61,6 +62,7 @@ export const router = createBrowserRouter([
       { path: "ledger",                       Component: Ledger },
       { path: "marketplace",                  Component: Marketplace },
       { path: "investor",                     Component: Investor },
+      { path: "reviews",                      Component: ReviewsPage },
       { path: "settings",                     Component: Settings },
       { path: "verification",                 Component: VerificationPage },
       { path: "component-map",                Component: ComponentMap },

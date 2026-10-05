@@ -4,12 +4,12 @@ import type { ComponentType } from "react";
 import { Link, useLocation } from "react-router";
 import {
   Briefcase, Building2, ClipboardList, FileSignature, Home, Inbox, Landmark, MessageSquare, PanelLeftClose, PanelLeftOpen,
-  Plus, Send, Settings, Shield, ShieldCheck, Sparkles, Store, Menu,
+  Plus, Send, Settings, Shield, ShieldCheck, Sparkles, Store, Menu, Search, Star, HelpCircle,
 } from "lucide-react";
 import { useAuth } from "../../auth/AuthProvider";
 import { useSidebarCounts, type SidebarCounts } from "../../lib/useSidebarCounts";
 
-type BadgeKey = "proposals" | "alerts" | "verification";
+type BadgeKey = "proposals" | "alerts" | "verification" | "reviews";
 interface NavItem { label: string; path: string; icon: ComponentType<{ className?: string }>; match?: string[]; badge?: BadgeKey }
 interface NavGroup { id: string; label?: string; items: NavItem[] }
 
@@ -17,6 +17,7 @@ const GROUPS: NavGroup[] = [
   { id: "home", items: [{ label: "Overview", path: "/app/dashboard", icon: Home }] },
   { id: "buying", label: "Buying", items: [
     { label: "My requirements", path: "/app/requirements/active", match: ["/app/requirements"], icon: ClipboardList },
+    { label: "Find businesses", path: "/explore", icon: Search },
     { label: "Proposals received", path: "/app/opportunities/received", match: ["/app/opportunities/received", "/app/opportunities/proposals"], icon: Inbox, badge: "proposals" },
   ] },
   { id: "selling", label: "Selling", items: [
@@ -28,6 +29,7 @@ const GROUPS: NavGroup[] = [
     { label: "Contracts", path: "/app/contracts", icon: FileSignature },
     { label: "Ledger", path: "/app/ledger", icon: Landmark },
     { label: "Messages", path: "/app/messaging", icon: MessageSquare },
+    { label: "Reviews", path: "/app/reviews", icon: Star, badge: "reviews" },
   ] },
   { id: "company", label: "Company", items: [
     { label: "Business profile", path: "/app/companies", icon: Building2 },
@@ -43,6 +45,7 @@ const isActive = (pathname: string, item: NavItem) =>
 function badgeValue(key: BadgeKey | undefined, c: SidebarCounts): { n: number; tone: "purple" | "amber"; label: string } | null {
   if (key === "proposals" && c.proposals > 0) return { n: c.proposals, tone: "purple", label: `${c.proposals} waiting for a reply` };
   if (key === "alerts" && c.alerts > 0) return { n: c.alerts, tone: "purple", label: `${c.alerts} need your action` };
+  if (key === "reviews" && c.reviews > 0) return { n: c.reviews, tone: "amber", label: `${c.reviews} deal${c.reviews === 1 ? "" : "s"} to review` };
   if (key === "verification" && c.verificationDone < c.verificationTotal) {
     const left = c.verificationTotal - c.verificationDone;
     return { n: left, tone: "amber", label: `${left} profile check${left === 1 ? "" : "s"} left` };
@@ -119,6 +122,12 @@ export function Sidebar({ collapsed, onToggleCollapsed, mobile = false, onNaviga
           <p className="mt-2 text-sm text-slate-500">Verified businesses get more replies.</p>
         </Link>
       )}
+
+      <Link to="/help" target="_blank" rel="noopener" onClick={onNavigate} title={narrow ? "Help centre" : undefined} aria-label="Help centre"
+        className={`mx-2 mb-2 flex items-center rounded-xl text-[15px] font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#6921A5] ${narrow ? "h-11 justify-center" : "gap-3 px-3 py-2.5"}`}>
+        <HelpCircle className="h-5 w-5 shrink-0 text-slate-400" aria-hidden="true" />
+        {!narrow && "Help centre"}
+      </Link>
 
       <div className={`flex items-center border-t border-slate-100 ${narrow ? "flex-col gap-2 px-2 py-3" : "gap-3 px-4 py-3"}`}>
         <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#6921A5] to-[#4B99E4] text-base font-bold text-white">
