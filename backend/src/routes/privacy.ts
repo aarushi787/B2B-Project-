@@ -25,12 +25,11 @@ router.post(
     const granted = Boolean(req.body.granted);
     const id = uuidv4();
 
-    const connection = await pool.getConnection();
+    const connection = pool;
     await connection.query(
       'INSERT INTO user_consents (id, userId, purpose, granted, source) VALUES (?, ?, ?, ?, ?)',
       [id, req.userId, purpose, granted, req.body.source ?? 'web']
     );
-    connection.release();
 
     await createAuditLog({
       userId: req.userId,
@@ -53,12 +52,11 @@ router.post(
 
 router.get('/consent', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const connection = await pool.getConnection();
+    const connection = pool;
     const [rows] = await connection.query(
       'SELECT id, purpose, granted, source, createdAt FROM user_consents WHERE userId = ? ORDER BY createdAt DESC',
       [req.userId]
     );
-    connection.release();
     res.json(rows);
   } catch (error) {
     logger.error('List consent error:', error);
@@ -68,12 +66,11 @@ router.get('/consent', authMiddleware, async (req: AuthRequest, res: Response) =
 
 router.get('/export-me', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const connection = await pool.getConnection();
+    const connection = pool;
     const [users] = await connection.query('SELECT id, email, phone, firstName, lastName, role, createdAt FROM users WHERE id = ?', [req.userId]);
     const [companies] = await connection.query('SELECT * FROM companies WHERE userId = ?', [req.userId]);
     const [consents] = await connection.query('SELECT purpose, granted, source, createdAt FROM user_consents WHERE userId = ?', [req.userId]);
     const [requests] = await connection.query('SELECT type, status, reason, createdAt, completedAt FROM gdpr_requests WHERE userId = ?', [req.userId]);
-    connection.release();
 
     const exportData = {
       exportedAt: new Date().toISOString(),
@@ -84,13 +81,12 @@ router.get('/export-me', authMiddleware, async (req: AuthRequest, res: Response)
     };
 
     const requestId = uuidv4();
-    const connection2 = await pool.getConnection();
+    const connection2 = pool;
     await connection2.query(
       `INSERT INTO gdpr_requests (id, userId, type, status, reason, completedAt)
        VALUES (?, ?, 'EXPORT', 'COMPLETED', ?, CURRENT_TIMESTAMP)`,
       [requestId, req.userId, 'Self-service export']
     );
-    connection2.release();
 
     res.json(exportData);
   } catch (error) {
@@ -108,13 +104,12 @@ router.post(
   try {
     const id = uuidv4();
     const reason = req.body.reason ?? 'User requested account deletion';
-    const connection = await pool.getConnection();
+    const connection = pool;
     await connection.query(
       `INSERT INTO gdpr_requests (id, userId, type, status, reason)
        VALUES (?, ?, 'DELETE', 'REQUESTED', ?)`,
       [id, req.userId, reason]
     );
-    connection.release();
 
     await enqueueJob({
       type: 'gdpr_delete_request',
@@ -142,13 +137,12 @@ router.post(
 
 router.get('/requests', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const connection = await pool.getConnection();
+    const connection = pool;
     const [roles] = await connection.query('SELECT role FROM users WHERE id = ?', [req.userId]);
     const role = (roles as any[])[0]?.role;
     const [rows] = role === 'admin'
       ? await connection.query('SELECT * FROM gdpr_requests ORDER BY createdAt DESC LIMIT 500')
       : await connection.query('SELECT * FROM gdpr_requests WHERE userId = ? ORDER BY createdAt DESC LIMIT 200', [req.userId]);
-    connection.release();
     res.json(rows);
   } catch (error) {
     logger.error('List GDPR requests error:', error);

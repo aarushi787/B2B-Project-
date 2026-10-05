@@ -3,9 +3,12 @@ import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import pool from '../config/database.js';
 import { adminMiddleware, authMiddleware, AuthRequest } from '../middleware/auth.js';
-import { isValidGst, isValidPan, isValidPhone } from '../services/compliance.js';
+import { isValidGst, isValidPan, isValidPhone, trustChecks } from '../services/compliance.js';
 import { validateRequest, companyCreateSchema, companyUpdateSchema, emptyBodySchema } from '../middleware/validation.js';
 import { logger } from '../utils/logger.js';
+import { createAuditLog } from '../utils/audit.js';
+import { notifyCompany } from '../services/notify.js';
+import { emitToCompany } from '../realtime/socket.js';
 import { withIdempotency } from '../middleware/idempotency.js';
 
 const router = Router();
@@ -16,9 +19,8 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     if (req.role !== 'admin') {
       return res.status(403).json({ error: 'Forbidden. Only admins can list all companies.' });
     }
-    const connection = await pool.getConnection();
+    const connection = pool;
     const [companies] = await connection.query('SELECT * FROM companies WHERE deletedAt IS NULL');
-    connection.release();
     res.json(companies);
   } catch (error) {
     logger.error('Get companies error:', error);
@@ -26,11 +28,53 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   }
 });
 
+// Business directory for the Explore page: any signed-in user, public fields only (never email, GST, PAN or phone).
+// Filters, sorting and paging happen in SQL so the page stays fast as the directory grows.
+router.get('/directory', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const q = String(req.query.q ?? '').trim().slice(0, 100);
+    const location = String(req.query.location ?? '').trim().slice(0, 100);
+    const categories = String(req.query.category ?? '').split(',').map((c) => c.trim()).filter(Boolean).slice(0, 10);
+    const verifiedOnly = req.query.verified === 'true';
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(Math.max(Number(req.query.limit) || 12, 1), 50);
+    const like = (v: string) => `%${v.replace(/[\\%_]/g, '\\$&')}%`;
+
+    const where: string[] = ['deletedAt IS NULL'];
+    const params: unknown[] = [];
+    if (q) { where.push('(name LIKE ? OR description LIKE ? OR industry LIKE ?)'); params.push(like(q), like(q), like(q)); }
+    if (location) { where.push('address LIKE ?'); params.push(like(location)); }
+    if (categories.length) { where.push(`(${categories.map(() => 'industry LIKE ?').join(' OR ')})`); params.push(...categories.map(like)); }
+    if (verifiedOnly) where.push('verified = TRUE');
+
+    // Whitelisted, never interpolated from user input.
+    const ORDER: Record<string, string> = {
+      relevance: 'verified DESC, createdAt DESC',
+      newest: 'createdAt DESC',
+      name: 'name ASC',
+      verified: 'verified DESC, name ASC',
+    };
+    const orderBy = ORDER[String(req.query.sort)] ?? ORDER.relevance;
+    const whereSql = where.join(' AND ');
+
+    const [countRows] = await pool.query(`SELECT COUNT(*) AS total FROM companies WHERE ${whereSql}`, params);
+    const [rows] = await pool.query(
+      `SELECT id, name, industry, description, address, website, verified, gst, createdAt
+       FROM companies WHERE ${whereSql} ORDER BY ${orderBy} LIMIT ? OFFSET ?`,
+      [...params, limit, (page - 1) * limit]
+    );
+    res.json({ data: (rows as any[]).map(({ gst, ...c }) => ({ ...c, trust: trustChecks({ verified: c.verified, gst }) })), total: (countRows as any[])[0]?.total ?? 0, page, limit });
+  } catch (error) {
+    logger.error('Company directory error:', error);
+    res.status(500).json({ error: 'Failed to load businesses' });
+  }
+});
+
 // Search companies (must be before /:id)
 router.get('/search', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const { q = '' } = req.query as { q?: string };
-    const connection = await pool.getConnection();
+    const connection = pool;
     
     // For non-admins, we might want to redact sensitive info, but since they are searching to propose deals, 
     // we just return safe info. We'll leave it as is for now, but require authentication.
@@ -38,7 +82,6 @@ router.get('/search', authMiddleware, async (req: AuthRequest, res: Response) =>
       'SELECT id, name, domain, industry, website FROM companies WHERE deletedAt IS NULL AND (name LIKE ? OR domain LIKE ?) LIMIT 50',
       [`%${q}%`, `%${q}%`]
     );
-    connection.release();
     res.json(companies);
   } catch (error) {
     logger.error('Search companies error:', error);
@@ -50,14 +93,13 @@ router.get('/search', authMiddleware, async (req: AuthRequest, res: Response) =>
 router.get('/domain/:domain', authMiddleware, async (req: AuthRequest, res: Response) => {
   let connection;
   try {
-    connection = await pool.getConnection();
+    connection = pool;
     const [companies] = await connection.query('SELECT id, name, domain, industry FROM companies WHERE deletedAt IS NULL AND domain = ?', [req.params.domain]);
     res.json(companies);
   } catch (error) {
     logger.error('Get companies by domain error:', error);
     res.status(500).json({ error: 'Failed to fetch companies' });
   } finally {
-    if (connection) connection.release();
   }
 });
 
@@ -65,7 +107,7 @@ router.get('/domain/:domain', authMiddleware, async (req: AuthRequest, res: Resp
 router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   let connection;
   try {
-    connection = await pool.getConnection();
+    connection = pool;
     const [companies] = await connection.query('SELECT * FROM companies WHERE id = ? AND deletedAt IS NULL', [req.params.id]);
 
     if ((companies as any[]).length === 0) {
@@ -73,6 +115,7 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
     }
     
     const company = (companies as any)[0];
+    company.trust = trustChecks(company);
     
     // Redact sensitive info if not admin and not requesting own company
     if (req.role !== 'admin' && req.companyId !== company.id) {
@@ -88,7 +131,6 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
     logger.error('Get company error:', error);
     res.status(500).json({ error: 'Failed to fetch company' });
   } finally {
-    if (connection) connection.release();
   }
 });
 
@@ -122,7 +164,7 @@ router.post(
       });
     }
 
-    connection = await pool.getConnection();
+    connection = pool;
     const companyId = uuidv4();
 
     await connection.query(
@@ -136,7 +178,6 @@ router.post(
     logger.error('Create company error:', error);
     res.status(500).json({ error: 'Failed to create company' });
   } finally {
-    if (connection) connection.release();
   }
   }
 );
@@ -166,7 +207,7 @@ router.put(
         error: 'Invalid phone format. Use 8-15 digits, optional leading + (example: +919876543210)',
       });
     }
-    connection = await pool.getConnection();
+    connection = pool;
 
     // SECURITY: Verify user owns this company
     const [existing] = await connection.query('SELECT * FROM companies WHERE id = ? AND userId = ? AND deletedAt IS NULL', [req.params.id, req.userId]);
@@ -201,7 +242,6 @@ router.put(
     logger.error('Update company error:', error);
     res.status(500).json({ error: 'Failed to update company' });
   } finally {
-    if (connection) connection.release();
   }
   }
 );
@@ -214,7 +254,7 @@ router.delete(
   async (req: AuthRequest, res: Response) => {
   let connection;
   try {
-    connection = await pool.getConnection();
+    connection = pool;
     
     // SECURITY: Verify user owns this company
     const [existing] = await connection.query('SELECT * FROM companies WHERE id = ? AND userId = ? AND deletedAt IS NULL', [req.params.id, req.userId]);
@@ -228,7 +268,6 @@ router.delete(
     logger.error('Delete company error:', error);
     res.status(500).json({ error: 'Failed to delete company' });
   } finally {
-    if (connection) connection.release();
   }
   }
 );
@@ -242,20 +281,40 @@ router.put(
   async (req: AuthRequest, res: Response) => {
   let connection;
   try {
-    connection = await pool.getConnection();
-    await connection.query('UPDATE companies SET verified = TRUE WHERE id = ? AND deletedAt IS NULL', [req.params.id]);
+    // `verified: false` revokes a verification; anything else (including no body) verifies.
+    const verified = req.body?.verified !== false;
+    connection = pool;
+    await connection.query('UPDATE companies SET verified = ? WHERE id = ? AND deletedAt IS NULL', [verified, req.params.id]);
     const [rows] = await connection.query('SELECT * FROM companies WHERE id = ? AND deletedAt IS NULL', [req.params.id]);
 
     if ((rows as any[]).length === 0) {
       return res.status(404).json({ error: 'Company not found' });
     }
+    const company = (rows as any[])[0];
 
-    res.json((rows as any[])[0]);
+    await createAuditLog({
+      userId: req.userId,
+      companyId: company.id,
+      action: verified ? 'COMPANY_VERIFIED' : 'COMPANY_VERIFICATION_REVOKED',
+      resourceType: 'company',
+      resourceId: company.id,
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+    void notifyCompany(company.id, {
+      kind: verified ? 'COMPANY_VERIFIED' : 'COMPANY_VERIFICATION_REVOKED',
+      type: verified ? 'success' : 'warning',
+      title: verified ? 'Your business is verified' : 'Verification removed',
+      message: verified ? 'Your business now shows the verified badge.' : 'The verified badge was removed from your business. Contact support if you think this is a mistake.',
+      link: '/app/verification',
+    });
+    emitToCompany(company.id, 'company:updated', { id: company.id, verified });
+
+    res.json(company);
   } catch (error) {
     logger.error('Verify company error:', error);
     res.status(500).json({ error: 'Failed to verify company' });
   } finally {
-    if (connection) connection.release();
   }
   }
 );

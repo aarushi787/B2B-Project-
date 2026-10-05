@@ -62,11 +62,11 @@ export function signAccessToken(payload: Omit<AuthTokenPayload, 'type'>): string
     ...payload,
     type: 'access',
   };
-  return jwt.sign(signPayload, getJwtSecret(), { expiresIn: ACCESS_TOKEN_EXPIRY } as SignOptions);
+  return jwt.sign(signPayload, getJwtSecret(), { expiresIn: ACCESS_TOKEN_EXPIRY, algorithm: 'HS256' } as SignOptions);
 }
 
 export function verifyAccessToken(token: string): AuthTokenPayload {
-  const decoded = jwt.verify(token, getJwtSecret()) as AuthTokenPayload;
+  const decoded = jwt.verify(token, getJwtSecret(), { algorithms: ['HS256'] }) as AuthTokenPayload;
   // Only real access tokens: a short-lived websocket token must never authenticate REST requests.
   if (decoded.type !== 'access') throw new Error('Not an access token');
   return decoded;
@@ -81,11 +81,11 @@ export const SOCKET_TOKEN_TTL_SECONDS = 60;
  */
 export function signSocketToken(payload: { userId: string; companyId: string | null; role: string }): string {
   const signPayload: AuthTokenPayload = { ...payload, type: 'socket' };
-  return jwt.sign(signPayload, getJwtSecret(), { expiresIn: SOCKET_TOKEN_TTL_SECONDS } as SignOptions);
+  return jwt.sign(signPayload, getJwtSecret(), { expiresIn: SOCKET_TOKEN_TTL_SECONDS, algorithm: 'HS256' } as SignOptions);
 }
 
 export function verifySocketToken(token: string): AuthTokenPayload {
-  const decoded = jwt.verify(token, getJwtSecret()) as AuthTokenPayload;
+  const decoded = jwt.verify(token, getJwtSecret(), { algorithms: ['HS256'] }) as AuthTokenPayload;
   if (decoded.type !== 'socket') throw new Error('Not a socket token');
   return decoded;
 }

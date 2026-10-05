@@ -108,8 +108,13 @@ router.post(
       return res.status(400).json({ error: 'Name and price are required' });
     }
 
-    if (!merchantId) {
-      return res.status(400).json({ error: 'merchantId is required' });
+    // Products are listed by the caller's own company; a client-supplied merchantId is only honoured for platform admins.
+    const owner = req.role === 'admin' ? (merchantId ?? req.companyId) : req.companyId;
+    if (!owner) {
+      return res.status(400).json({ error: 'Your account needs a company before you can list products' });
+    }
+    if (merchantId && merchantId !== owner) {
+      return res.status(403).json({ error: 'You can only list products for your own company' });
     }
 
     connection = await pool.getConnection();
@@ -117,7 +122,7 @@ router.post(
 
     await connection.query(
       'INSERT INTO products (id, name, description, price, category, inventory, merchantId) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [productId, name, description ?? null, price, category ?? null, inventory ?? 0, merchantId]
+      [productId, name, description ?? null, price, category ?? null, inventory ?? 0, owner]
     );
 
     const [rows] = await connection.query('SELECT * FROM products WHERE id = ?', [productId]);
@@ -150,12 +155,13 @@ router.put(
            price = COALESCE(?, price),
            category = COALESCE(?, category),
            inventory = COALESCE(?, inventory)
-       WHERE id = ? AND deletedAt IS NULL`,
-      [name ?? null, description ?? null, price ?? null, category ?? null, inventory ?? null, req.params.id]
+       WHERE id = ? AND deletedAt IS NULL AND (? = 1 OR merchantId = ?)`,
+      [name ?? null, description ?? null, price ?? null, category ?? null, inventory ?? null, req.params.id, req.role === 'admin' ? 1 : 0, req.companyId ?? null]
     );
 
-    const [rows] = await connection.query('SELECT * FROM products WHERE id = ? AND deletedAt IS NULL', [req.params.id]);
+    const [rows] = await connection.query('SELECT * FROM products WHERE id = ? AND deletedAt IS NULL AND (? = 1 OR merchantId = ?)', [req.params.id, req.role === 'admin' ? 1 : 0, req.companyId ?? null]);
 
+    // Same answer for "not found" and "not yours".
     if ((rows as any[]).length === 0) {
       return res.status(404).json({ error: 'Product not found' });
     }
@@ -179,7 +185,11 @@ router.delete(
   let connection;
   try {
     connection = await pool.getConnection();
-    await connection.query('UPDATE products SET deletedAt = CURRENT_TIMESTAMP WHERE id = ? AND deletedAt IS NULL', [req.params.id]);
+    const [result] = await connection.query(
+      'UPDATE products SET deletedAt = CURRENT_TIMESTAMP WHERE id = ? AND deletedAt IS NULL AND (? = 1 OR merchantId = ?)',
+      [req.params.id, req.role === 'admin' ? 1 : 0, req.companyId ?? null]
+    );
+    if ((result as { affectedRows: number }).affectedRows === 0) return res.status(404).json({ error: 'Product not found' });
     res.json({ message: 'Product deleted successfully' });
   } catch (error) {
     logger.error('Delete product error:', error);
@@ -206,8 +216,8 @@ router.put(
     }
 
     connection = await pool.getConnection();
-    await connection.query('UPDATE products SET inventory = ? WHERE id = ? AND deletedAt IS NULL', [inventory, req.params.id]);
-    const [rows] = await connection.query('SELECT * FROM products WHERE id = ? AND deletedAt IS NULL', [req.params.id]);
+    await connection.query('UPDATE products SET inventory = ? WHERE id = ? AND deletedAt IS NULL AND (? = 1 OR merchantId = ?)', [inventory, req.params.id, req.role === 'admin' ? 1 : 0, req.companyId ?? null]);
+    const [rows] = await connection.query('SELECT * FROM products WHERE id = ? AND deletedAt IS NULL AND (? = 1 OR merchantId = ?)', [req.params.id, req.role === 'admin' ? 1 : 0, req.companyId ?? null]);
 
     if ((rows as any[]).length === 0) {
       return res.status(404).json({ error: 'Product not found' });

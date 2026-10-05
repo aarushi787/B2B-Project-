@@ -19,7 +19,9 @@ export function resolveSsl(host: string | undefined, env: DbEnv, urlRequestedSsl
   const flag = (env.DB_SSL || '').trim().toLowerCase();
   if (flag === 'false' || flag === '0') return undefined;
   const local = !host || LOCAL_HOSTS.has(host.toLowerCase());
-  const wanted = flag === 'true' || flag === '1' || urlRequestedSsl || (!local && env.NODE_ENV === 'production');
+  // TiDB Cloud refuses unencrypted connections in every environment, development included.
+  const requiresTls = !!host && /(^|\.)tidbcloud\.com$/i.test(host);
+  const wanted = flag === 'true' || flag === '1' || urlRequestedSsl || requiresTls || (!local && env.NODE_ENV === 'production');
   if (!wanted) return undefined;
 
   let ca = (env.DB_SSL_CA || '').trim();

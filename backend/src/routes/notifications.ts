@@ -35,7 +35,7 @@ function broadcastNotification(notification: any): void {
 
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const connection = await pool.getConnection();
+    const connection = pool;
     const [rows] = await connection.query(
       `SELECT id, userId, companyId, type, title, message, payload, isRead, createdAt
        FROM notifications
@@ -44,7 +44,6 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
        LIMIT 100`,
       [req.userId ?? null, req.companyId ?? null]
     );
-    connection.release();
     res.json((rows as any[]).map((r) => ({ ...r, payload: typeof r.payload === 'string' ? JSON.parse(r.payload) : r.payload, isRead: !!r.isRead })));
   } catch (error) {
     logger.error('List notifications error:', error);
@@ -87,7 +86,7 @@ router.post(
       isRead: false,
     };
 
-    const connection = await pool.getConnection();
+    const connection = pool;
     await connection.query(
       `INSERT INTO notifications (id, userId, companyId, type, title, message, payload, isRead)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -102,7 +101,6 @@ router.post(
         notification.isRead,
       ]
     );
-    connection.release();
 
     broadcastNotification({ ...notification, payload });
     res.status(201).json({ ...notification, payload });
@@ -133,12 +131,11 @@ router.put(
   validateRequest(emptyBodySchema),
   async (req: AuthRequest, res: Response) => {
   try {
-    const connection = await pool.getConnection();
+    const connection = pool;
     await connection.query(
       'UPDATE notifications SET isRead = TRUE WHERE id = ? AND (userId = ? OR (userId IS NULL AND companyId = ?))',
       [req.params.id, req.userId ?? null, req.companyId ?? null]
     );
-    connection.release();
     emitToUser(req.userId, 'notifications:read', { id: req.params.id, isRead: true });
     emitToCompany(req.companyId, 'notifications:read', { id: req.params.id, isRead: true });
     res.json({ id: req.params.id, isRead: true });

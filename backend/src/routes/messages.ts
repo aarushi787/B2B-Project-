@@ -115,13 +115,26 @@ router.post(
   async (req: AuthRequest, res: Response) => {
   let connection;
   try {
-    const { senderId, receiverId, dealId, content } = req.body;
+    const { senderId: claimedSender, receiverId, dealId, content } = req.body;
+    // The sender is always the caller's own company. A client-supplied senderId is only checked, never trusted.
+    const senderId = req.companyId;
+    if (!senderId) return res.status(403).json({ error: 'Your account needs a company before you can send messages' });
+    if (claimedSender && claimedSender !== senderId) return res.status(403).json({ error: 'You can only send messages as your own company' });
 
-    if (!senderId || !receiverId || !content) {
-      return res.status(400).json({ error: 'Sender ID, receiver ID, and content are required' });
+    if (!receiverId || !content) {
+      return res.status(400).json({ error: 'Receiver ID and content are required' });
     }
 
     connection = await pool.getConnection();
+    if (dealId) {
+      // A message in a deal must be between that deal's two parties.
+      const [deals] = await connection.query('SELECT buyerId, sellerId FROM deals WHERE id = ? AND deletedAt IS NULL', [dealId]);
+      const deal = (deals as any[])[0];
+      const parties = deal ? [deal.buyerId, deal.sellerId] : [];
+      if (!deal || !parties.includes(senderId) || !parties.includes(receiverId) || senderId === receiverId) {
+        return res.status(403).json({ error: 'You can only message the other party of a deal you are part of' });
+      }
+    }
     const messageId = uuidv4();
 
     await connection.beginTransaction();
@@ -167,8 +180,9 @@ router.put(
   let connection;
   try {
     connection = await pool.getConnection();
-    await connection.query('UPDATE messages SET isRead = TRUE WHERE id = ? AND deletedAt IS NULL', [req.params.id]);
-    const [rows] = await connection.query('SELECT * FROM messages WHERE id = ? AND deletedAt IS NULL', [req.params.id]);
+    // Only the company the message was sent TO can mark it read.
+    await connection.query('UPDATE messages SET isRead = TRUE WHERE id = ? AND receiverId = ? AND deletedAt IS NULL', [req.params.id, req.companyId ?? null]);
+    const [rows] = await connection.query('SELECT * FROM messages WHERE id = ? AND receiverId = ? AND deletedAt IS NULL', [req.params.id, req.companyId ?? null]);
 
     if ((rows as any[]).length === 0) return res.status(404).json({ error: 'Message not found' });
     const message = mapMessage((rows as any[])[0]);
@@ -196,7 +210,12 @@ router.delete(
   let connection;
   try {
     connection = await pool.getConnection();
-    await connection.query('UPDATE messages SET deletedAt = CURRENT_TIMESTAMP WHERE id = ? AND deletedAt IS NULL', [req.params.id]);
+    // Only the sender can delete a message (platform admins can too).
+    const [result] = await connection.query(
+      'UPDATE messages SET deletedAt = CURRENT_TIMESTAMP WHERE id = ? AND deletedAt IS NULL AND (? = 1 OR senderId = ?)',
+      [req.params.id, req.role === 'admin' ? 1 : 0, req.companyId ?? null]
+    );
+    if ((result as { affectedRows: number }).affectedRows === 0) return res.status(404).json({ error: 'Message not found' });
     res.json({ message: 'Message deleted successfully' });
   } catch (error) {
     logger.error('Delete message error:', error);

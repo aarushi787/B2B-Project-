@@ -71,6 +71,11 @@ export const userProfileUpdateSchema = z
     message: 'At least one profile field is required',
   });
 
+export const phoneSendSchema = z.object({ phone: z.string().trim().max(30).optional() });
+export const phoneVerifySchema = z.object({ code: z.string().trim().regex(/^\d{6}$/, 'Enter the 6-digit code') });
+
+export const preferencesSchema = z.object({ emailNotifications: z.boolean() });
+
 export const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1).optional(),
@@ -206,6 +211,13 @@ export const documentUploadSchema = z.object({
 
 export const documentSignSchema = z.object({
   signatureType: z.enum(['CLICK', 'OTP', 'DIGITAL']).optional(),
+  // For agreements: the authorised representative's typed name, and an explicit "I agree".
+  signerName: z.string().trim().min(2, 'Type your full name').max(255).optional(),
+  agree: z.boolean().optional(),
+});
+
+export const agreementCreateSchema = z.object({
+  dealId: uuidSchema,
 });
 
 // Reputation schemas

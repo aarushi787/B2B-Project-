@@ -1,6 +1,6 @@
 // Purpose: This module (backend/src/routes/jobs.ts) is used to implement job queue API operations in a modular, maintainable way.
 import { Router, Response } from 'express';
-import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+import { adminMiddleware, AuthRequest } from '../middleware/auth.js';
 import { enqueueJob, getQueuedJobs, markJobStatus } from '../services/jobQueue.js';
 import { createAuditLog } from '../utils/audit.js';
 import { jobCreateSchema, jobStatusUpdateSchema, validateRequest } from '../middleware/validation.js';
@@ -11,7 +11,7 @@ const router = Router();
 
 router.post(
   '/',
-  authMiddleware,
+  adminMiddleware,
   withIdempotency({ required: true, ttlHours: 48 }),
   validateRequest(jobCreateSchema),
   async (req: AuthRequest, res: Response) => {
@@ -41,7 +41,7 @@ router.post(
   }
 );
 
-router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/', adminMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const limit = Math.min(Number(req.query.limit) || 50, 200);
     const jobs = await getQueuedJobs(limit);
@@ -52,7 +52,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.put('/:id/status', authMiddleware, validateRequest(jobStatusUpdateSchema), async (req: AuthRequest, res: Response) => {
+router.put('/:id/status', adminMiddleware, validateRequest(jobStatusUpdateSchema), async (req: AuthRequest, res: Response) => {
   try {
     const status = req.body.status as 'processing' | 'completed' | 'failed' | 'dead_letter';
     if (!['processing', 'completed', 'failed', 'dead_letter'].includes(status)) {

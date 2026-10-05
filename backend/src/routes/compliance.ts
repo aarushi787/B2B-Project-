@@ -43,14 +43,13 @@ router.post('/pan/verify', authMiddleware, validateRequest(panVerifySchema), asy
 
 router.get('/aml-checks', adminMiddleware, async (_req: AuthRequest, res: Response) => {
   try {
-    const connection = await pool.getConnection();
+    const connection = pool;
     const [rows] = await connection.query(
       `SELECT id, dealId, escrowId, companyId, amount, currency, riskScore, riskLevel, decision, reason, createdAt
        FROM aml_checks
        ORDER BY createdAt DESC
        LIMIT 200`
     );
-    connection.release();
     res.json(rows);
   } catch (error) {
     logger.error('List AML checks error:', error);

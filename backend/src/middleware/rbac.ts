@@ -14,7 +14,7 @@ type RequireCompanyRoleOptions = {
 const DEFAULT_RESOLVER = (req: AuthRequest) =>
   (req.companyId ?? (req.body as { companyId?: string })?.companyId ?? req.params.companyId ?? null);
 
-async function resolveCompanyRole(userId: string, companyId: string): Promise<CompanyRole | null> {
+export async function resolveCompanyRole(userId: string, companyId: string): Promise<CompanyRole | null> {
   const connection = await pool.getConnection();
   try {
     const [memberRows] = await connection.query(
