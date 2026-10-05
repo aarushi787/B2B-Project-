@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
-import { Mail, Lock, User, Phone, Building2, Eye, EyeOff, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Link, useNavigate } from "react-router";
+import { Mail, Lock, User, Phone, Building2, Eye, EyeOff, CheckCircle, XCircle, Loader2, ArrowLeft } from "lucide-react";
 import { useAuth } from "../../../auth/AuthProvider";
 import { authService } from "../../../services/authService";
 import { apiClient } from "../../../services/apiClient";
@@ -137,6 +137,9 @@ export function Auth() {
 
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(rgba(73,47,119,0.8), rgba(73,47,119,0.8)), url(https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=2000&q=80) center/cover", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <Link to="/" style={{ position: "absolute", top: 20, left: 20, display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 16px", borderRadius: 12, background: "rgba(255,255,255,0.15)", color: "#fff", fontSize: 15, fontWeight: 600, textDecoration: "none", backdropFilter: "blur(6px)" }}>
+        <ArrowLeft size={18} aria-hidden="true" /> Back to home
+      </Link>
       <div style={{ width: "100%", maxWidth: 448 }}>
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
