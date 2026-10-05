@@ -1,3 +1,4 @@
+import { SiteFooter } from "../SiteFooter";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import {
@@ -336,22 +337,7 @@ export function Landing() {
         </section>
       </main>
 
-      <footer className="border-t border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="" className="h-8 w-auto" />
-            <p className="text-sm text-slate-600">B2BForCorporates · Find, compare and negotiate with business partners.</p>
-          </div>
-          <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-            <Link to="/services" className={`rounded text-slate-700 hover:text-[#4B99E4] ${focusRing}`}>Services</Link>
-            <Link to="/explore" className={`rounded text-slate-700 hover:text-[#4B99E4] ${focusRing}`}>Explore businesses</Link>
-            <Link to="/auth" className={`rounded text-slate-700 hover:text-[#4B99E4] ${focusRing}`}>Sign in</Link>
-          </nav>
-        </div>
-        <div className="border-t border-slate-100 py-4 text-center text-xs text-slate-500">
-          © {new Date().getFullYear()} B2BForCorporates. All rights reserved.
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

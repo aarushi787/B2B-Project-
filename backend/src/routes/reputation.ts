@@ -6,6 +6,7 @@ import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { createAuditLog } from '../utils/audit.js';
 import { reputationEventSchema, validateRequest } from '../middleware/validation.js';
 import { logger } from '../utils/logger.js';
+import { notifyCompany } from '../services/notify.js';
 
 const router = Router();
 
@@ -48,6 +49,7 @@ router.post('/events', authMiddleware, validateRequest(reputationEventSchema), a
       userAgent: req.get('user-agent'),
     });
 
+    void notifyCompany(companyId, { kind: 'REVIEW_RECEIVED', title: 'You received a review', message: `A business rated its deal with you ${score} out of 5.`, type: 'info', link: `/app/deals/${dealId}` });
     res.status(201).json({ id, companyId, score });
   } catch (error) {
     logger.error('Create reputation event error:', error);
@@ -55,31 +57,77 @@ router.post('/events', authMiddleware, validateRequest(reputationEventSchema), a
   }
 });
 
+// Reviews other businesses left for a company, with who wrote them and which deal they were about.
 router.get('/company/:companyId', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const connection = pool;
-    const [rows] = await connection.query(
-      `SELECT id, companyId, counterpartyCompanyId, dealId, score, comment, createdBy, createdAt
-       FROM reputation_events
-       WHERE companyId = ?
-       ORDER BY createdAt DESC`,
+    const [rows] = await pool.query(
+      `SELECT e.id, e.companyId, e.counterpartyCompanyId, e.dealId, e.score, e.comment, e.createdAt,
+              rc.name AS reviewerName, rc.verified AS reviewerVerified, d.title AS dealTitle
+       FROM reputation_events e
+       LEFT JOIN companies rc ON rc.id = e.counterpartyCompanyId
+       LEFT JOIN deals d ON d.id = e.dealId
+       WHERE e.companyId = ?
+       ORDER BY e.createdAt DESC
+       LIMIT 100`,
       [req.params.companyId]
     );
-
-    const [summaryRows] = await connection.query(
-      `SELECT COUNT(*) as totalReviews, AVG(score) as averageScore, MIN(score) as minScore, MAX(score) as maxScore
-       FROM reputation_events
-       WHERE companyId = ?`,
+    const [summaryRows] = await pool.query(
+      `SELECT COUNT(*) AS totalReviews, AVG(score) AS averageScore, MIN(score) AS minScore, MAX(score) AS maxScore
+       FROM reputation_events WHERE companyId = ?`,
       [req.params.companyId]
     );
-
+    const summary = (summaryRows as any[])[0] ?? {};
     res.json({
-      events: rows,
-      summary: (summaryRows as any[])[0] ?? { totalReviews: 0, averageScore: null, minScore: null, maxScore: null },
+      events: (rows as any[]).map((r) => ({ ...r, reviewerVerified: Boolean(r.reviewerVerified) })),
+      summary: {
+        totalReviews: Number(summary.totalReviews) || 0,
+        averageScore: summary.averageScore == null ? null : Math.round(Number(summary.averageScore) * 10) / 10,
+        minScore: summary.minScore ?? null,
+        maxScore: summary.maxScore ?? null,
+      },
     });
   } catch (error) {
     logger.error('Get reputation error:', error);
     res.status(500).json({ error: 'Failed to fetch reputation' });
+  }
+});
+
+// Completed deals where the caller's company has not yet rated the other side: the "leave a review" to-do list.
+router.get('/pending', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.companyId) return res.json([]);
+    const [rows] = await pool.query(
+      `SELECT d.id AS dealId, d.title AS dealTitle,
+              IF(d.buyerId = ?, d.sellerId, d.buyerId) AS companyId,
+              c.name AS companyName
+       FROM deals d
+       JOIN companies c ON c.id = IF(d.buyerId = ?, d.sellerId, d.buyerId)
+       WHERE d.status = 'completed' AND d.deletedAt IS NULL AND (d.buyerId = ? OR d.sellerId = ?)
+         AND NOT EXISTS (SELECT 1 FROM reputation_events e WHERE e.dealId = d.id AND e.counterpartyCompanyId = ?)
+       ORDER BY d.createdAt DESC LIMIT 50`,
+      [req.companyId, req.companyId, req.companyId, req.companyId, req.companyId]
+    );
+    res.json(rows);
+  } catch (error) {
+    logger.error('Pending reviews error:', error);
+    res.status(500).json({ error: 'Failed to load pending reviews' });
+  }
+});
+
+// What each side said about one deal (both parties may read it; nobody else).
+router.get('/deal/:dealId', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const [deals] = await pool.query('SELECT buyerId, sellerId FROM deals WHERE id = ? AND deletedAt IS NULL', [req.params.dealId]);
+    const deal = (deals as any[])[0];
+    if (!deal || !req.companyId || ![deal.buyerId, deal.sellerId].includes(req.companyId)) return res.status(404).json({ error: 'Deal not found' });
+    const [rows] = await pool.query(
+      'SELECT id, companyId, counterpartyCompanyId, score, comment, createdAt FROM reputation_events WHERE dealId = ?',
+      [req.params.dealId]
+    );
+    res.json({ given: (rows as any[]).find((r) => r.counterpartyCompanyId === req.companyId) ?? null, received: (rows as any[]).find((r) => r.companyId === req.companyId) ?? null });
+  } catch (error) {
+    logger.error('Deal reviews error:', error);
+    res.status(500).json({ error: 'Failed to load reviews' });
   }
 });
 

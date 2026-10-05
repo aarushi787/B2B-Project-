@@ -5,6 +5,9 @@ import { Auth } from "./components/pages/Auth";
 import { Landing } from "./components/pages/Landing";
 import { AdminGuard } from "../auth/AdminGuard";
 
+const Terms = React.lazy(() => import("./components/pages/InfoPages").then(m => ({ default: m.Terms })));
+const Privacy = React.lazy(() => import("./components/pages/InfoPages").then(m => ({ default: m.Privacy })));
+const Help = React.lazy(() => import("./components/pages/InfoPages").then(m => ({ default: m.Help })));
 const Dashboard = React.lazy(() => import("./components/pages/Dashboard").then(m => ({ default: m.Dashboard })));
 const Companies = React.lazy(() => import("./components/pages/Companies").then(m => ({ default: m.Companies })));
 const DealWorkspace = React.lazy(() => import("./components/pages/DealWorkspace").then(m => ({ default: m.DealWorkspace })));
@@ -37,6 +40,9 @@ export const router = createBrowserRouter([
   { path: "/landing",  Component: Landing },
   { path: "/services", Component: ServicesPage },
   { path: "/explore",  Component: ExploreBusinesses },
+  { path: "/terms",    Component: Terms },
+  { path: "/privacy",  Component: Privacy },
+  { path: "/help",     Component: Help },
   { path: "/auth",     Component: Auth },
   { path: "/verify-email", Component: VerifyEmail },
   // Platform admin console: standalone (outside the user Layout) and admin-only.

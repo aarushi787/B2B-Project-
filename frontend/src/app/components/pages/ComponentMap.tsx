@@ -370,6 +370,12 @@ const componentData: ComponentNode[] = [
   },
 ];
 
+// The map lists public paths; everything signed-in lives under /app, and a few screens have no page of their own.
+const APP_ROUTE_OVERRIDES: Record<string, string> = { "/": "/app/dashboard", "/deals/:id": "/app/deals" };
+const PUBLIC_ROUTES = ["/landing", "/auth", "/explore", "/services", "/admin"];
+const appRoute = (route: string) =>
+  APP_ROUTE_OVERRIDES[route] ?? (PUBLIC_ROUTES.includes(route) ? route : `/app${route}`);
+
 export function ComponentMap() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
@@ -519,7 +525,7 @@ export function ComponentMap() {
                         onHoverEnd={() => setHoveredNode(null)}
                         onClick={() => {
                           if (isNavigable && component.route) {
-                            navigate(component.route);
+                            navigate(appRoute(component.route));
                           }
                         }}
                         className={`bg-white rounded-xl p-5 transition-all ${

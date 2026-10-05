@@ -1,6 +1,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MapPin, Star, CheckCircle, Globe, ShieldCheck } from 'lucide-react';
+import { CoverArt } from './CoverArt';
+import { CompanyReviews } from './Reviews';
 import { TrustBadges, type Trust } from './TrustBadges';
 
 interface BusinessProfile {
@@ -40,7 +42,8 @@ export function BusinessProfileModal({ business, onClose }: BusinessProfileModal
           className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[95vh]"
         >
           {/* Header Cover Image */}
-          <div className="relative h-48 bg-gradient-to-r from-[#6921A5] to-[#492F77]">
+          <div className="relative h-48 overflow-hidden bg-[#492F77]">
+            <div className="absolute inset-0"><CoverArt name={business.name} height={192} /></div>
             <button 
               onClick={onClose} 
               className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur-md transition-colors"
@@ -93,6 +96,13 @@ export function BusinessProfileModal({ business, onClose }: BusinessProfileModal
                   </p>
                 </section>
                 
+                {business.id && (
+                  <section>
+                    <h3 className="text-lg font-bold text-slate-900 mb-3">Reviews</h3>
+                    <CompanyReviews companyId={business.id} />
+                  </section>
+                )}
+
                 <section>
                   <h3 className="text-lg font-bold text-slate-900 mb-3">Services & Expertise</h3>
                   <div className="flex flex-wrap gap-2">

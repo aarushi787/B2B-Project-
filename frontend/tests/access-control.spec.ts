@@ -191,6 +191,30 @@ test.describe('Agreements and milestones', () => {
   });
 });
 
+test.describe('Reviews', () => {
+  test('a review needs a completed deal between the two companies, and nobody else can read the reviews of a deal', async () => {
+    const buyer = await Session.create('buyer');
+    const seller = await Session.create('seller');
+    const outsider = await Session.create('outsider');
+    const dealId = await dealBetween(buyer, seller);
+
+    // The deal is still pending, so it cannot be reviewed yet.
+    expect((await buyer.post('/reputation/events', { companyId: seller.companyId, dealId, score: 5 })).status()).toBe(409);
+    // Nobody reviews themselves, an outsider cannot review a deal they are not in, and scores stay 1 to 5.
+    expect((await buyer.post('/reputation/events', { companyId: buyer.companyId, dealId, score: 5 })).status()).toBe(400);
+    expect((await outsider.post('/reputation/events', { companyId: seller.companyId, dealId, score: 5 })).status()).toBe(404);
+    expect((await buyer.post('/reputation/events', { companyId: seller.companyId, dealId, score: 9 })).status()).toBe(400);
+
+    expect((await outsider.get(`/reputation/deal/${dealId}`)).status()).toBe(404);
+    expect((await buyer.get(`/reputation/deal/${dealId}`)).status()).toBe(200);
+    expect(await (await buyer.get('/reputation/pending')).json()).toEqual([]); // pending only lists completed deals
+    const summary = await (await buyer.get(`/reputation/company/${seller.companyId}`)).json();
+    expect(summary.summary.totalReviews).toBe(0);
+    expect(summary.summary.averageScore).toBeNull();
+    await Promise.all([buyer.dispose(), seller.dispose(), outsider.dispose()]);
+  });
+});
+
 test.describe('Phone and email verification', () => {
   test('a phone is verified with the right code, after wrong ones are refused', async () => {
     const user = await Session.create('phone');

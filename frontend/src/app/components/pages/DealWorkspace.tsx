@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Toaster, toast } from "sonner";
+import toast from "react-hot-toast";
 import { ActivityChat } from "../ActivityChat";
 import { DealDetails } from "../DealDetails";
 import { useParams } from "react-router";
@@ -21,6 +21,7 @@ import { RiskPanel } from "../RiskPanel";
 import { DealAlerts } from "../DealAlerts";
 import { useMilestones } from "../../../lib/useMilestones";
 import { TrustBadges } from "../TrustBadges";
+import { DealReviewPanel } from "../Reviews";
 
 export type Role = "Client" | "Provider" | "Admin";
 export type DealStatus = "Pending" | "Approved" | "Rejected" | "Completed";
@@ -109,6 +110,19 @@ export function DealWorkspace() {
     return () => { offDeal(); offMsg(); socketService.unwatchDeal(id); };
   }, [id]);
 
+  const completeDeal = async () => {
+    if (!window.confirm("Mark this deal as completed? Both companies can then review each other.")) return;
+    setBusy(true);
+    try {
+      setDeal(await dealsService.updateDealStatus(id, "completed"));
+      toast.success("Deal marked as completed");
+    } catch (e: any) {
+      toast.error(friendlyError(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const act = async (kind: "approve" | "reject") => {
     if (!canAct) { toast.error("You have view-only access to this deal."); return; }
     setBusy(true);
@@ -169,7 +183,6 @@ export function DealWorkspace() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-800" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <Toaster position="top-right" richColors />
 
       <div className="bg-white border-b border-slate-200 shadow-sm mb-6 rounded-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4">
@@ -215,6 +228,17 @@ export function DealWorkspace() {
               Reject deal
             </button>
           </div>
+        )}
+
+        {dealStatus === "Approved" && side === "buyer" && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+            <p className="text-[15px] text-slate-600">When the work is delivered and paid for, mark the deal as completed to unlock reviews.</p>
+            <button disabled={busy} onClick={completeDeal} className="rounded-xl bg-[#6921A5] px-4 py-2.5 text-[15px] font-semibold text-white hover:bg-[#492F77] disabled:opacity-50">Mark deal completed</button>
+          </div>
+        )}
+
+        {dealStatus === "Completed" && (side === "buyer" || side === "seller") && (
+          <DealReviewPanel dealId={id} otherCompanyId={side === "buyer" ? deal.sellerIds[0] : deal.buyerId} otherName={side === "buyer" ? seller?.name : buyer?.name} />
         )}
 
         <DealAlerts dealId={id} hideWhenEmpty />
