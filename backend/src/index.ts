@@ -104,6 +104,15 @@ app.use((req, _res, next) => {
 });
 app.use('/api', csrfProtection(isOriginAllowed));
 app.use('/api', apiLimiter);
+
+// The server starts listening straight away and brings the database schema up to date in the background. Until that has
+// finished, API calls get a clear "starting up" answer instead of the browser seeing a refused connection.
+let dbReady = process.env.AUTO_INIT_DB === 'false';
+app.use('/api', (req, res, next) => {
+  if (dbReady || req.path === '/health' || req.path === '/ready') return next();
+  res.setHeader('Retry-After', '5');
+  return errorResponse(res, 503, 'INTERNAL_ERROR', 'The server is starting up and updating its database. Please try again in a moment.');
+});
 app.use(requestLogger);
 app.use(normalizeErrorEnvelope);
 
@@ -157,6 +166,7 @@ app.get('/api/health', (_req, res) => {
 
 // Readiness: can this instance actually serve requests? Unlike /api/health (is the process alive), this checks the database.
 app.get('/api/ready', async (_req, res) => {
+  if (!dbReady) return res.status(503).json({ status: 'STARTING', reason: 'database_updating' });
   try {
     await pool.query('SELECT 1');
     res.json({ status: 'READY', timestamp: new Date().toISOString() });
@@ -195,10 +205,20 @@ const server = createServer(app);
 initSocketServer(server, corsFunc);
 
 async function start() {
-  // Optional: create/upgrade tables on boot (idempotent). Useful on hosts without a pre-deploy command.
-  // On by default: the tables and columns this version needs are created or added when the server starts (it is safe to
-  // repeat). Set AUTO_INIT_DB=false only if the database user has no permission to change the schema.
+  server.listen(PORT, () => {
+    logger.info('server_started', {
+      port: PORT,
+      nodeEnv: process.env.NODE_ENV || 'development',
+      database: describeDatabase(),
+      corsOrigin,
+      websocket: 'socket.io enabled',
+    });
+  });
+
+  // On by default: the tables and columns this version needs are created or added (it is safe to repeat). Set
+  // AUTO_INIT_DB=false only if the database user has no permission to change the schema.
   if (process.env.AUTO_INIT_DB !== 'false') {
+    logger.info('database_update_started', { hint: 'The first start after an update can take a minute on a remote database.' });
     // A database that is still waking up (common on free tiers) should not crash the first boot: retry with backoff.
     for (let attempt = 1; ; attempt++) {
       try {
@@ -211,16 +231,9 @@ async function start() {
         await new Promise((r) => setTimeout(r, waitMs));
       }
     }
+    dbReady = true;
+    logger.info('database_ready');
   }
-  server.listen(PORT, () => {
-    logger.info('server_started', {
-      port: PORT,
-      nodeEnv: process.env.NODE_ENV || 'development',
-      database: describeDatabase(),
-      corsOrigin,
-      websocket: 'socket.io enabled',
-    });
-  });
 }
 
 // Finish in-flight requests before exiting, so a deploy does not cut people off mid-action.
