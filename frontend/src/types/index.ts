@@ -136,6 +136,9 @@ export interface MarketProposal {
   proposerId: string;
   proposerName: string | null;
   proposerVerified: boolean;
+  proposerRating: number | null;
+  proposerReviews: number;
+  proposerCompletedDeals: number;
   requesterId: string;
   requesterName: string | null;
   amount: number;

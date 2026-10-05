@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MapPin, Star, CheckCircle, Globe, ShieldCheck } from 'lucide-react';
 import { CoverArt } from './CoverArt';
+import { CompanyReviews } from './Reviews';
 import { TrustBadges, type Trust } from './TrustBadges';
 
 interface BusinessProfile {
@@ -95,6 +96,13 @@ export function BusinessProfileModal({ business, onClose }: BusinessProfileModal
                   </p>
                 </section>
                 
+                {business.id && (
+                  <section>
+                    <h3 className="text-lg font-bold text-slate-900 mb-3">Reviews</h3>
+                    <CompanyReviews companyId={business.id} />
+                  </section>
+                )}
+
                 <section>
                   <h3 className="text-lg font-bold text-slate-900 mb-3">Services & Expertise</h3>
                   <div className="flex flex-wrap gap-2">

@@ -7,6 +7,8 @@ import { requirementsService } from "../../../services/requirementsService";
 import { friendlyError, useLoad } from "../../../lib/useLoad";
 import { budgetLabel, formatDate, formatINR } from "../../../lib/format";
 import type { MarketProposal } from "../../../types";
+import { ProposalCompare, budgetDelta } from "../marketplace/ProposalCompare";
+import { RatingSummary } from "../Reviews";
 import { AcceptDialog, ProposalActionButtons, useProposalActions } from "../marketplace/actions";
 import {
   ListSkeleton, LoadError, PageHeader, ProposalStatusBadge, RequirementStatusBadge, VerifiedMark, YourTurnTag, pageStyle,
@@ -19,6 +21,9 @@ export function RequirementDetails() {
   const [sort, setSort] = useState<Sort>("amount");
   const [accepting, setAccepting] = useState<MarketProposal | null>(null);
   const [closing, setClosing] = useState(false);
+  const [onlyShortlisted, setOnlyShortlisted] = useState(false);
+  const [picked, setPicked] = useState<string[]>([]);
+  const [comparing, setComparing] = useState(false);
 
   const requirement = useLoad(() => requirementsService.get(id), [id]);
   const req = requirement.data;
@@ -51,7 +56,11 @@ export function RequirementDetails() {
   }
   if (!req) return <div style={pageStyle}><ListSkeleton rows={3} /></div>;
 
-  const list = proposals.data ?? [];
+  const all = proposals.data ?? [];
+  const shortlistedCount = all.filter((p) => p.status === "shortlisted").length;
+  const list = onlyShortlisted ? all.filter((p) => p.status === "shortlisted") : all;
+  const togglePick = (pid: string) => setPicked((cur) => cur.includes(pid) ? cur.filter((x) => x !== pid) : cur.length >= 3 ? cur : [...cur, pid]);
+  const pickedProposals = all.filter((p) => picked.includes(p.id));
   const lowest = list.filter((p) => p.status !== "rejected" && p.status !== "withdrawn").reduce<number | null>(
     (min, p) => (min === null || p.amount < min ? p.amount : min), null
   );
@@ -117,6 +126,10 @@ export function RequirementDetails() {
             <h2 id="proposals-heading" style={{ fontSize: 17, fontWeight: 800, color: "#0f172a", margin: 0 }}>
               Proposals {list.length > 0 && <span style={{ color: "#475569", fontWeight: 600 }}>({list.length})</span>}
             </h2>
+            <label style={{ fontSize: 14, color: "#475569", display: "flex", alignItems: "center", gap: 8 }}>
+              <input type="checkbox" checked={onlyShortlisted} onChange={(e) => setOnlyShortlisted(e.target.checked)} />
+              Shortlisted only ({shortlistedCount})
+            </label>
             <label style={{ fontSize: 13, color: "#475569", display: "flex", alignItems: "center", gap: 8 }}>
               Sort by
               <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} style={{ padding: "6px 10px", border: "1px solid #cbd5e1", borderRadius: 8, fontSize: 13, background: "#fff" }}>
@@ -133,16 +146,39 @@ export function RequirementDetails() {
             <ListSkeleton rows={3} />
           ) : list.length === 0 ? (
             <Card>
-              <EmptyState icon={Inbox} title="No proposals yet" desc="Companies that match your requirement can send proposals. You will see them here to compare." />
+              <EmptyState icon={Inbox} title={onlyShortlisted ? "No shortlisted proposals" : "No proposals yet"} desc={onlyShortlisted ? "Shortlist a proposal to keep it here." : "Companies that match your requirement can send proposals. You will see them here to compare."} />
             </Card>
           ) : (
+            <>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
+              <button
+                type="button" disabled={picked.length < 2} onClick={() => setComparing(true)}
+                style={{ background: picked.length < 2 ? "#e2e8f0" : "#6921A5", color: picked.length < 2 ? "#64748b" : "#fff", border: "none", borderRadius: 10, padding: "9px 16px", fontSize: 14, fontWeight: 600, cursor: picked.length < 2 ? "not-allowed" : "pointer" }}
+              >
+                Compare selected ({picked.length})
+              </button>
+              <span style={{ fontSize: 13, color: "#64748b" }}>Tick two or three proposals to see them side by side.</span>
+            </div>
+            {comparing && pickedProposals.length >= 2 && (
+              <ProposalCompare
+                proposals={pickedProposals}
+                onClose={() => setComparing(false)}
+                renderActions={(p) => (
+                  <ProposalActionButtons
+                    proposal={{ ...p, allowedActions: p.allowedActions.filter((a) => a === "accept" || a === "shortlist") }}
+                    busy={busyId === p.id}
+                    onAction={(a) => (a === "accept" ? setAccepting(p) : void run(p, a))}
+                  />
+                )}
+              />
+            )}
             <Card>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 760 }}>
                   <caption style={{ position: "absolute", left: -9999 }}>Proposals for this requirement, side by side</caption>
                   <thead>
                     <tr style={{ background: "#f8fafc", textAlign: "left" }}>
-                      {["Company", "Offer", "Timeline", "Status", "Round", ""].map((h) => (
+                      {["Compare", "Company", "Offer", "Timeline", "Status", "Round", ""].map((h) => (
                         <th key={h} scope="col" style={{ padding: "12px 16px", fontSize: 13, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.04em" }}>{h}</th>
                       ))}
                     </tr>
@@ -150,11 +186,23 @@ export function RequirementDetails() {
                   <tbody>
                     {list.map((p) => (
                       <tr key={p.id} style={{ borderTop: "1px solid #f1f5f9", verticalAlign: "top" }}>
+                        <td style={{ padding: "14px 16px" }}>
+                          <input
+                            type="checkbox" checked={picked.includes(p.id)} onChange={() => togglePick(p.id)}
+                            disabled={!picked.includes(p.id) && picked.length >= 3}
+                            aria-label={`Select ${p.proposerName ?? "this company"} to compare`}
+                            style={{ width: 18, height: 18 }}
+                          />
+                        </td>
                         <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 600, color: "#0f172a" }}>
                           {p.proposerName ?? "—"}<VerifiedMark verified={p.proposerVerified} />
+                          <div style={{ marginTop: 4 }}><RatingSummary rating={p.proposerRating} count={p.proposerReviews} /></div>
                         </td>
                         <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 700, color: "#0f172a", whiteSpace: "nowrap" }}>
                           {formatINR(p.amount)}
+                          {budgetDelta(p.amount, p.requirementBudgetMin, p.requirementBudgetMax) && (
+                            <div style={{ fontSize: 12, fontWeight: 500, color: "#64748b" }}>{budgetDelta(p.amount, p.requirementBudgetMin, p.requirementBudgetMax)}</div>
+                          )}
                           {lowest !== null && p.amount === lowest && p.allowedActions.length > 0 && (
                             <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 700, color: "#166534", background: "#dcfce7", padding: "2px 8px", borderRadius: 20 }}>Lowest</span>
                           )}
@@ -185,6 +233,7 @@ export function RequirementDetails() {
                 </table>
               </div>
             </Card>
+            </>
           )}
         </section>
       )}

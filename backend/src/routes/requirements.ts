@@ -112,6 +112,9 @@ function mapProposal(r: Row, viewerCompanyId?: string | null) {
     proposerId: r.companyId,
     proposerName: r.proposerName ?? null,
     proposerVerified: Boolean(r.proposerVerified),
+    proposerRating: r.proposerRating == null ? null : Math.round(Number(r.proposerRating) * 10) / 10,
+    proposerReviews: Number(r.proposerReviews) || 0,
+    proposerCompletedDeals: Number(r.proposerCompletedDeals) || 0,
     requesterId: r.requirementCompanyId,
     requesterName: r.requesterName ?? null,
     amount: Number(r.amount),
@@ -138,7 +141,10 @@ function mapProposal(r: Row, viewerCompanyId?: string | null) {
 const PROPOSAL_SELECT = `
   SELECT p.*, r.title AS requirementTitle, r.status AS requirementStatus, r.companyId AS requirementCompanyId,
          r.budgetMin AS requirementBudgetMin, r.budgetMax AS requirementBudgetMax, r.dealId AS dealId,
-         pc.name AS proposerName, pc.verified AS proposerVerified, rc.name AS requesterName
+         pc.name AS proposerName, pc.verified AS proposerVerified, rc.name AS requesterName,
+         (SELECT AVG(e.score) FROM reputation_events e WHERE e.companyId = p.companyId) AS proposerRating,
+         (SELECT COUNT(*) FROM reputation_events e WHERE e.companyId = p.companyId) AS proposerReviews,
+         (SELECT COUNT(*) FROM deals x WHERE x.status = 'completed' AND x.deletedAt IS NULL AND (x.buyerId = p.companyId OR x.sellerId = p.companyId)) AS proposerCompletedDeals
   FROM proposals p
   JOIN requirements r ON r.id = p.requirementId AND r.deletedAt IS NULL
   JOIN companies pc ON pc.id = p.companyId
