@@ -236,6 +236,12 @@ export async function initializeDatabase(options: { standalone?: boolean } = {})
     await createIndexIfMissing(connection, 'proposals', 'idx_proposals_requirement', 'requirementId');
     await createIndexIfMissing(connection, 'proposals', 'idx_proposals_company', 'companyId');
     await createIndexIfMissing(connection, 'messages', 'idx_messages_deletedAt', 'deletedAt');
+    // The inbox reads "everything sent to or by this company, newest first".
+    await createIndexIfMissing(connection, 'messages', 'idx_messages_receiver_created', 'receiverId, createdAt');
+    await createIndexIfMissing(connection, 'messages', 'idx_messages_sender_created', 'senderId, createdAt');
+    await createIndexIfMissing(connection, 'messages', 'idx_messages_deal', 'dealId');
+    await createIndexIfMissing(connection, 'products', 'idx_products_merchant', 'merchantId');
+    await createIndexIfMissing(connection, 'requirements', 'idx_requirements_created', 'createdAt');
 
     // Ledger table
     await connection.query(`

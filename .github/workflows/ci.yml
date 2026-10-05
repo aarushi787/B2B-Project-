@@ -24,12 +24,14 @@ jobs:
         run: |
           npm ci
           npm test        # compiles with tsc, then runs the node:test suite
+          npm audit --omit=dev --audit-level=critical
 
       - name: Frontend
         working-directory: frontend
         run: |
           npm ci
           npm run build   # tsc -b && vite build
+          npm audit --omit=dev --audit-level=critical
 
       - name: Admin frontend
         working-directory: admin-frontend
