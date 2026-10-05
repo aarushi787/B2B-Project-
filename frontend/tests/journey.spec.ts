@@ -48,14 +48,19 @@ test.describe('Marketplace journey', () => {
     const title = `Journey requirement ${Date.now().toString(36)}`;
     await signUpThroughUi(page, 'buyer');
 
-    // 1. Post a requirement through the form.
+    // 1. Post a requirement through the step-by-step form.
     await page.goto('/app/requirements/new');
-    await page.getByRole('button', { name: 'Cloud & DevOps' }).click();
-    await page.getByPlaceholder('E.g. Build an e-commerce website').fill(title);
-    await page.getByPlaceholder('Provide as much detail as possible...').fill('Move our servers to AWS with a CI/CD pipeline and handover docs.');
-    await page.getByRole('button', { name: '50K-1L' }).click();
-    await page.getByRole('button', { name: 'Within 1 Month' }).click();
-    await page.getByRole('button', { name: 'Submit', exact: true }).click();
+    const next = () => page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: 'Cloud & DevOps' }).click();      // step 1: service
+    await next();
+    await page.getByPlaceholder('E.g. Build an e-commerce website').fill(title); // step 2: describe
+    await page.getByPlaceholder(/What do you need/).fill('Move our servers to AWS with a CI/CD pipeline and handover docs.');
+    await next();
+    await page.getByRole('button', { name: '50K-1L' }).click();               // step 3: budget
+    await next();
+    await page.getByRole('button', { name: 'Within 1 Month' }).click();       // step 4: timeline
+    await next();
+    await page.getByRole('button', { name: 'Post requirement' }).click();     // step 5: review and submit
     await page.waitForURL('**/app/requirements/active');
     await expect(page.getByText(title)).toBeVisible();
 

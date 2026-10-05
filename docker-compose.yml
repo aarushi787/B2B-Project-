@@ -6,7 +6,7 @@ services:
     container_name: b2b_mysql
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASS:-root_password}
-      MYSQL_DATABASE: ${DB_NAME:-b2b_nexus}
+      MYSQL_DATABASE: ${DB_NAME:-b2bforcorporates}
       MYSQL_USER: ${DB_USER:-b2b_user}
       MYSQL_PASSWORD: ${DB_PASS:-b2b_password}
     ports:
@@ -61,7 +61,7 @@ services:
       - DB_HOST=db
       - DB_USER=${DB_USER:-b2b_user}
       - DB_PASSWORD=${DB_PASS:-b2b_password}
-      - DB_NAME=${DB_NAME:-b2b_nexus}
+      - DB_NAME=${DB_NAME:-b2bforcorporates}
       # Required secrets: compose refuses to start without them (no weak defaults).
       - JWT_SECRET=${JWT_SECRET:?set JWT_SECRET in .env (e.g. openssl rand -hex 32)}
       - DATA_ENCRYPTION_KEY=${DATA_ENCRYPTION_KEY:?set DATA_ENCRYPTION_KEY in .env (e.g. openssl rand -hex 32)}

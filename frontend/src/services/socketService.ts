@@ -15,7 +15,10 @@ const env = (import.meta as any).env ?? {};
 
 function resolveSocketUrl(): string | null {
   const configured = String(env.VITE_SOCKET_URL || '').trim();
-  if (configured) return configured.replace(/\/api\/?$/, '').replace(/\/+$/, '');
+  // Same guard as the API address: a localhost socket URL baked into a deployed build can never work for visitors.
+  const pageIsLocal = typeof window !== 'undefined' && ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
+  const pointsAtLocalhost = /^(https?|wss?):\/\/(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/i.test(configured);
+  if (configured && (pageIsLocal || !pointsAtLocalhost)) return configured.replace(/\/api\/?$/, '').replace(/\/+$/, '');
   return env.PROD ? null : 'http://localhost:5000';
 }
 

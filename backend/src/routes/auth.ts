@@ -230,8 +230,8 @@ router.post('/register', authLimiter, validateRequest(userRegisterSchema), async
     );
 
     const verifyUrl = `${frontendBaseUrl()}/verify-email?token=${verifyToken}`;
-    await sendEmail(normalizedEmail, 'Verify your B2B For Corporates Email', `
-      <h1>Welcome to B2B For Corporates!</h1>
+    await sendEmail(normalizedEmail, 'Verify your B2BForCorporates Email', `
+      <h1>Welcome to B2BForCorporates!</h1>
       <p>Please click the link below to verify your email address:</p>
       <a href="${verifyUrl}">${verifyUrl}</a>
     `);
@@ -608,7 +608,7 @@ router.post('/resend-verification', authLimiter, authMiddleware, validateRequest
     const verifyToken = emailLink.token;
     await connection.query('UPDATE users SET verifyToken = ?, verifyTokenExpiresAt = ? WHERE id = ?', [emailLink.hash, emailLink.expiresAt, user.id]);
     const verifyUrl = `${frontendBaseUrl()}/verify-email?token=${verifyToken}`;
-    await sendEmail(user.email, 'Verify your B2B For Corporates Email', `
+    await sendEmail(user.email, 'Verify your B2BForCorporates Email', `
       <h1>Verify your email</h1>
       <p>Please click the link below to verify your email address:</p>
       <a href="${verifyUrl}">${verifyUrl}</a>

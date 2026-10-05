@@ -1,5 +1,5 @@
 // ─── Shared Design System Components ──────────────────────────────────────────
-// Used across all pages to ensure consistent ConnectPro UI
+// Used across all pages to ensure consistent B2BForCorporates UI
 
 import React from "react";
 import { Search, ChevronDown } from "lucide-react";

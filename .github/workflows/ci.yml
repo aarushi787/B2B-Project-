@@ -83,10 +83,10 @@ jobs:
           npm run db:init
           nohup node dist/index.js > ../backend.log 2>&1 &
           for i in $(seq 1 30); do
-            curl -sf http://localhost:5000/api/health && exit 0
+            curl -sf http://localhost:5000/api/ready && exit 0
             sleep 2
           done
-          echo "Backend did not become healthy"; cat ../backend.log; exit 1
+          echo "Backend did not become ready"; cat ../backend.log; exit 1
 
       - name: Install frontend and browsers
         working-directory: frontend

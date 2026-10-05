@@ -1,5 +1,5 @@
 // B2BForCorporates — AuthProvider
-// Bridges the SaaS Dashboard UI with the B2B Nexus backend auth system.
+// Bridges the SaaS Dashboard UI with the B2BForCorporates backend auth system.
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { apiClient } from '../services/apiClient';
 import { socketService } from '../services/socketService';

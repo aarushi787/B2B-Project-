@@ -24,11 +24,8 @@ function Navbar() {
     <nav style={{ position: "sticky", top: 0, zIndex: 50, background: "#ffffff", borderBottom: "1px solid #e2e8f0", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", gap: 32, height: 60 }}>
         <a href="/landing" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
-          <img src="/logo.png" alt="B2B Logo" style={{ height: "32px", width: "auto", objectFit: "contain" }} />
-          <div>
-            <div style={{ fontWeight: 800, fontSize: 13, lineHeight: "1.1", color: "#0f172a" }}>B2B</div>
-            <div style={{ fontWeight: 700, fontSize: 8, lineHeight: "1.1", color: "#0f172a", textTransform: "uppercase" }}>CORPORATES</div>
-          </div>
+          <img src="/logo.png" alt="B2BForCorporates logo" style={{ height: "32px", width: "auto", objectFit: "contain" }} />
+          <span style={{ fontFamily: "Fraunces, Georgia, serif", fontWeight: 500, fontSize: 18, color: "#6921A5", letterSpacing: "-0.01em" }}>B2BForCorporates</span>
         </a>
         <div style={{ display: "flex", alignItems: "center", gap: 24, flex: 1 }}>
           {[
@@ -137,7 +134,7 @@ export function ServicesPage() {
         <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 32 }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-              <span style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>✦ ConnectPro</span>
+              <span style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>B2BForCorporates</span>
             </div>
             <p style={{ fontSize: 13, color: "#64748b", maxWidth: 220, lineHeight: 1.6 }}>Enterprise-grade secure marketplace matching international operators with premium vetted suppliers.</p>
           </div>
@@ -154,7 +151,7 @@ export function ServicesPage() {
           ))}
         </div>
         <div style={{ maxWidth: 1200, margin: "32px auto 0", borderTop: "1px solid #1e293b", paddingTop: 24 }}>
-          <p style={{ fontSize: 13, color: "#475569" }}>© 2026 ConnectPro Technologies Group, Inc. All rights reserved.</p>
+          <p style={{ fontSize: 13, color: "#475569" }}>© 2026 B2BForCorporates. All rights reserved.</p>
         </div>
       </footer>
     </div>

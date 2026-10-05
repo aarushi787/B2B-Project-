@@ -11,52 +11,18 @@ import {
 } from "lucide-react";
 import { Onboarding } from "./Onboarding";
 import { Header } from "./Header";
+import { Sidebar, BottomTabs } from "./Sidebar";
 import { useAuth } from "../../auth/AuthProvider";
 import { socketService } from "../../services/socketService";
-
-const NAV_ITEMS = [
-  { icon: LayoutDashboard, label: "Overview",              path: "/app/dashboard",              group: "root" },
-
-  // Highest Priority: Core Marketplace Actions
-  { icon: Sparkles,        label: "Discover Leads",       path: "/app/opportunities/matching", group: "marketplace" },
-  { icon: FileText,        label: "My Requirements",      path: "/app/requirements/active",    group: "marketplace" },
-  { icon: Send,            label: "Sent Proposals",       path: "/app/opportunities/sent",     group: "marketplace" },
-  { icon: Inbox,           label: "Received Proposals",   path: "/app/opportunities/received", group: "marketplace" },
-
-  // Projects & Deals
-  { icon: Folder,          label: "Portfolio / Deals",    path: "/app/deals",                  group: "projects" },
-  { icon: Shield,          label: "Verification",         path: "/app/verification",           group: "projects" },
-  { icon: FileText,        label: "Contracts",            path: "/app/contracts",              group: "projects" },
-  { icon: FileText,        label: "Ledger",               path: "/app/ledger",                 group: "projects" },
-
-  // Communication
-  { icon: MessageSquare,   label: "Messages",             path: "/app/messaging",              group: "communication" },
-
-  // Administrative: Company Identity
-  { icon: Building2,       label: "Business Profile",     path: "/app/companies",              group: "company" },
-  { icon: ShoppingBag,     label: "Services Catalog",     path: "/app/marketplace",            group: "company" },
-  { icon: FileText,        label: "Investor Portal",      path: "/app/investor",               group: "company" },
-
-  // Admin & Settings
-  { icon: Settings,        label: "Settings",             path: "/app/settings",               group: "settings" },
-];
-
-const GROUPS = [
-  { id: "root",           label: null,              items: NAV_ITEMS.filter(n => n.group === "root") },
-  { id: "marketplace",    label: "MARKETPLACE",     items: NAV_ITEMS.filter(n => n.group === "marketplace") },
-  { id: "projects",       label: "PROJECTS",        items: NAV_ITEMS.filter(n => n.group === "projects") },
-  { id: "communication",  label: "COMMUNICATION",   items: NAV_ITEMS.filter(n => n.group === "communication") },
-  { id: "company",        label: "MY BUSINESS",     items: NAV_ITEMS.filter(n => n.group === "company") },
-  { id: "settings",       label: null,              items: NAV_ITEMS.filter(n => n.group === "settings") },
-];
 
 const BREADCRUMB_MAP: Record<string, string> = {
   "/app": "Overview",
   "/app/dashboard": "Overview",
   "/app/companies": "Business Profile",
   "/app/marketplace": "Services",
-  "/app/deals": "Portfolio",
   "/app/contracts": "Contracts",
+  "/app/requirements/new": "Post a Requirement",
+  "/app/deals": "Deals",
   "/app/verification": "Verification",
   "/app/settings": "Business Settings",
   "/app/requirements/active": "Active Requirements",
@@ -71,20 +37,14 @@ const BREADCRUMB_MAP: Record<string, string> = {
   "/app/messaging": "Messages",
 };
 
-// ─── Brand Logo ─────────────────────────────────────────────────────────────
-function BrandLogo({ small }: { small?: boolean }) {
-  return (
-    <div className="flex items-center justify-center w-full">
-      <img src="/logo.png" alt="B2B Logo" style={{ height: small ? 32 : 44, width: "auto", objectFit: "contain" }} className="shrink-0" />
-    </div>
-  );
-}
-
 export function Layout() {
   const { user, logout: authLogout, isAdmin } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem("sidebar-collapsed") === "1"; } catch { return false; }
+  });
+  useEffect(() => { try { localStorage.setItem("sidebar-collapsed", collapsed ? "1" : "0"); } catch { /* storage can be blocked */ } }, [collapsed]);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -134,156 +94,6 @@ export function Layout() {
   ];
   const pageTitle = BREADCRUMB_MAP[location.pathname] ?? crumbs[crumbs.length - 1]?.label ?? "Dashboard";
 
-  // Sidebar
-  const SidebarContent = ({ isMobile = false }: { isMobile?: boolean }) => {
-    const isCollapsed = collapsed && !isMobile;
-    return (
-      <div className="flex flex-col h-full" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-        {/* Logo */}
-        <div
-          style={{
-            padding: isCollapsed ? "20px 12px" : "20px 24px",
-            borderBottom: "1px solid #f1f5f9",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: isCollapsed ? "center" : "flex-start",
-            minHeight: 64,
-            background: "linear-gradient(to right, #ffffff, #f8fafc)"
-          }}
-        >
-          {isCollapsed
-            ? <BrandLogo small />
-            : <BrandLogo />
-          }
-        </div>
-
-        {/* Nav */}
-        <nav style={{ flex: 1, overflowY: "auto", padding: "12px 8px" }}>
-          {GROUPS.map(group => (
-            <div key={group.id} style={{ marginBottom: group.label ? 16 : 4 }}>
-              {group.label && !isCollapsed && (
-                <p style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: "#94a3b8",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  padding: "0 8px",
-                  marginBottom: 4,
-                  marginTop: group.id !== "root" ? 4 : 0,
-                }}>
-                  {group.label}
-                </p>
-              )}
-              <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                {group.items.map(item => {
-                  const isActive = location.pathname === item.path ||
-                    (item.path !== "/" && location.pathname.startsWith(item.path));
-                  return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      title={isCollapsed ? item.label : undefined}
-                      style={{ textDecoration: "none" }}
-                    >
-                      <motion.div
-                        whileHover={{ x: 4, backgroundColor: isActive ? "#F3E8F8" : "#f8fafc" }}
-                        whileTap={{ scale: 0.98 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: isCollapsed ? 0 : 12,
-                          padding: isCollapsed ? "10px" : "10px 14px",
-                          borderRadius: 10,
-                          justifyContent: isCollapsed ? "center" : "flex-start",
-                          position: "relative",
-                          background: isActive ? "#F3E8F8" : "transparent",
-                          color: isActive ? "#6921A5" : "#64748b",
-                          fontWeight: isActive ? 600 : 500,
-                          fontSize: 13,
-                          borderLeft: isActive && !isCollapsed ? "3px solid #6921A5" : "3px solid transparent",
-                        }}
-                        className="sidebar-link"
-                      >
-                        <item.icon
-                          style={{
-                            width: 18,
-                            height: 18,
-                            flexShrink: 0,
-                            color: isActive ? "#6921A5" : "#94a3b8",
-                            transition: "color 0.2s"
-                          }}
-                        />
-                        {!isCollapsed && <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", transition: "color 0.2s" }}>{item.label}</span>}
-                        {/* Tooltip on collapsed */}
-                        {isCollapsed && (
-                          <div style={{
-                            position: "absolute",
-                            left: "calc(100% + 12px)",
-                            top: "50%",
-                            transform: "translateY(-50%)",
-                            background: "#0f172a",
-                            color: "#fff",
-                            fontSize: 13,
-                            fontWeight: 600,
-                            padding: "6px 12px",
-                            borderRadius: 6,
-                            whiteSpace: "nowrap",
-                            opacity: 0,
-                            pointerEvents: "none",
-                            zIndex: 99,
-                            boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-                          }} className="sidebar-tooltip">
-                            {item.label}
-                          </div>
-                        )}
-                      </motion.div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </nav>
-
-        {/* User info at bottom */}
-        <div style={{ borderTop: "1px solid #f1f5f9", padding: isCollapsed ? "12px 8px" : "12px 16px" }}>
-          {!isCollapsed && (
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{
-                width: 36,
-                height: 36,
-                borderRadius: "50%",
-                background: "linear-gradient(135deg, #1e3a8a 0%, #6921A5 100%)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}>
-                <span style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>{(user?.name || user?.email || "?").trim().charAt(0).toUpperCase()}</span>
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", margin: 0, lineHeight: "1.2" }}>
-                  {user?.name ?? ""}
-                </p>
-                <p style={{ fontSize: 12, color: "#64748b", margin: 0, lineHeight: "1.2" }}>{isAdmin ? "Platform admin" : (user as any)?.companyName ?? "Member"}</p>
-              </div>
-            </div>
-          )}
-          {isCollapsed && (
-            <button
-              onClick={() => setCollapsed(false)}
-              style={{ width: "100%", display: "flex", justifyContent: "center", padding: 6, color: "#64748b", background: "none", border: "none", cursor: "pointer", borderRadius: 8 }}
-            >
-              <PanelLeftOpen style={{ width: 16, height: 16 }} />
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div style={{ display: "flex", height: "100vh", background: "#f8fafc", overflow: "hidden", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
 
@@ -298,22 +108,9 @@ export function Layout() {
       </AnimatePresence>
 
       {/* ── Desktop Sidebar ──────────────────────────────── */}
-      <motion.aside
-        animate={{ width: collapsed ? 60 : 220 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        style={{
-          background: "#ffffff",
-          borderRight: "1px solid #e2e8f0",
-          display: "flex",
-          flexDirection: "column",
-          flexShrink: 0,
-          overflow: "hidden",
-          zIndex: 20,
-        }}
-        className="hidden md:flex"
-      >
-        <SidebarContent />
-      </motion.aside>
+      <aside aria-label="Sidebar" className={`hidden shrink-0 flex-col border-r border-slate-200 bg-white transition-[width] duration-200 md:flex ${collapsed ? "w-[76px]" : "w-64"}`} style={{ zIndex: 20 }}>
+        <Sidebar collapsed={collapsed} onToggleCollapsed={() => setCollapsed((c) => !c)} />
+      </aside>
 
       {/* ── Mobile Drawer ─────────────────────────────────── */}
       <AnimatePresence>
@@ -331,7 +128,7 @@ export function Layout() {
               style={{
                 position: "fixed",
                 left: 0, top: 0, bottom: 0,
-                width: 240,
+                width: 280,
                 background: "#ffffff",
                 borderRight: "1px solid #e2e8f0",
                 zIndex: 40,
@@ -344,7 +141,7 @@ export function Layout() {
               >
                 <X style={{ width: 16, height: 16 }} />
               </button>
-              <SidebarContent isMobile />
+              <Sidebar collapsed={false} mobile onNavigate={() => setMobileOpen(false)} />
             </motion.aside>
           </>
         )}
@@ -380,10 +177,13 @@ export function Layout() {
               style={{ minHeight: "100%" }}
             >
               <Outlet context={{ notifications, setNotifications, markAllRead, markRead }} />
+              <div className="h-20 md:hidden" aria-hidden="true" />
             </motion.div>
           </AnimatePresence>
         </main>
       </div>
+
+      <BottomTabs onMore={() => setMobileOpen(true)} />
 
       <style>{`
         .sidebar-link:hover {
