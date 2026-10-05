@@ -804,7 +804,13 @@ router.post('/phone/verify', authLimiter, authMiddleware, validateRequest(phoneV
     }
 
     await pool.query('UPDATE phone_verifications SET consumedAt = CURRENT_TIMESTAMP WHERE id = ?', [row.id]);
-    await pool.query('UPDATE users SET phoneVerified = TRUE WHERE id = ? AND phone = ?', [req.userId, row.phone]);
+    // The code was issued for row.phone (normalized). A stored phone may be formatted differently, so compare normalized
+    // values in code and save the normalized number, rather than matching raw text in SQL.
+    const [owner] = await pool.query('SELECT phone FROM users WHERE id = ?', [req.userId]);
+    const current = (owner as any[])[0]?.phone;
+    if (!current || normalizePhone(current) === row.phone) {
+      await pool.query('UPDATE users SET phone = ?, phoneVerified = TRUE WHERE id = ?', [row.phone, req.userId]);
+    }
     await createAuditLog({ userId: req.userId, action: 'PHONE_VERIFIED', resourceType: 'user', resourceId: req.userId, ipAddress: req.ip, userAgent: req.get('user-agent') });
     emitToUser(req.userId, 'user:updated', { phoneVerified: true });
     return res.json({ verified: true });
