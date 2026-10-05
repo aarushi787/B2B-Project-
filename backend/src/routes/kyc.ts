@@ -5,12 +5,16 @@ import pool from '../config/database.js';
 import { adminMiddleware, authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { decryptJson, encryptJson } from '../utils/encryption.js';
 import { createAuditLog } from '../utils/audit.js';
-import { sendNotificationEmail } from '../services/email.js';
 import { kycUploadSchema, kycVerifySchema, validateRequest } from '../middleware/validation.js';
 import { resolveStoragePath } from '../services/storage.js';
 import { notifyAdmins, notifyCompany } from '../services/notify.js';
 import { emitToCompany } from '../realtime/socket.js';
 import { logger } from '../utils/logger.js';
+import { uploadLimiter } from '../middleware/rateLimit.js';
+
+const KYC_ALLOWED_TYPES = new Set(['application/pdf', 'image/png', 'image/jpeg']);
+const KYC_MAX_FILE_BYTES = 2 * 1024 * 1024;
+const KYC_MAX_DOCS_PER_COMPANY = 25;
 
 const router = Router();
 
@@ -19,7 +23,7 @@ router.get('/company/:companyId', authMiddleware, async (req: AuthRequest, res: 
     if (req.role !== 'admin' && req.params.companyId !== req.companyId) {
       return res.status(403).json({ error: 'You can only see your own company documents' });
     }
-    const connection = await pool.getConnection();
+    const connection = pool;
     const [rows] = await connection.query(
       `SELECT id, companyId, uploadedBy, documentType, status, verifierUserId, verifiedAt, createdAt, updatedAt
        FROM kyc_documents
@@ -27,7 +31,6 @@ router.get('/company/:companyId', authMiddleware, async (req: AuthRequest, res: 
        ORDER BY createdAt DESC`,
       [req.params.companyId]
     );
-    connection.release();
     res.json(rows);
   } catch (error) {
     logger.error('List KYC docs error:', error);
@@ -35,7 +38,7 @@ router.get('/company/:companyId', authMiddleware, async (req: AuthRequest, res: 
   }
 });
 
-router.post('/upload', authMiddleware, validateRequest(kycUploadSchema), async (req: AuthRequest, res: Response) => {
+router.post('/upload', authMiddleware, uploadLimiter, validateRequest(kycUploadSchema), async (req: AuthRequest, res: Response) => {
   try {
     const { companyId, documentType, fileName, filePath, mimeType, sizeBytes, contentBase64 } = req.body;
     if (companyId !== req.companyId) {
@@ -43,6 +46,20 @@ router.post('/upload', authMiddleware, validateRequest(kycUploadSchema), async (
     }
     if (!companyId || !documentType || !fileName) {
       return res.status(400).json({ error: 'companyId, documentType and fileName are required' });
+    }
+    // Check the real file, not the sizes the browser claims.
+    if (contentBase64) {
+      if (!mimeType || !KYC_ALLOWED_TYPES.has(String(mimeType))) {
+        return res.status(400).json({ error: 'Only PDF, PNG and JPG files are accepted.' });
+      }
+      const actualBytes = Math.floor((String(contentBase64).length * 3) / 4);
+      if (actualBytes > KYC_MAX_FILE_BYTES) {
+        return res.status(413).json({ error: 'That file is larger than 2 MB. Please upload a smaller one.' });
+      }
+    }
+    const [existingDocs] = await pool.query("SELECT COUNT(*) AS n FROM kyc_documents WHERE companyId = ? AND status <> 'REJECTED'", [companyId]);
+    if (Number((existingDocs as any[])[0]?.n) >= KYC_MAX_DOCS_PER_COMPANY) {
+      return res.status(409).json({ error: 'Your company has reached the document limit. Contact support to add more.' });
     }
 
     const storagePath = resolveStoragePath({ fileName, filePath, docType: documentType });
@@ -57,13 +74,12 @@ router.post('/upload', authMiddleware, validateRequest(kycUploadSchema), async (
       uploadedAt: new Date().toISOString(),
     });
 
-    const connection = await pool.getConnection();
+    const connection = pool;
     await connection.query(
       `INSERT INTO kyc_documents (id, companyId, uploadedBy, documentType, encryptedMeta, status)
        VALUES (?, ?, ?, ?, ?, 'PENDING')`,
       [id, companyId, req.userId ?? null, String(documentType).toUpperCase(), encryptedMeta]
     );
-    connection.release();
 
     await createAuditLog({
       userId: req.userId,
@@ -98,7 +114,7 @@ router.put('/:id/verify', adminMiddleware, validateRequest(kycVerifySchema), asy
       return res.status(400).json({ error: 'status must be VERIFIED or REJECTED' });
     }
 
-    const connection = await pool.getConnection();
+    const connection = pool;
     await connection.query(
       `UPDATE kyc_documents
        SET status = ?, verifierUserId = ?, verifiedAt = CURRENT_TIMESTAMP
@@ -106,7 +122,6 @@ router.put('/:id/verify', adminMiddleware, validateRequest(kycVerifySchema), asy
       [status, req.userId ?? null, req.params.id]
     );
     const [rows] = await connection.query('SELECT * FROM kyc_documents WHERE id = ?', [req.params.id]);
-    connection.release();
     const updated = (rows as any[])[0];
     if (!updated) {
       return res.status(404).json({ error: 'KYC document not found' });
@@ -131,17 +146,6 @@ router.put('/:id/verify', adminMiddleware, validateRequest(kycVerifySchema), asy
       link: '/app/contracts',
     });
     emitToCompany(updated.companyId, 'kyc:updated', { id: updated.id, status });
-
-    // Notify user async
-    if (status === 'VERIFIED') {
-      sendNotificationEmail(
-        'admin@b2bforcorporates.com', // Would normally look up company owner's email
-        'KYC Document Verified',
-        `Your ${updated.documentType} document has been verified. Your company profile is now one step closer to full approval.`,
-        `${process.env.FRONTEND_URL || 'http://localhost:5173'}/app/contracts`,
-        'View Verification Progress'
-      ).catch(e => logger.error('Email error', e));
-    }
 
     res.json({
       id: updated.id,

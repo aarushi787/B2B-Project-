@@ -23,8 +23,8 @@ export const companiesService = {
     await apiClient.delete(`/companies/${id}`);
   },
 
-  async verifyCompany(id: string): Promise<Company> {
-    return apiClient.put<Company>(`/companies/${id}/verify`, { verified: true });
+  async verifyCompany(id: string, verified = true): Promise<Company> {
+    return apiClient.put<Company>(`/companies/${id}/verify`, { verified });
   },
 
   async searchCompanies(query: string): Promise<Company[]> {

@@ -9,6 +9,8 @@ import { socketService } from "../../../services/socketService";
 import { useLoad } from "../../../lib/useLoad";
 import { formatDate } from "../../../lib/format";
 import { ActivityLogsModal } from "../ActivityLogsModal";
+import { OverviewCards } from "../OverviewCards";
+import { DealAlerts } from "../DealAlerts";
 import type { Deal } from "../../../types";
 
 interface ActivityRow { id: string; title: string; message?: string; createdAt: string; }
@@ -17,7 +19,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string; label: string }>
   active:       { bg: "#dcfce7", text: "#16a34a", label: "Active" },
   open:         { bg: "#dcfce7", text: "#16a34a", label: "Open" },
   pending:      { bg: "#fef3c7", text: "#d97706", label: "Pending" },
-  awarded:      { bg: "#eff6ff", text: "#2563EB", label: "Awarded" },
+  awarded:      { bg: "#F3E8F8", text: "#6921A5", label: "Awarded" },
   closed:       { bg: "#f1f5f9", text: "#64748b", label: "Closed" },
   cancelled:    { bg: "#f1f5f9", text: "#64748b", label: "Cancelled" },
 };
@@ -25,25 +27,9 @@ const STATUS_COLORS: Record<string, { bg: string; text: string; label: string }>
 function StatusBadge({ status }: { status: string }) {
   const s = STATUS_COLORS[status?.toLowerCase()] ?? { bg: "#f1f5f9", text: "#64748b", label: status || "Unknown" };
   return (
-    <span style={{ background: s.bg, color: s.text, fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, whiteSpace: "nowrap" }}>
+    <span style={{ background: s.bg, color: s.text, fontSize: 12, fontWeight: 600, padding: "3px 10px", borderRadius: 20, whiteSpace: "nowrap" }}>
       {s.label}
     </span>
-  );
-}
-
-function KPICard({ label, value, iconBg, iconColor, icon: Icon }: {
-  label: string; value: string | number; iconBg: string; iconColor: string; icon: any;
-}) {
-  return (
-    <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-        <p style={{ fontSize: 13, fontWeight: 600, color: "#64748b", margin: 0 }}>{label}</p>
-        <div style={{ width: 36, height: 36, background: iconBg, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Icon style={{ width: 18, height: 18, color: iconColor }} />
-        </div>
-      </div>
-      <p style={{ fontSize: 28, fontWeight: 800, color: "#0f172a", margin: 0, lineHeight: "1.1" }}>{value}</p>
-    </div>
   );
 }
 
@@ -90,11 +76,11 @@ export function Dashboard() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      style={{ maxWidth: 1200, margin: "0 auto", fontFamily: "Inter, sans-serif" }}
+      style={{ maxWidth: 1200, margin: "0 auto", fontFamily: "'Plus Jakarta Sans', sans-serif" }}
     >
       {error ? (
         <div role="alert" style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 12, padding: 20, color: "#b91c1c", fontSize: 13 }}>
-          {error} <button onClick={() => void reload()} style={{ color: "#2563EB", background: "none", border: "none", cursor: "pointer", fontWeight: 700 }}>Retry</button>
+          {error} <button onClick={() => void reload()} style={{ color: "#6921A5", background: "none", border: "none", cursor: "pointer", fontWeight: 700 }}>Retry</button>
         </div>
       ) : loading && !data ? (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 200 }}>
@@ -102,29 +88,31 @@ export function Dashboard() {
         </div>
       ) : (
         <>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 20, marginBottom: 28 }}>
-            <KPICard label="Open Requirements" value={openRequirements.length} iconBg="#eff6ff" iconColor="#2563EB" icon={FileText} />
-            <KPICard label="Received Proposals" value={data?.receivedTotal ?? 0} iconBg="#dcfce7" iconColor="#16a34a" icon={Inbox} />
-            <KPICard label="Sent Proposals" value={data?.sentTotal ?? 0} iconBg="#fef3c7" iconColor="#d97706" icon={Search} />
-            <KPICard label="Active Deals" value={activeDeals.length} iconBg="#EFF6FF" iconColor="#2563EB" icon={TrendingUp} />
-          </div>
+          <OverviewCards items={[
+            { label: "Open Requirements", value: openRequirements.length, icon: FileText, iconBg: "#F3E8F8", iconColor: "#6921A5" },
+            { label: "Received Proposals", value: data?.receivedTotal ?? 0, icon: Inbox, iconBg: "#dcfce7", iconColor: "#16a34a" },
+            { label: "Sent Proposals", value: data?.sentTotal ?? 0, icon: Search, iconBg: "#fef3c7", iconColor: "#d97706" },
+            { label: "Active Deals", value: activeDeals.length, icon: TrendingUp, iconBg: "#F3E8F8", iconColor: "#6921A5" },
+          ]} />
+
+          <div style={{ marginBottom: 28 }}><DealAlerts /></div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 20, marginBottom: 28 }}>
             <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px", borderBottom: "1px solid #f1f5f9" }}>
                 <h2 style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", margin: 0 }}>Recent Activity</h2>
-                <button onClick={() => setShowActivityModal(true)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#2563EB" }}>See All</button>
+                <button onClick={() => setShowActivityModal(true)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#6921A5" }}>See All</button>
               </div>
               <div>
                 {activity.length === 0 && <p style={{ padding: "16px 24px", fontSize: 13, color: "#64748b", margin: 0 }}>No recent activity.</p>}
                 {activity.slice(0, 5).map((a, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 16, padding: "16px 24px" }}>
-                    <div style={{ width: 32, height: 32, background: "#eff6ff", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>
-                      <a.icon style={{ width: 16, height: 16, color: "#2563EB" }} />
+                    <div style={{ width: 32, height: 32, background: "#F3E8F8", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>
+                      <a.icon style={{ width: 16, height: 16, color: "#6921A5" }} />
                     </div>
                     <div>
                       <p style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", margin: 0, lineHeight: "1.4" }}>{a.title}</p>
-                      <p style={{ fontSize: 11, color: "#64748b", margin: "4px 0 0" }}>{a.source ? `${a.source} - ` : ""}{a.time}</p>
+                      <p style={{ fontSize: 12, color: "#64748b", margin: "4px 0 0" }}>{a.source ? `${a.source} - ` : ""}{a.time}</p>
                     </div>
                   </div>
                 ))}
@@ -136,7 +124,7 @@ export function Dashboard() {
                 <h2 style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", margin: "0 0 16px" }}>Quick Actions</h2>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   <Link to="/app/requirements/new"
-                    style={{ background: "#2563EB", color: "#fff", fontSize: 13, fontWeight: 600, padding: "12px", borderRadius: 8, textDecoration: "none", textAlign: "center" }}>
+                    style={{ background: "#6921A5", color: "#fff", fontSize: 13, fontWeight: 600, padding: "12px", borderRadius: 8, textDecoration: "none", textAlign: "center" }}>
                     Post Requirement
                   </Link>
                   <Link to="/app/marketplace"
@@ -162,7 +150,7 @@ export function Dashboard() {
                     <Link key={d.id} to={`/app/deals/${d.id}`} style={{ textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: i < arr.length - 1 ? 16 : 0, borderBottom: i < arr.length - 1 ? "1px solid #f1f5f9" : "none" }}>
                       <div>
                         <p style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", margin: 0 }}>{d.title || "Untitled deal"}</p>
-                        <p style={{ fontSize: 11, color: "#64748b", margin: "4px 0 0" }}>Created {formatDate(d.createdAt)}</p>
+                        <p style={{ fontSize: 12, color: "#64748b", margin: "4px 0 0" }}>Created {formatDate(d.createdAt)}</p>
                       </div>
                       <StatusBadge status={(d.status || "").toUpperCase() === "CONFIRMED" ? "active" : "pending"} />
                     </Link>
@@ -175,13 +163,13 @@ export function Dashboard() {
           <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px", borderBottom: "1px solid #f1f5f9" }}>
               <h2 style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", margin: 0 }}>Recent Requirements</h2>
-              <Link to="/app/requirements/active" style={{ fontSize: 13, fontWeight: 700, color: "#2563EB", textDecoration: "none" }}>
+              <Link to="/app/requirements/active" style={{ fontSize: 13, fontWeight: 700, color: "#6921A5", textDecoration: "none" }}>
                 View All Requirements
               </Link>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "3fr 1.5fr 1fr 1fr 1fr", padding: "12px 24px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9" }}>
               {["Requirement", "Category", "Posted Date", "Proposals", "Status"].map(h => (
-                <span key={h} style={{ fontSize: 12, fontWeight: 700, color: "#64748b" }}>{h}</span>
+                <span key={h} style={{ fontSize: 13, fontWeight: 700, color: "#64748b" }}>{h}</span>
               ))}
             </div>
             {requirements.length === 0 && <p style={{ padding: "16px 24px", fontSize: 13, color: "#64748b", margin: 0 }}>You have not posted any requirements yet.</p>}

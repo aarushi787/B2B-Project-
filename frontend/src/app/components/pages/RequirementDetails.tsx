@@ -74,7 +74,7 @@ export function RequirementDetails() {
               </button>
             )}
             {isMine && req.status === "awarded" && req.dealId && (
-              <Link to={`/app/deals/${req.dealId}`} style={{ background: "#2563EB", color: "#fff", fontSize: 13, fontWeight: 600, padding: "8px 14px", borderRadius: 8, textDecoration: "none" }}>
+              <Link to={`/app/deals/${req.dealId}`} style={{ background: "#6921A5", color: "#fff", fontSize: 13, fontWeight: 600, padding: "8px 14px", borderRadius: 8, textDecoration: "none" }}>
                 Open deal
               </Link>
             )}
@@ -96,12 +96,12 @@ export function RequirementDetails() {
           {req.myProposalId ? (
             <>
               <span style={{ fontSize: 14, color: "#334155" }}>You have already sent a proposal for this requirement.</span>
-              <Link to={`/app/opportunities/proposals/${req.myProposalId}`} style={{ fontSize: 14, fontWeight: 600, color: "#1d4ed8" }}>View your proposal</Link>
+              <Link to={`/app/opportunities/proposals/${req.myProposalId}`} style={{ fontSize: 14, fontWeight: 600, color: "#6921A5" }}>View your proposal</Link>
             </>
           ) : req.status === "open" ? (
             <>
               <span style={{ fontSize: 14, color: "#334155" }}>Interested? Send your price, timeline and approach.</span>
-              <Link to={`/app/opportunities/send/${req.id}`} style={{ background: "#2563EB", color: "#fff", fontSize: 14, fontWeight: 600, padding: "10px 18px", borderRadius: 8, textDecoration: "none" }}>
+              <Link to={`/app/opportunities/send/${req.id}`} style={{ background: "#6921A5", color: "#fff", fontSize: 14, fontWeight: 600, padding: "10px 18px", borderRadius: 8, textDecoration: "none" }}>
                 Send proposal
               </Link>
             </>
@@ -143,7 +143,7 @@ export function RequirementDetails() {
                   <thead>
                     <tr style={{ background: "#f8fafc", textAlign: "left" }}>
                       {["Company", "Offer", "Timeline", "Status", "Round", ""].map((h) => (
-                        <th key={h} scope="col" style={{ padding: "12px 16px", fontSize: 12, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.04em" }}>{h}</th>
+                        <th key={h} scope="col" style={{ padding: "12px 16px", fontSize: 13, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.04em" }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -156,7 +156,7 @@ export function RequirementDetails() {
                         <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 700, color: "#0f172a", whiteSpace: "nowrap" }}>
                           {formatINR(p.amount)}
                           {lowest !== null && p.amount === lowest && p.allowedActions.length > 0 && (
-                            <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 700, color: "#166534", background: "#dcfce7", padding: "2px 8px", borderRadius: 20 }}>Lowest</span>
+                            <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 700, color: "#166534", background: "#dcfce7", padding: "2px 8px", borderRadius: 20 }}>Lowest</span>
                           )}
                         </td>
                         <td style={{ padding: "14px 16px", fontSize: 14, color: "#334155" }}>{p.timeline ?? "—"}</td>
@@ -169,7 +169,7 @@ export function RequirementDetails() {
                         <td style={{ padding: "14px 16px", fontSize: 13, color: "#475569" }}>v{p.version}</td>
                         <td style={{ padding: "14px 16px" }}>
                           <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" }}>
-                            <Link to={`/app/opportunities/proposals/${p.id}`} style={{ fontSize: 13, fontWeight: 600, color: "#1d4ed8" }}>
+                            <Link to={`/app/opportunities/proposals/${p.id}`} style={{ fontSize: 13, fontWeight: 600, color: "#6921A5" }}>
                               Review and negotiate
                             </Link>
                             <ProposalActionButtons
@@ -202,7 +202,7 @@ export function RequirementDetails() {
 function Fact({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</p>
+      <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</p>
       <p style={{ margin: "4px 0 0", fontSize: 15, fontWeight: 600, color: "#0f172a" }}>{value}</p>
     </div>
   );

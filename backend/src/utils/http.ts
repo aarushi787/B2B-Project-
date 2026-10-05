@@ -8,6 +8,7 @@ export type ErrorCode =
   | 'VALIDATION_ERROR'
   | 'BAD_REQUEST'
   | 'CONFLICT'
+  | 'PAYMENTS_NOT_CONFIGURED'
   | 'CSRF_ORIGIN'
   | 'CSRF_INVALID'
   | 'INTERNAL_ERROR';

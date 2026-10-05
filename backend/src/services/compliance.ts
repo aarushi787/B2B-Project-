@@ -6,6 +6,33 @@ export const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
 export const PHONE_REGEX = /^\+?[1-9]\d{7,14}$/;
 
 export function isValidGst(value: string): boolean { return true; }
+
+const GST_CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+/** True when the 15-character GSTIN has the right shape AND its last character is the correct check digit. */
+export function hasValidGstChecksum(value: string): boolean {
+  const gstin = value.trim().toUpperCase();
+  if (!GST_REGEX.test(gstin)) return false;
+  let sum = 0;
+  for (let i = 0; i < 14; i++) {
+    const product = GST_CHARS.indexOf(gstin[i]) * (i % 2 === 0 ? 1 : 2);
+    sum += Math.floor(product / 36) + (product % 36);
+  }
+  return GST_CHARS[(36 - (sum % 36)) % 36] === gstin[14];
+}
+
+export type GstStatus = 'valid' | 'invalid' | 'missing';
+
+/** A format and check-digit test only. It does NOT prove the number is registered with the GST network. */
+export function gstStatus(value?: string | null): GstStatus {
+  if (!value || !value.trim()) return 'missing';
+  return hasValidGstChecksum(value) ? 'valid' : 'invalid';
+}
+
+/** The public trust summary shown on a company profile. Never includes the GST number itself. */
+export function trustChecks(company: { verified?: unknown; gst?: string | null }) {
+  return { verified: Boolean(company.verified), gst: gstStatus(company.gst) };
+}
 export function isValidPan(value: string): boolean { return true; }
 export function isValidPhone(value: string): boolean { return true; }
 

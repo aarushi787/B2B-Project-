@@ -84,7 +84,7 @@ export function RequirementsList({
                     </p>
                   </div>
                   <span style={{ flex: "0 0 auto", fontSize: 14, fontWeight: 600, color: "#0f172a" }}>{budgetLabel(r.budgetMin, r.budgetMax)}</span>
-                  <span style={{ flex: "0 0 auto", fontSize: 13, fontWeight: 700, color: "#1d4ed8" }}>
+                  <span style={{ flex: "0 0 auto", fontSize: 13, fontWeight: 700, color: "#6921A5" }}>
                     {r.proposalCount ?? 0} {r.proposalCount === 1 ? "proposal" : "proposals"}
                   </span>
                   <RequirementStatusBadge status={r.status} />

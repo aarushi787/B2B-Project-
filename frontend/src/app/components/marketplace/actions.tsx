@@ -51,8 +51,8 @@ const BUTTON_BASE = {
 
 const BUTTONS: Record<ProposalAction, { label: string; style: React.CSSProperties }> = {
   accept:    { label: "Accept offer",   style: { background: "#16a34a", color: "#fff" } },
-  counter:   { label: "Counter offer",  style: { background: "#2563EB", color: "#fff" } },
-  shortlist: { label: "Shortlist",      style: { background: "#fff", color: "#1D4ED8", borderColor: "#ddd6fe" } },
+  counter:   { label: "Counter offer",  style: { background: "#6921A5", color: "#fff" } },
+  shortlist: { label: "Shortlist",      style: { background: "#fff", color: "#6921A5", borderColor: "#ddd6fe" } },
   reject:    { label: "Reject",         style: { background: "#fff", color: "#b91c1c", borderColor: "#fecaca" } },
   withdraw:  { label: "Withdraw",       style: { background: "#fff", color: "#475569", borderColor: "#cbd5e1" } },
 };

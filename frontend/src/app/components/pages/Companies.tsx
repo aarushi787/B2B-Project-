@@ -71,7 +71,7 @@ export function Companies() {
   if (error) {
     return (
       <div role="alert" style={{ padding: 40, textAlign: "center", color: "#b91c1c" }}>
-        {error} <button onClick={() => void fetchCompany()} style={{ color: "#2563EB", background: "none", border: "none", cursor: "pointer", fontWeight: 700 }}>Retry</button>
+        {error} <button onClick={() => void fetchCompany()} style={{ color: "#6921A5", background: "none", border: "none", cursor: "pointer", fontWeight: 700 }}>Retry</button>
       </div>
     );
   }
@@ -82,26 +82,26 @@ export function Companies() {
   const comp = company;
 
   return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", fontFamily: "Inter, sans-serif" }}>
+    <div style={{ maxWidth: 1200, margin: "0 auto", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 32, marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-          <div style={{ width: 88, height: 88, background: "#f1f5f9", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 800, color: "#2563EB" }}>
+          <div style={{ width: 88, height: 88, background: "#f1f5f9", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 800, color: "#6921A5" }}>
             {comp.name.charAt(0)}
           </div>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
               <h1 style={{ fontSize: 24, fontWeight: 800, color: "#0f172a", margin: 0 }}>{comp.name}</h1>
               {comp.verified && (
-                <span style={{ display: "flex", alignItems: "center", gap: 4, background: "#dcfce7", color: "#16a34a", padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
+                <span style={{ display: "flex", alignItems: "center", gap: 4, background: "#dcfce7", color: "#16a34a", padding: "4px 10px", borderRadius: 20, fontSize: 12, fontWeight: 700 }}>
                   <CheckCircle2 style={{ width: 14, height: 14 }} /> Verified
                 </span>
               )}
             </div>
             <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 8px" }}>{[comp.industry, comp.address].filter(Boolean).join(" • ") || "No industry or location added yet"}</p>
-            {comp.createdAt && <p style={{ fontSize: 11, color: "#94a3b8", margin: 0 }}>Member since {formatDate(comp.createdAt)}</p>}
+            {comp.createdAt && <p style={{ fontSize: 12, color: "#94a3b8", margin: 0 }}>Member since {formatDate(comp.createdAt)}</p>}
           </div>
         </div>
-        <button onClick={() => setEditModalOpen(true)} style={{ background: "transparent", color: "#2563EB", border: "1px solid #2563EB", borderRadius: 8, padding: "8px 24px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+        <button onClick={() => setEditModalOpen(true)} style={{ background: "transparent", color: "#6921A5", border: "1px solid #6921A5", borderRadius: 8, padding: "8px 24px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
           Edit Profile
         </button>
       </div>
@@ -137,11 +137,11 @@ export function Companies() {
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
           <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 24 }}>
             <h2 style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", margin: "0 0 16px" }}>Verification Status</h2>
-            <span style={{ fontSize: 11, fontWeight: 700, color: comp.verified ? "#16a34a" : "#d97706", background: comp.verified ? "#dcfce7" : "#fef3c7", padding: "3px 10px", borderRadius: 12 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: comp.verified ? "#16a34a" : "#d97706", background: comp.verified ? "#dcfce7" : "#fef3c7", padding: "3px 10px", borderRadius: 12 }}>
               {comp.verified ? "VERIFIED" : "PENDING"}
             </span>
             <p style={{ margin: "12px 0 0" }}>
-              <Link to="/app/verification" style={{ fontSize: 12, fontWeight: 600, color: "#2563EB", textDecoration: "none" }}>View document status</Link>
+              <Link to="/app/verification" style={{ fontSize: 13, fontWeight: 600, color: "#6921A5", textDecoration: "none" }}>View document status</Link>
             </p>
           </div>
         </div>

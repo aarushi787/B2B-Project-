@@ -2,7 +2,8 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import pool from '../config/database.js';
-import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+import { adminMiddleware, authMiddleware, AuthRequest } from '../middleware/auth.js';
+import { canChangeDealStatus, canEditDealTerms, sideOfDeal } from '../utils/dealAccess.js';
 import { dealCreateSchema, dealStatusUpdateSchema, dealUpdateSchema, emptyBodySchema, validateRequest } from '../middleware/validation.js';
 import { requireCompanyRole } from '../middleware/rbac.js';
 import { withIdempotency } from '../middleware/idempotency.js';
@@ -76,9 +77,8 @@ function emitDealEvent(event: string, deal: ReturnType<typeof mapDealRow>) {
 }
 
 async function getDealById(id: string) {
-  const connection = await pool.getConnection();
+  const connection = pool;
   const [rows] = await connection.query('SELECT * FROM deals WHERE id = ? AND deletedAt IS NULL', [id]);
-  connection.release();
   return (rows as any[])[0];
 }
 
@@ -104,7 +104,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     }
     
     // Total count
-    const connection = await pool.getConnection();
+    const connection = pool;
     const [countRows] = await connection.query(query.replace('SELECT *', 'SELECT COUNT(*) as total'), params);
     const total = (countRows as any[])[0].total;
     
@@ -113,7 +113,6 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     params.push(limit, offset);
     
     const [rows] = await connection.query(query, params);
-    connection.release();
     
     res.json({
       data: (rows as any[]).map(mapDealRow),
@@ -137,12 +136,11 @@ router.get('/buyer/:buyerId', authMiddleware, async (req: AuthRequest, res: Resp
     const limit = Math.min(parseInt(req.query.limit as string) || 10, 100);
     const offset = (page - 1) * limit;
 
-    const connection = await pool.getConnection();
+    const connection = pool;
     const [countRows] = await connection.query('SELECT COUNT(*) as total FROM deals WHERE deletedAt IS NULL AND buyerId = ?', [req.params.buyerId]);
     const total = (countRows as any[])[0].total;
 
     const [rows] = await connection.query('SELECT * FROM deals WHERE deletedAt IS NULL AND buyerId = ? ORDER BY createdAt DESC LIMIT ? OFFSET ?', [req.params.buyerId, limit, offset]);
-    connection.release();
 
     res.json({
       data: (rows as any[]).map(mapDealRow),
@@ -166,12 +164,11 @@ router.get('/seller/:sellerId', authMiddleware, async (req: AuthRequest, res: Re
     const limit = Math.min(parseInt(req.query.limit as string) || 10, 100);
     const offset = (page - 1) * limit;
 
-    const connection = await pool.getConnection();
+    const connection = pool;
     const [countRows] = await connection.query('SELECT COUNT(*) as total FROM deals WHERE deletedAt IS NULL AND sellerId = ?', [req.params.sellerId]);
     const total = (countRows as any[])[0].total;
 
     const [rows] = await connection.query('SELECT * FROM deals WHERE deletedAt IS NULL AND sellerId = ? ORDER BY createdAt DESC LIMIT ? OFFSET ?', [req.params.sellerId, limit, offset]);
-    connection.release();
 
     res.json({
       data: (rows as any[]).map(mapDealRow),
@@ -199,9 +196,8 @@ router.get('/status/:status', authMiddleware, async (req: AuthRequest, res: Resp
     }
     query += ' ORDER BY createdAt DESC LIMIT 100';
 
-    const connection = await pool.getConnection();
+    const connection = pool;
     const [rows] = await connection.query(query, params);
-    connection.release();
     res.json((rows as any[]).map(mapDealRow));
   } catch (error) {
     logger.error('Get deals by status error:', error);
@@ -256,7 +252,7 @@ router.post(
     const totalAmount = req.body.totalAmount ?? req.body.amount ?? 0;
     const status = toDbStatus(req.body.status);
 
-    const connection = await pool.getConnection();
+    const connection = pool;
     const dealId = uuidv4();
 
     await connection.query(
@@ -265,7 +261,6 @@ router.post(
     );
 
     const [rows] = await connection.query('SELECT * FROM deals WHERE id = ?', [dealId]);
-    connection.release();
     const deal = mapDealRow((rows as any[])[0]);
     emitDealEvent('deals:updated', deal);
     res.status(201).json(deal);
@@ -285,20 +280,23 @@ router.put(
   validateRequest(dealUpdateSchema),
   async (req: AuthRequest, res: Response) => {
   try {
-    const connection = await pool.getConnection();
+    const connection = pool;
     const [rows] = await connection.query('SELECT * FROM deals WHERE id = ? AND deletedAt IS NULL', [req.params.id]);
     const existing = (rows as any[])[0];
 
-    if (!existing) {
-      connection.release();
-      return res.status(404).json({ error: 'Deal not found' });
+    const isAdmin = req.role === 'admin';
+    const edit = existing ? canEditDealTerms({ isAdmin, side: sideOfDeal(existing, req.companyId), status: existing.status }) : ({ ok: false, status: 404, message: 'Deal not found' } as const);
+    if (!existing || !edit.ok) {
+      const e = edit.ok ? { status: 404, message: 'Deal not found' } : edit;
+      return res.status(e.status).json({ error: e.message });
     }
 
     const title = req.body.title ?? existing.title;
     const description = req.body.description ?? req.body.notes ?? existing.description;
     const quantity = req.body.quantity ?? existing.quantity;
     const totalAmount = req.body.totalAmount ?? req.body.amount ?? existing.totalAmount;
-    const status = req.body.status ? toDbStatus(req.body.status) : existing.status;
+    // Status is the platform's call: only a platform admin may change it through this route.
+    const status = isAdmin && req.body.status ? toDbStatus(req.body.status) : existing.status;
 
     await connection.query(
       'UPDATE deals SET title = ?, description = ?, quantity = ?, totalAmount = ?, status = ? WHERE id = ?',
@@ -306,7 +304,6 @@ router.put(
     );
 
     const [updatedRows] = await connection.query('SELECT * FROM deals WHERE id = ? AND deletedAt IS NULL', [req.params.id]);
-    connection.release();
     const deal = mapDealRow((updatedRows as any[])[0]);
     emitDealEvent('deals:updated', deal);
     res.json(deal);
@@ -325,16 +322,14 @@ router.delete(
   withIdempotency({ required: false, ttlHours: 24 }),
   async (req: AuthRequest, res: Response) => {
   try {
-    const connection = await pool.getConnection();
+    const connection = pool;
     const [rows] = await connection.query('SELECT * FROM deals WHERE id = ? AND deletedAt IS NULL', [req.params.id]);
     const existing = (rows as any[])[0];
-    if (!existing) {
-      connection.release();
+    if (!existing || (req.role !== 'admin' && !sideOfDeal(existing, req.companyId))) {
       return res.status(404).json({ error: 'Deal not found' });
     }
 
     await connection.query('UPDATE deals SET deletedAt = CURRENT_TIMESTAMP WHERE id = ? AND deletedAt IS NULL', [req.params.id]);
-    connection.release();
     const deal = mapDealRow(existing);
     emitDealEvent('deals:deleted', deal);
     res.json({ message: 'Deal deleted successfully' });
@@ -355,10 +350,18 @@ router.put(
   async (req: AuthRequest, res: Response) => {
   try {
     const status = toDbStatus(req.body.status);
-    const connection = await pool.getConnection();
-    await connection.query('UPDATE deals SET status = ? WHERE id = ? AND deletedAt IS NULL', [status, req.params.id]);
+    const connection = pool;
+    const [current] = await connection.query('SELECT * FROM deals WHERE id = ? AND deletedAt IS NULL', [req.params.id]);
+    const existing = (current as any[])[0];
+    const verdict = existing
+      ? canChangeDealStatus({ isAdmin: req.role === 'admin', side: sideOfDeal(existing, req.companyId), from: existing.status, to: status })
+      : ({ ok: false, status: 404, message: 'Deal not found' } as const);
+    if (!verdict.ok) {
+      return res.status(verdict.status).json({ error: verdict.message });
+    }
+    // The old status is part of the WHERE, so two people changing it at once cannot both succeed.
+    await connection.query('UPDATE deals SET status = ? WHERE id = ? AND status = ? AND deletedAt IS NULL', [status, req.params.id, existing.status]);
     const [rows] = await connection.query('SELECT * FROM deals WHERE id = ? AND deletedAt IS NULL', [req.params.id]);
-    connection.release();
 
     if ((rows as any[]).length === 0) return res.status(404).json({ error: 'Deal not found' });
     const deal = mapDealRow((rows as any[])[0]);
@@ -374,16 +377,14 @@ router.put(
 // Approve deal
 router.put(
   '/:id/approve',
-  authMiddleware,
-  requireCompanyRole(['OPS', 'OWNER', 'ADMIN']),
+  adminMiddleware,
   withIdempotency({ required: false, ttlHours: 24 }),
   validateRequest(emptyBodySchema),
   async (req: AuthRequest, res: Response) => {
   try {
-    const connection = await pool.getConnection();
+    const connection = pool;
     await connection.query('UPDATE deals SET status = ? WHERE id = ? AND deletedAt IS NULL', ['approved', req.params.id]);
     const [rows] = await connection.query('SELECT * FROM deals WHERE id = ? AND deletedAt IS NULL', [req.params.id]);
-    connection.release();
 
     if ((rows as any[]).length === 0) return res.status(404).json({ error: 'Deal not found' });
     const deal = mapDealRow((rows as any[])[0]);
@@ -399,14 +400,13 @@ router.put(
 // Reject deal
 router.put(
   '/:id/reject',
-  authMiddleware,
-  requireCompanyRole(['OPS', 'OWNER', 'ADMIN']),
+  adminMiddleware,
   withIdempotency({ required: false, ttlHours: 24 }),
   validateRequest(emptyBodySchema),
   async (req: AuthRequest, res: Response) => {
   let connection;
   try {
-    connection = await pool.getConnection();
+    connection = pool;
     await connection.query('UPDATE deals SET status = ? WHERE id = ? AND deletedAt IS NULL', ['rejected', req.params.id]);
     const [rows] = await connection.query('SELECT * FROM deals WHERE id = ? AND deletedAt IS NULL', [req.params.id]);
 
@@ -418,7 +418,6 @@ router.put(
     logger.error('Reject deal error:', error);
     res.status(500).json({ error: 'Failed to reject deal' });
   } finally {
-    if (connection) connection.release();
   }
   }
 );

@@ -12,12 +12,12 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc", fontFamily: "Inter, sans-serif" }}>
+        <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
           <div style={{ textAlign: "center", padding: 40, background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", boxShadow: "0 10px 40px rgba(0,0,0,0.05)" }}>
             <AlertCircle style={{ width: 48, height: 48, color: "#ef4444", margin: "0 auto 16px" }} />
             <h1 style={{ fontSize: 20, fontWeight: 700, color: "#0f172a", margin: "0 0 8px" }}>Something went wrong.</h1>
             <p style={{ fontSize: 14, color: "#64748b", margin: "0 0 24px", maxWidth: 300 }}>We've encountered an unexpected error. Our engineering team has been notified.</p>
-            <button onClick={() => window.location.href = '/'} style={{ background: "#2563EB", color: "#fff", padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer" }}>Reload Application</button>
+            <button onClick={() => window.location.href = '/'} style={{ background: "#6921A5", color: "#fff", padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer" }}>Reload Application</button>
           </div>
         </div>
       );
@@ -37,7 +37,7 @@ const SuspenseFallback = () => {
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
       <div style={{ width: 24, height: 24, border: "2px solid #e2e8f0", borderTopColor: "#0f172a", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
       {showReload && (
-        <button onClick={() => window.location.reload()} style={{ background: "#2563EB", color: "#fff", padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer" }}>
+        <button onClick={() => window.location.reload()} style={{ background: "#6921A5", color: "#fff", padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer" }}>
           Reload Page
         </button>
       )}

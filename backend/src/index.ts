@@ -9,6 +9,9 @@ import { createOriginMatcher, parseOriginList } from './utils/origins.js';
 import { describeDatabase } from './utils/redact.js';
 import { initializeDatabase } from './config/init.js';
 import { requestLogger } from './middleware/requestLogger.js';
+import { apiLimiter } from './middleware/rateLimit.js';
+import pool from './config/database.js';
+import crypto from 'crypto';
 import { logger } from './utils/logger.js';
 import { errorResponse } from './utils/http.js';
 import { normalizeErrorEnvelope } from './middleware/errorEnvelope.js';
@@ -27,6 +30,7 @@ import ledgerRoutes from './routes/ledger.js';
 import membersRoutes from './routes/members.js';
 import notificationsRoutes from './routes/notifications.js';
 import paymentsRoutes from './routes/payments.js';
+import milestonesRoutes from './routes/milestones.js';
 import documentsRoutes from './routes/documents.js';
 import reputationRoutes from './routes/reputation.js';
 import auditRoutes from './routes/audit.js';
@@ -99,6 +103,7 @@ app.use((req, _res, next) => {
   next();
 });
 app.use('/api', csrfProtection(isOriginAllowed));
+app.use('/api', apiLimiter);
 app.use(requestLogger);
 app.use(normalizeErrorEnvelope);
 
@@ -131,6 +136,7 @@ app.use('/api/ledger', ledgerRoutes);
 app.use('/api/members', membersRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/payments', paymentsRoutes);
+app.use('/api/milestones', milestonesRoutes);
 app.use('/api/documents', documentsRoutes);
 app.use('/api/reputation', reputationRoutes);
 app.use('/api/audit', auditRoutes);
@@ -149,12 +155,28 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// Readiness: can this instance actually serve requests? Unlike /api/health (is the process alive), this checks the database.
+app.get('/api/ready', async (_req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ status: 'READY', timestamp: new Date().toISOString() });
+  } catch {
+    res.status(503).json({ status: 'NOT_READY', reason: 'database_unreachable' });
+  }
+});
+
 app.get('/api/metrics', async (req, res) => {
   const metricsToken = process.env.METRICS_TOKEN;
+  // In production the metrics are closed unless a token is configured, instead of being open by accident.
+  if (!metricsToken && process.env.NODE_ENV === 'production') {
+    return errorResponse(res, 404, 'NOT_FOUND', 'Route not found');
+  }
   if (metricsToken) {
     const authHeader = req.get('authorization') || '';
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice('Bearer '.length).trim() : '';
-    if (token !== metricsToken) {
+    const a = Buffer.from(token);
+    const b = Buffer.from(metricsToken);
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
       return errorResponse(res, 401, 'UNAUTHORIZED', 'Invalid metrics token');
     }
   }
@@ -174,8 +196,21 @@ initSocketServer(server, corsFunc);
 
 async function start() {
   // Optional: create/upgrade tables on boot (idempotent). Useful on hosts without a pre-deploy command.
-  if (process.env.AUTO_INIT_DB === 'true') {
-    await initializeDatabase();
+  // On by default: the tables and columns this version needs are created or added when the server starts (it is safe to
+  // repeat). Set AUTO_INIT_DB=false only if the database user has no permission to change the schema.
+  if (process.env.AUTO_INIT_DB !== 'false') {
+    // A database that is still waking up (common on free tiers) should not crash the first boot: retry with backoff.
+    for (let attempt = 1; ; attempt++) {
+      try {
+        await initializeDatabase();
+        break;
+      } catch (error) {
+        if (attempt >= 5) throw error;
+        const waitMs = 2000 * 2 ** (attempt - 1);
+        logger.warn('db_init_retry', { attempt, waitMs, error: error instanceof Error ? error.message : String(error) });
+        await new Promise((r) => setTimeout(r, waitMs));
+      }
+    }
   }
   server.listen(PORT, () => {
     logger.info('server_started', {
@@ -187,6 +222,29 @@ async function start() {
     });
   });
 }
+
+// Finish in-flight requests before exiting, so a deploy does not cut people off mid-action.
+let shuttingDown = false;
+async function shutdown(signal: string) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  logger.info('shutdown_started', { signal });
+  const force = setTimeout(() => process.exit(1), 10_000);
+  force.unref();
+  server.close(async () => {
+    try { await pool.end(); } catch { /* already closed */ }
+    process.exit(0);
+  });
+}
+process.on('SIGTERM', () => void shutdown('SIGTERM'));
+process.on('SIGINT', () => void shutdown('SIGINT'));
+process.on('unhandledRejection', (reason) => {
+  logger.error('unhandled_rejection', { reason: reason instanceof Error ? reason.message : String(reason) });
+});
+process.on('uncaughtException', (error) => {
+  logger.error('uncaught_exception', { error: error.message });
+  void shutdown('uncaughtException');
+});
 
 start().catch((error) => {
   logger.error('startup_failed', { error: error instanceof Error ? error.message : String(error) });

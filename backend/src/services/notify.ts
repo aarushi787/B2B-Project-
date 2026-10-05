@@ -7,10 +7,41 @@ import pool from '../config/database.js';
 import { emitToAdmins, emitToCompany, emitToUser } from '../realtime/socket.js';
 import { createAuditLog } from '../utils/audit.js';
 import { logger } from '../utils/logger.js';
+import { sendNotificationEmail } from './email.js';
+import { frontendBaseUrl } from '../utils/origins.js';
 
 export type NotificationType = 'info' | 'success' | 'warning';
 
 type Content = { type?: NotificationType; kind: string; title: string; message: string; link?: string };
+
+// Events worth an email (people are not watching the app all day). PROPOSAL_SENT is the sender's own receipt, so skipped.
+const EMAIL_KINDS = /^(PROPOSAL_(?!SENT)|DOCUMENT_(VERIFIED|REJECTED)|COMPANY_VERIFIED|COMPANY_VERIFICATION_REVOKED|DEAL_CREATED|AGREEMENT_|MILESTONE_(SUBMITTED|APPROVED|CHANGES_REQUESTED))/;
+const emailsOn = () => process.env.EMAIL_NOTIFICATIONS !== 'false';
+
+async function companyEmails(companyId: string): Promise<string[]> {
+  const [rows] = await pool.query(
+    `SELECT u.email FROM users u JOIN companies c ON c.userId = u.id WHERE c.id = ? AND u.emailNotifications = TRUE
+     UNION
+     SELECT u.email FROM users u JOIN company_members m ON m.userId = u.id
+      WHERE m.companyId = ? AND m.status = 'ACTIVE' AND m.role IN ('OWNER', 'ADMIN') AND u.emailNotifications = TRUE`,
+    [companyId, companyId]
+  );
+  return (rows as { email: string }[]).map((r) => r.email).filter(Boolean);
+}
+
+async function userEmail(userId: string): Promise<string[]> {
+  const [rows] = await pool.query('SELECT email FROM users WHERE id = ? AND emailNotifications = TRUE', [userId]);
+  return (rows as { email: string }[]).map((r) => r.email).filter(Boolean);
+}
+
+/** Fire-and-forget: a failed email must never break the action, and the in-app notification is already stored. */
+async function emailRecipients(emails: string[], c: Content): Promise<void> {
+  if (!emailsOn() || !EMAIL_KINDS.test(c.kind)) return;
+  const link = c.link ? `${frontendBaseUrl()}${c.link.startsWith('/') ? '' : '/'}${c.link}` : undefined;
+  await Promise.all(
+    [...new Set(emails)].map((to) => sendNotificationEmail(to, c.title, c.message, link, 'Open in B2BForCorporates').catch((e) => logger.error('notification_email_failed', e)))
+  );
+}
 
 async function insert(userId: string | null, companyId: string | null, c: Content) {
   const n = {
@@ -36,6 +67,7 @@ export async function notifyCompany(companyId: string | null | undefined, c: Con
   try {
     const n = await insert(null, companyId, c);
     emitToCompany(companyId, 'notifications:new', n);
+    void companyEmails(companyId).then((emails) => emailRecipients(emails, c)).catch((e) => logger.error('notifyCompany email failed', e));
   } catch (error) {
     logger.error('notifyCompany failed', error);
   }
@@ -46,6 +78,7 @@ export async function notifyUser(userId: string | null | undefined, c: Content):
   try {
     const n = await insert(userId, null, c);
     emitToUser(userId, 'notifications:new', n);
+    void userEmail(userId).then((emails) => emailRecipients(emails, c)).catch((e) => logger.error('notifyUser email failed', e));
   } catch (error) {
     logger.error('notifyUser failed', error);
   }

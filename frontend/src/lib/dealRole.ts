@@ -64,3 +64,36 @@ export function getNextStep(input: {
   }
   return { title: 'Waiting for the buyer to confirm delivery', description: 'Payment is released to you as soon as the buyer confirms.', tone: 'waiting' };
 }
+
+/** What happens next on an approved deal, worked out from its real milestones (not from a fixed script). */
+export function getMilestoneNextStep(input: {
+  side: DealSide;
+  milestones: { title: string; status: 'PLANNED' | 'SUBMITTED' | 'APPROVED'; changeNote: string | null; overdue: boolean }[];
+}): NextStep {
+  const { side, milestones } = input;
+  const party = side === 'buyer' || side === 'seller';
+
+  if (milestones.length === 0) {
+    return party
+      ? { title: 'Plan the work in milestones', description: 'Add milestones with an amount and a due date. The provider marks each one done and the client confirms it.', tone: 'action' }
+      : { title: 'No milestones yet', description: 'The parties have not planned any milestones for this deal.', tone: 'waiting' };
+  }
+  if (milestones.every((m) => m.status === 'APPROVED')) {
+    return { title: 'All milestones confirmed', description: 'Every milestone has been delivered and confirmed.', tone: 'done' };
+  }
+
+  const waiting = milestones.find((m) => m.status === 'SUBMITTED');
+  const changes = milestones.find((m) => m.status === 'PLANNED' && m.changeNote);
+  const nextOpen = milestones.find((m) => m.status !== 'APPROVED')!;
+
+  if (side === 'buyer') {
+    if (waiting) return { title: `Confirm "${waiting.title}"`, description: 'The provider marked this milestone as done. Confirm it, or ask for changes.', tone: 'action' };
+    return { title: `Waiting for the provider to finish "${nextOpen.title}"`, description: 'You will be asked to confirm it when it is marked done.', tone: 'waiting' };
+  }
+  if (side === 'seller') {
+    if (changes) return { title: `Make the requested changes to "${changes.title}"`, description: changes.changeNote ?? 'The client asked for changes.', tone: 'action' };
+    if (waiting && waiting === nextOpen) return { title: `Waiting for the client to confirm "${waiting.title}"`, description: 'You will be notified when it is confirmed.', tone: 'waiting' };
+    return { title: `Deliver "${nextOpen.title}"`, description: 'Complete the work and mark the milestone as done on the timeline.', tone: 'action' };
+  }
+  return { title: 'Deal in progress', description: `${milestones.filter((m) => m.status === 'APPROVED').length} of ${milestones.length} milestones confirmed.`, tone: 'waiting' };
+}

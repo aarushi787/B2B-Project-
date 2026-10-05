@@ -60,7 +60,7 @@ export function ProposalDetails() {
       </div>
 
       <Card style={{ padding: 24, marginBottom: 20 }}>
-        <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.04em" }}>Current offer · round {p.version}</p>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.04em" }}>Current offer · round {p.version}</p>
         <p style={{ margin: "6px 0 0", fontSize: 32, fontWeight: 800, color: "#0f172a" }}>{formatINR(p.amount)}</p>
         <p style={{ margin: "4px 0 16px", fontSize: 14, color: "#475569" }}>
           {p.timeline ? `Delivery: ${p.timeline}` : "No delivery timeline given"} · {p.proposerName ?? "—"}<VerifiedMark verified={p.proposerVerified} />
@@ -82,10 +82,10 @@ export function ProposalDetails() {
             onCounter={() => setCountering(true)}
           />
           {p.dealId && p.status === "accepted" && (
-            <Link to={`/app/deals/${p.dealId}`} style={{ fontSize: 14, fontWeight: 600, color: "#1d4ed8" }}>Open the deal</Link>
+            <Link to={`/app/deals/${p.dealId}`} style={{ fontSize: 14, fontWeight: 600, color: "#6921A5" }}>Open the deal</Link>
           )}
           {canOpenRequirement && (
-            <Link to={`/app/requirements/${p.requirementId}`} style={{ fontSize: 14, fontWeight: 600, color: "#1d4ed8" }}>View requirement</Link>
+            <Link to={`/app/requirements/${p.requirementId}`} style={{ fontSize: 14, fontWeight: 600, color: "#6921A5" }}>View requirement</Link>
           )}
         </div>
       </Card>
@@ -115,12 +115,12 @@ export function ProposalDetails() {
             const mine = r.offeredBy === p.side;
             return (
               <li key={r.version}>
-                <Card style={{ padding: 18, borderLeft: `4px solid ${r.offeredBy === "proposer" ? "#2563EB" : "#2563EB"}` }}>
+                <Card style={{ padding: 18, borderLeft: `4px solid ${r.offeredBy === "proposer" ? "#6921A5" : "#6921A5"}` }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
                     <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#0f172a" }}>
                       {formatINR(r.amount)} <span style={{ fontWeight: 500, color: "#475569" }}>· {mine ? "You" : r.authorCompanyName} {r.version === 1 ? "proposed" : "countered"}</span>
                     </p>
-                    <span style={{ fontSize: 12, color: "#475569" }}>Round {r.version} · {formatDate(r.createdAt)}</span>
+                    <span style={{ fontSize: 13, color: "#475569" }}>Round {r.version} · {formatDate(r.createdAt)}</span>
                   </div>
                   {r.timeline && <p style={{ margin: "6px 0 0", fontSize: 13, color: "#475569" }}>Delivery: {r.timeline}</p>}
                   {r.message && <p style={{ margin: "8px 0 0", fontSize: 14, color: "#334155", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{r.message}</p>}
@@ -173,7 +173,7 @@ function CounterForm({
           <div>
             <label htmlFor="counter-amount" style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Amount (₹)</label>
             <input id="counter-amount" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} aria-invalid={!!error} aria-describedby="counter-error" style={{ ...fieldStyle, borderColor: error ? "#dc2626" : "#cbd5e1" }} />
-            {error && <p id="counter-error" role="alert" style={{ margin: "6px 0 0", fontSize: 12, color: "#b91c1c" }}>{error}</p>}
+            {error && <p id="counter-error" role="alert" style={{ margin: "6px 0 0", fontSize: 13, color: "#b91c1c" }}>{error}</p>}
           </div>
           <div>
             <label htmlFor="counter-timeline" style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Delivery timeline</label>
@@ -184,7 +184,7 @@ function CounterForm({
         <textarea id="counter-message" value={message} onChange={(e) => setMessage(e.target.value)} rows={3} maxLength={5000} placeholder="Explain your counter-offer" style={{ ...fieldStyle, resize: "vertical" }} />
         <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 16 }}>
           <button type="button" onClick={onCancel} style={{ background: "#fff", border: "1px solid #cbd5e1", color: "#334155", fontSize: 14, fontWeight: 600, padding: "9px 18px", borderRadius: 8, cursor: "pointer" }}>Cancel</button>
-          <button type="submit" disabled={sending} style={{ background: "#2563EB", color: "#fff", border: "none", fontSize: 14, fontWeight: 600, padding: "9px 20px", borderRadius: 8, cursor: sending ? "not-allowed" : "pointer", opacity: sending ? 0.7 : 1 }}>
+          <button type="submit" disabled={sending} style={{ background: "#6921A5", color: "#fff", border: "none", fontSize: 14, fontWeight: 600, padding: "9px 20px", borderRadius: 8, cursor: sending ? "not-allowed" : "pointer", opacity: sending ? 0.7 : 1 }}>
             {sending ? "Sending…" : "Send counter-offer"}
           </button>
         </div>

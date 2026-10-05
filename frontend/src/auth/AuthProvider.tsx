@@ -9,6 +9,9 @@ export interface AuthUser {
   name: string;
   email: string;
   phone?: string;
+  emailVerified?: boolean;
+  emailNotifications?: boolean;
+  phoneVerified?: boolean;
   // Account role: only admin vs regular user. "Buyer"/"seller" is a role per deal (see lib/dealRole.ts).
   // The API sends it uppercase (USER/ADMIN); compare case-insensitively.
   role: 'user' | 'admin' | 'USER' | 'ADMIN';
@@ -67,6 +70,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const refreshUser = async () => { await fetchUser(); };
+
+  // The server tells us when this account changes elsewhere (for example the email link was clicked in another tab or
+  // on a phone), so the whole app updates at once without a refresh.
+  useEffect(() => {
+    if (!user) return;
+    socketService.connect();
+    return socketService.on('user:updated', () => { void fetchUser(); });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   // UI convenience only — the backend enforces admin access on every /api/admin request.
   const isAdmin = user?.role?.toString().toLowerCase() === 'admin';

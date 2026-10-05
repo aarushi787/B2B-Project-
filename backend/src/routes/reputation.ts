@@ -9,24 +9,33 @@ import { logger } from '../utils/logger.js';
 
 const router = Router();
 
+// A rating is a company's honest word about a company it has actually done a deal with:
+// the reviewer is always the caller's company, the deal must be completed, and each side can rate once per deal.
 router.post('/events', authMiddleware, validateRequest(reputationEventSchema), async (req: AuthRequest, res: Response) => {
   try {
-    const { companyId, counterpartyCompanyId, dealId, score, comment } = req.body;
-    if (!companyId || typeof score !== 'number') {
-      return res.status(400).json({ error: 'companyId and numeric score are required' });
-    }
-    if (score < 1 || score > 5) {
-      return res.status(400).json({ error: 'score must be between 1 and 5' });
-    }
+    const { companyId, dealId, score, comment } = req.body;
+    const reviewer = req.companyId;
+    if (!reviewer) return res.status(403).json({ error: 'Your account needs a company before you can leave a rating' });
+    if (!dealId) return res.status(400).json({ error: 'A rating must refer to a deal' });
+    if (companyId === reviewer) return res.status(400).json({ error: 'You cannot rate your own company' });
+
+    const [deals] = await pool.query("SELECT buyerId, sellerId, status FROM deals WHERE id = ? AND deletedAt IS NULL", [dealId]);
+    const deal = (deals as any[])[0];
+    const parties = deal ? [deal.buyerId, deal.sellerId] : [];
+    // Same answer whether the deal does not exist or the caller is not part of it.
+    if (!deal || !parties.includes(reviewer) || !parties.includes(companyId)) return res.status(404).json({ error: 'Deal not found' });
+    if (deal.status !== 'completed') return res.status(409).json({ error: 'You can rate the other company once the deal is completed' });
+
+    const [already] = await pool.query('SELECT id FROM reputation_events WHERE dealId = ? AND counterpartyCompanyId = ? LIMIT 1', [dealId, reviewer]);
+    if ((already as any[]).length > 0) return res.status(409).json({ error: 'You have already rated this deal' });
 
     const id = uuidv4();
-    const connection = await pool.getConnection();
-    await connection.query(
+    // companyId is who is rated; counterpartyCompanyId is who rated them.
+    await pool.query(
       `INSERT INTO reputation_events (id, companyId, counterpartyCompanyId, dealId, score, comment, createdBy)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [id, companyId, counterpartyCompanyId ?? null, dealId ?? null, score, comment ?? null, req.userId ?? null]
+      [id, companyId, reviewer, dealId, score, comment ?? null, req.userId ?? null]
     );
-    connection.release();
 
     await createAuditLog({
       userId: req.userId,
@@ -34,7 +43,7 @@ router.post('/events', authMiddleware, validateRequest(reputationEventSchema), a
       action: 'REPUTATION_EVENT_CREATED',
       resourceType: 'reputation_event',
       resourceId: id,
-      metadata: { score, dealId: dealId ?? null },
+      metadata: { score, dealId },
       ipAddress: req.ip,
       userAgent: req.get('user-agent'),
     });
@@ -48,7 +57,7 @@ router.post('/events', authMiddleware, validateRequest(reputationEventSchema), a
 
 router.get('/company/:companyId', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const connection = await pool.getConnection();
+    const connection = pool;
     const [rows] = await connection.query(
       `SELECT id, companyId, counterpartyCompanyId, dealId, score, comment, createdBy, createdAt
        FROM reputation_events
@@ -63,7 +72,6 @@ router.get('/company/:companyId', authMiddleware, async (req: AuthRequest, res: 
        WHERE companyId = ?`,
       [req.params.companyId]
     );
-    connection.release();
 
     res.json({
       events: rows,

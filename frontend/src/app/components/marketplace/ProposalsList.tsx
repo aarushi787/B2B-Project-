@@ -44,9 +44,9 @@ export function ProposalsList({ scope }: { scope: "sent" | "received" }) {
             onClick={() => { setStatus(t.key); setPage(1); }}
             style={{
               padding: "7px 14px", borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: "pointer",
-              border: `1px solid ${status === t.key ? "#2563EB" : "#cbd5e1"}`,
-              background: status === t.key ? "#eff6ff" : "#fff",
-              color: status === t.key ? "#1d4ed8" : "#334155",
+              border: `1px solid ${status === t.key ? "#6921A5" : "#cbd5e1"}`,
+              background: status === t.key ? "#F3E8F8" : "#fff",
+              color: status === t.key ? "#6921A5" : "#334155",
             }}
           >
             {t.label}
@@ -66,7 +66,7 @@ export function ProposalsList({ scope }: { scope: "sent" | "received" }) {
             desc={sent ? "Browse open requirements and send your first proposal." : "When companies respond to your requirements, their offers appear here."}
             action={
               !status ? (
-                <Link to={sent ? "/app/opportunities/matching" : "/app/requirements/new"} style={{ background: "#2563EB", color: "#fff", fontSize: 13, fontWeight: 600, padding: "9px 18px", borderRadius: 8, textDecoration: "none" }}>
+                <Link to={sent ? "/app/opportunities/matching" : "/app/requirements/new"} style={{ background: "#6921A5", color: "#fff", fontSize: 13, fontWeight: 600, padding: "9px 18px", borderRadius: 8, textDecoration: "none" }}>
                   {sent ? "Find work" : "Post a requirement"}
                 </Link>
               ) : undefined
@@ -89,7 +89,7 @@ export function ProposalsList({ scope }: { scope: "sent" | "received" }) {
                       </p>
                     </div>
                     <span style={{ flex: "0 0 auto", fontSize: 15, fontWeight: 700, color: "#0f172a" }}>{formatINR(p.amount)}</span>
-                    <span style={{ flex: "0 0 auto", fontSize: 12, color: "#475569" }}>Round {p.version}</span>
+                    <span style={{ flex: "0 0 auto", fontSize: 13, color: "#475569" }}>Round {p.version}</span>
                     <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
                       <ProposalStatusBadge status={p.status} />
                       {myTurn && <YourTurnTag />}

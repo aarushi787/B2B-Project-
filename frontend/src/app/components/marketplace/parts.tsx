@@ -3,8 +3,8 @@ import { Skeleton, StatusBadge } from "../ui/DesignSystem";
 import type { ProposalStatus, RequirementStatus } from "../../../types";
 
 const PROPOSAL_STATUS: Record<ProposalStatus, { bg: string; text: string; label: string }> = {
-  submitted:   { bg: "#eff6ff", text: "#1d4ed8", label: "Submitted" },
-  shortlisted: { bg: "#EFF6FF", text: "#1D4ED8", label: "Shortlisted" },
+  submitted:   { bg: "#F3E8F8", text: "#6921A5", label: "Submitted" },
+  shortlisted: { bg: "#F3E8F8", text: "#6921A5", label: "Shortlisted" },
   accepted:    { bg: "#dcfce7", text: "#166534", label: "Accepted" },
   rejected:    { bg: "#fee2e2", text: "#991b1b", label: "Rejected" },
   withdrawn:   { bg: "#f1f5f9", text: "#475569", label: "Withdrawn" },
@@ -12,7 +12,7 @@ const PROPOSAL_STATUS: Record<ProposalStatus, { bg: string; text: string; label:
 
 const REQUIREMENT_STATUS: Record<RequirementStatus, { bg: string; text: string; label: string }> = {
   open:      { bg: "#dcfce7", text: "#166534", label: "Open" },
-  awarded:   { bg: "#eff6ff", text: "#1d4ed8", label: "Awarded" },
+  awarded:   { bg: "#F3E8F8", text: "#6921A5", label: "Awarded" },
   closed:    { bg: "#f1f5f9", text: "#475569", label: "Closed" },
   cancelled: { bg: "#fee2e2", text: "#991b1b", label: "Cancelled" },
 };
@@ -28,7 +28,7 @@ export function RequirementStatusBadge({ status }: { status: RequirementStatus }
 export function VerifiedMark({ verified }: { verified?: boolean }) {
   if (!verified) return null;
   return (
-    <span title="Verified business" aria-label="Verified business" style={{ display: "inline-flex", verticalAlign: "middle", marginLeft: 4, color: "#2563EB" }}>
+    <span title="Verified business" aria-label="Verified business" style={{ display: "inline-flex", verticalAlign: "middle", marginLeft: 4, color: "#6921A5" }}>
       <BadgeCheck size={15} aria-hidden="true" />
     </span>
   );
@@ -37,7 +37,7 @@ export function VerifiedMark({ verified }: { verified?: boolean }) {
 /** Highlights proposals where the viewer is the one who should respond next. */
 export function YourTurnTag() {
   return (
-    <span style={{ background: "#fef3c7", color: "#92400e", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, whiteSpace: "nowrap" }}>
+    <span style={{ background: "#fef3c7", color: "#92400e", fontSize: 12, fontWeight: 700, padding: "3px 10px", borderRadius: 20, whiteSpace: "nowrap" }}>
       Your turn
     </span>
   );
@@ -65,7 +65,7 @@ export function ListSkeleton({ rows = 4 }: { rows?: number }) {
   );
 }
 
-export const pageStyle = { maxWidth: 1100, margin: "0 auto", fontFamily: "Inter, sans-serif" } as const;
+export const pageStyle = { maxWidth: 1100, margin: "0 auto", fontFamily: "'Plus Jakarta Sans', sans-serif" } as const;
 
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: React.ReactNode }) {
   return (

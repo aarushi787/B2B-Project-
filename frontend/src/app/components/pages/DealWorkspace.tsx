@@ -12,8 +12,15 @@ import { messagesService } from "../../../services/messagesService";
 import { companiesService } from "../../../services/companiesService";
 import { formatINR } from "../../../lib/format";
 import type { Deal, Company, Message } from "../../../types";
-import { getDealSide, getNextStep } from "../../../lib/dealRole";
+import { getDealSide, getNextStep, getMilestoneNextStep } from "../../../lib/dealRole";
 import { DealRoleBadge, NextStepCard } from "../DealNextStep";
+import { ContractDocs } from "../ContractDocs";
+import { MilestoneTimeline } from "../MilestoneTimeline";
+import { EscrowPayment } from "../EscrowPayment";
+import { RiskPanel } from "../RiskPanel";
+import { DealAlerts } from "../DealAlerts";
+import { useMilestones } from "../../../lib/useMilestones";
+import { TrustBadges } from "../TrustBadges";
 
 export type Role = "Client" | "Provider" | "Admin";
 export type DealStatus = "Pending" | "Approved" | "Rejected" | "Completed";
@@ -55,6 +62,7 @@ export function DealWorkspace() {
   const [seller, setSeller] = useState<Company | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [busy, setBusy] = useState(false);
+  const milestones = useMilestones(id);
 
   // Load the real deal. The API only returns deals the viewer's company is a party to (or any deal for admins).
   useEffect(() => {
@@ -160,18 +168,22 @@ export function DealWorkspace() {
     "bg-amber-100 text-amber-700 border-amber-200";
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-800" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-800" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <Toaster position="top-right" richColors />
 
       <div className="bg-white border-b border-slate-200 shadow-sm mb-6 rounded-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#2563EB] to-blue-400 flex items-center justify-center shadow-sm shadow-blue-500/20">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#6921A5] to-blue-400 flex items-center justify-center shadow-sm shadow-blue-500/20">
               <ShieldCheck className="w-5 h-5 text-white" />
             </div>
             <div>
               <h2 className="text-sm font-bold text-slate-900 leading-tight">{deal.title || "Deal Workspace"}</h2>
               <p className="text-xs text-slate-400">{buyer?.name || "Buyer"} × {seller?.name || "Seller"}</p>
+              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                {(buyer as any)?.trust && <TrustBadges trust={(buyer as any).trust} compact />}
+                {(seller as any)?.trust && <TrustBadges trust={(seller as any).trust} compact />}
+              </div>
             </div>
             <div className={`px-2.5 py-1 rounded-full text-xs font-semibold border ml-2 ${statusClass}`}>{dealStatus}</div>
           </div>
@@ -182,13 +194,16 @@ export function DealWorkspace() {
         <div className="flex items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
           <div className="flex items-center gap-2 text-xs text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 font-medium">
             <span>Deal ID:</span>
-            <span className="text-[#2563EB] font-bold">{id}</span>
+            <span className="text-[#6921A5] font-bold">{id}</span>
           </div>
           <div className="ml-3"><DealRoleBadge side={side} /></div>
           {amountLabel && <div className="ml-auto text-sm font-bold text-slate-900">{amountLabel}</div>}
         </div>
 
-        {dealStatus !== "Approved" && (
+        {dealStatus === "Approved" && milestones.data && (
+          <NextStepCard step={getMilestoneNextStep({ side, milestones: milestones.data.milestones })} onAction={() => {}} />
+        )}
+                {dealStatus !== "Approved" && (
           <NextStepCard
             step={nextStep}
             onAction={(a) => { if (a === "approve" && !busy) void act("approve"); }}
@@ -202,14 +217,15 @@ export function DealWorkspace() {
           </div>
         )}
 
+        <DealAlerts dealId={id} hideWhenEmpty />
+
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5">
           <div className="space-y-5 min-w-0">
             <ActivityChat messages={chat} onSend={handleSendMessage} role={role} />
 
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-              <h2 className="text-sm font-bold text-slate-900">Contract documents</h2>
-              <p className="text-xs text-slate-400 mt-2">No documents are attached to this deal yet.</p>
-            </div>
+            <ContractDocs dealId={id} canGenerate={side === "buyer" || side === "seller"} />
+
+            <MilestoneTimeline dealId={id} data={milestones.data} reload={milestones.reload} />
           </div>
 
           <div className="space-y-5">
@@ -224,12 +240,9 @@ export function DealWorkspace() {
               provider={seller ? { name: seller.name } : undefined}
             />
 
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
-              <h2 className="text-sm font-bold text-slate-900">Escrow and milestones</h2>
-              <p className="text-xs text-slate-400 mt-2">
-                Escrow funding and milestone tracking are not enabled for this deal yet, so no payment status is shown.
-              </p>
-            </div>
+            <EscrowPayment data={milestones.data} reload={milestones.reload} />
+
+            <RiskPanel dealId={id} />
           </div>
         </div>
       </main>

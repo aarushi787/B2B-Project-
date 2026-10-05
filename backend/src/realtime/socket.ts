@@ -1,4 +1,5 @@
 // Purpose: This module (backend/src/realtime/socket.ts) is used to implement project functionality in a modular, maintainable way.
+import pool from '../config/database.js';
 import { type Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import { verifyAccessToken, verifySocketToken } from '../services/tokens.js';
@@ -103,10 +104,20 @@ export function initSocketServer(httpServer: HttpServer, corsOrigin: any) {
       connectedAt: new Date().toISOString(),
     });
 
-    socket.on('deals:watch', (payload: { dealId?: string }) => {
+    // A deal's live room carries its messages and amounts, so only its two parties (and platform admins) may join.
+    socket.on('deals:watch', async (payload: { dealId?: string }) => {
       const dealId = payload?.dealId;
-      if (!dealId) return;
-      socket.join(dealRoom(dealId));
+      if (!dealId || typeof dealId !== 'string' || dealId.length > 64) return;
+      try {
+        if (String(auth.role).toLowerCase() !== 'admin') {
+          const [rows] = await pool.query('SELECT buyerId, sellerId FROM deals WHERE id = ? AND deletedAt IS NULL', [dealId]);
+          const deal = (rows as any[])[0];
+          if (!deal || !auth.companyId || (deal.buyerId !== auth.companyId && deal.sellerId !== auth.companyId)) return;
+        }
+        socket.join(dealRoom(dealId));
+      } catch {
+        // If we cannot confirm the person belongs to the deal, they do not join.
+      }
     });
 
     socket.on('deals:unwatch', (payload: { dealId?: string }) => {
@@ -129,7 +140,8 @@ export function initSocketServer(httpServer: HttpServer, corsOrigin: any) {
         if (payload?.receiverId) {
           io.to(companyRoom(payload.receiverId)).emit('messages:typing', typingEvent);
         }
-        if (payload?.dealId) {
+        // Only people already in the deal's room (that is, its parties) can signal typing into it.
+        if (payload?.dealId && socket.rooms.has(dealRoom(payload.dealId))) {
           io.to(dealRoom(payload.dealId)).emit('messages:typing', typingEvent);
         }
       }

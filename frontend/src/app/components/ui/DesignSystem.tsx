@@ -26,7 +26,7 @@ export function StatusBadge({ status, custom }: { status: string; custom?: { bg:
   return (
     <span style={{
       background: s.bg, color: s.text,
-      fontSize: 11, fontWeight: 600,
+      fontSize: 12, fontWeight: 600,
       padding: "3px 10px", borderRadius: 20, whiteSpace: "nowrap",
     }}>
       {s.label}
@@ -66,7 +66,7 @@ export function PrimaryBtn({ children, onClick, style, disabled, ...rest }: { ch
       onClick={onClick}
       disabled={disabled}
       style={{
-        background: disabled ? "#94a3b8" : "#2563EB", color: "#fff", border: "none", cursor: disabled ? "not-allowed" : "pointer",
+        background: disabled ? "#94a3b8" : "#6921A5", color: "#fff", border: "none", cursor: disabled ? "not-allowed" : "pointer",
         fontSize: 13, fontWeight: 600, padding: "9px 18px", borderRadius: 8,
         display: "flex", alignItems: "center", gap: 6,
         opacity: disabled ? 0.7 : 1,
@@ -136,7 +136,7 @@ export function TableHeader({ cols }: { cols: string[] }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: cols.map(() => "1fr").join(" "), padding: "10px 24px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9" }}>
       {cols.map(c => (
-        <span key={c} style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>{c}</span>
+        <span key={c} style={{ fontSize: 12, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>{c}</span>
       ))}
     </div>
   );
@@ -150,8 +150,8 @@ export function MetricCard({ label, value, icon: Icon, iconBg, iconColor }: { la
         <p style={{ fontSize: 13, fontWeight: 500, color: "#64748b", margin: "0 0 6px" }}>{label}</p>
         <p style={{ fontSize: 26, fontWeight: 700, color: "#0f172a", margin: 0 }}>{value}</p>
       </div>
-      <div style={{ width: 40, height: 40, background: iconBg || "#eff6ff", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Icon style={{ width: 20, height: 20, color: iconColor || "#2563EB" }} />
+      <div style={{ width: 40, height: 40, background: iconBg || "#F3E8F8", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Icon style={{ width: 20, height: 20, color: iconColor || "#6921A5" }} />
       </div>
     </div>
   );

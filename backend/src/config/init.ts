@@ -88,6 +88,12 @@ export async function initializeDatabase(options: { standalone?: boolean } = {})
     await addColumnIfMissing(connection, 'users', 'phone', 'VARCHAR(30)');
     await addColumnIfMissing(connection, 'users', 'emailVerified', 'BOOLEAN DEFAULT FALSE');
     await addColumnIfMissing(connection, 'users', 'verifyToken', 'VARCHAR(255) NULL');
+    await addColumnIfMissing(connection, 'users', 'verifyTokenExpiresAt', 'TIMESTAMP NULL');
+    await addColumnIfMissing(connection, 'users', 'emailNotifications', 'BOOLEAN NOT NULL DEFAULT TRUE');
+    // A suspended user cannot sign in or refresh a session. The row and all their records stay intact.
+    await addColumnIfMissing(connection, 'users', 'phoneVerified', 'BOOLEAN NOT NULL DEFAULT FALSE');
+    await addColumnIfMissing(connection, 'users', 'suspendedAt', 'TIMESTAMP NULL');
+    await addColumnIfMissing(connection, 'users', 'suspendedReason', 'VARCHAR(255) NULL');
     await addColumnIfMissing(connection, 'users', 'resetToken', 'VARCHAR(255) NULL');
     await addColumnIfMissing(connection, 'users', 'resetTokenExpiry', 'TIMESTAMP NULL');
     await addColumnIfMissing(connection, 'companies', 'gst', 'VARCHAR(50)');
@@ -245,6 +251,52 @@ export async function initializeDatabase(options: { standalone?: boolean } = {})
         FOREIGN KEY (dealId) REFERENCES deals(id)
       )
     `);
+
+    // Deal milestones: planned steps of the work. The provider marks one done, the client confirms it, and the
+    // client's escrow payment for that step (if any) is released on confirmation.
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS milestones (
+        id VARCHAR(36) PRIMARY KEY,
+        dealId VARCHAR(36) NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        amount DECIMAL(15, 2) NOT NULL DEFAULT 0,
+        currency CHAR(3) NOT NULL DEFAULT 'INR',
+        dueDate DATE NULL,
+        position INT NOT NULL DEFAULT 0,
+        status ENUM('PLANNED', 'SUBMITTED', 'APPROVED') NOT NULL DEFAULT 'PLANNED',
+        submittedAt TIMESTAMP NULL,
+        submittedBy VARCHAR(36),
+        approvedAt TIMESTAMP NULL,
+        approvedBy VARCHAR(36),
+        changeNote VARCHAR(500) NULL,
+        escrowStatus ENUM('NOT_FUNDED', 'FUNDED', 'RELEASED') NOT NULL DEFAULT 'NOT_FUNDED',
+        paymentIntentId VARCHAR(255) NULL,
+        createdBy VARCHAR(36),
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        deletedAt TIMESTAMP NULL,
+        FOREIGN KEY (dealId) REFERENCES deals(id) ON DELETE CASCADE
+      )
+    `);
+    await createIndexIfMissing(connection, 'milestones', 'idx_milestones_dealId', 'dealId');
+    await createIndexIfMissing(connection, 'milestones', 'idx_milestones_status', 'status');
+
+    // One-time codes for verifying a phone number. Only a keyed hash of the code is kept.
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS phone_verifications (
+        id VARCHAR(36) PRIMARY KEY,
+        userId VARCHAR(36) NOT NULL,
+        phone VARCHAR(30) NOT NULL,
+        codeHash CHAR(64) NOT NULL,
+        attempts INT NOT NULL DEFAULT 0,
+        expiresAt TIMESTAMP NOT NULL,
+        consumedAt TIMESTAMP NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
+    await createIndexIfMissing(connection, 'phone_verifications', 'idx_phone_verifications_user', 'userId, createdAt');
 
     // Company members (multi-user roles per company)
     await connection.query(`
@@ -410,6 +462,9 @@ export async function initializeDatabase(options: { standalone?: boolean } = {})
     `);
 
     await addColumnIfMissing(connection, 'documents', 'deletedAt', 'TIMESTAMP NULL');
+    // E-signed agreements: the generated text and its SHA-256 fingerprint.
+    await addColumnIfMissing(connection, 'documents', 'content', 'LONGTEXT NULL');
+    await addColumnIfMissing(connection, 'documents', 'contentHash', 'VARCHAR(64) NULL');
     await createIndexIfMissing(connection, 'documents', 'idx_documents_deletedAt', 'deletedAt');
 
     await createIndexIfMissing(connection, 'documents', 'idx_documents_companyId', 'companyId');
@@ -432,6 +487,9 @@ export async function initializeDatabase(options: { standalone?: boolean } = {})
       )
     `);
 
+    await addColumnIfMissing(connection, 'document_signatures', 'signerName', 'VARCHAR(255) NULL');
+    await addColumnIfMissing(connection, 'document_signatures', 'contentHash', 'VARCHAR(64) NULL');
+    await createIndexIfMissing(connection, 'document_signatures', 'idx_document_signatures_documentId', 'documentId');
     await createIndexIfMissing(connection, 'document_signatures', 'idx_document_signatures_userId', 'userId');
     await createIndexIfMissing(connection, 'document_signatures', 'idx_document_signatures_companyId', 'companyId');
     await createIndexIfMissing(connection, 'document_signatures', 'idx_document_signatures_signedAt', 'signedAt');

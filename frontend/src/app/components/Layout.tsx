@@ -10,6 +10,7 @@ import {
   CheckCircle, AlertCircle, Clock, LogOut, User,
 } from "lucide-react";
 import { Onboarding } from "./Onboarding";
+import { Header } from "./Header";
 import { useAuth } from "../../auth/AuthProvider";
 import { socketService } from "../../services/socketService";
 
@@ -24,7 +25,8 @@ const NAV_ITEMS = [
 
   // Projects & Deals
   { icon: Folder,          label: "Portfolio / Deals",    path: "/app/deals",                  group: "projects" },
-  { icon: Shield,          label: "Verification",         path: "/app/contracts",              group: "projects" },
+  { icon: Shield,          label: "Verification",         path: "/app/verification",           group: "projects" },
+  { icon: FileText,        label: "Contracts",            path: "/app/contracts",              group: "projects" },
   { icon: FileText,        label: "Ledger",               path: "/app/ledger",                 group: "projects" },
 
   // Communication
@@ -37,7 +39,6 @@ const NAV_ITEMS = [
 
   // Admin & Settings
   { icon: Settings,        label: "Settings",             path: "/app/settings",               group: "settings" },
-  { icon: Settings,        label: "Component Map",        path: "/app/component-map",          group: "settings" },
 ];
 
 const GROUPS = [
@@ -55,7 +56,8 @@ const BREADCRUMB_MAP: Record<string, string> = {
   "/app/companies": "Business Profile",
   "/app/marketplace": "Services",
   "/app/deals": "Portfolio",
-  "/app/contracts": "Verification",
+  "/app/contracts": "Contracts",
+  "/app/verification": "Verification",
   "/app/settings": "Business Settings",
   "/app/requirements/active": "Active Requirements",
   "/app/requirements/closed": "Closed Requirements",
@@ -85,11 +87,6 @@ export function Layout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [avatarOpen, setAvatarOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const avatarRef = useRef<HTMLDivElement>(null);
-  const notifRef = useRef<HTMLDivElement>(null);
 
   const [notifications, setNotifications] = useState<any[]>([]);
 
@@ -125,14 +122,6 @@ export function Layout() {
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
-  useEffect(() => {
-    const h = (e: MouseEvent) => {
-      if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) setAvatarOpen(false);
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false);
-    };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, []);
 
   // Breadcrumbs
   const segments = location.pathname.split("/").filter(Boolean);
@@ -149,7 +138,7 @@ export function Layout() {
   const SidebarContent = ({ isMobile = false }: { isMobile?: boolean }) => {
     const isCollapsed = collapsed && !isMobile;
     return (
-      <div className="flex flex-col h-full" style={{ fontFamily: "Inter, sans-serif" }}>
+      <div className="flex flex-col h-full" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
         {/* Logo */}
         <div
           style={{
@@ -174,7 +163,7 @@ export function Layout() {
             <div key={group.id} style={{ marginBottom: group.label ? 16 : 4 }}>
               {group.label && !isCollapsed && (
                 <p style={{
-                  fontSize: 10,
+                  fontSize: 11,
                   fontWeight: 700,
                   color: "#94a3b8",
                   textTransform: "uppercase",
@@ -198,7 +187,7 @@ export function Layout() {
                       style={{ textDecoration: "none" }}
                     >
                       <motion.div
-                        whileHover={{ x: 4, backgroundColor: isActive ? "#eff6ff" : "#f8fafc" }}
+                        whileHover={{ x: 4, backgroundColor: isActive ? "#F3E8F8" : "#f8fafc" }}
                         whileTap={{ scale: 0.98 }}
                         transition={{ type: "spring", stiffness: 400, damping: 25 }}
                         style={{
@@ -209,11 +198,11 @@ export function Layout() {
                           borderRadius: 10,
                           justifyContent: isCollapsed ? "center" : "flex-start",
                           position: "relative",
-                          background: isActive ? "#eff6ff" : "transparent",
-                          color: isActive ? "#2563EB" : "#64748b",
+                          background: isActive ? "#F3E8F8" : "transparent",
+                          color: isActive ? "#6921A5" : "#64748b",
                           fontWeight: isActive ? 600 : 500,
                           fontSize: 13,
-                          borderLeft: isActive && !isCollapsed ? "3px solid #2563EB" : "3px solid transparent",
+                          borderLeft: isActive && !isCollapsed ? "3px solid #6921A5" : "3px solid transparent",
                         }}
                         className="sidebar-link"
                       >
@@ -222,7 +211,7 @@ export function Layout() {
                             width: 18,
                             height: 18,
                             flexShrink: 0,
-                            color: isActive ? "#2563EB" : "#94a3b8",
+                            color: isActive ? "#6921A5" : "#94a3b8",
                             transition: "color 0.2s"
                           }}
                         />
@@ -236,7 +225,7 @@ export function Layout() {
                             transform: "translateY(-50%)",
                             background: "#0f172a",
                             color: "#fff",
-                            fontSize: 12,
+                            fontSize: 13,
                             fontWeight: 600,
                             padding: "6px 12px",
                             borderRadius: 6,
@@ -266,7 +255,7 @@ export function Layout() {
                 width: 36,
                 height: 36,
                 borderRadius: "50%",
-                background: "linear-gradient(135deg, #1e3a8a 0%, #2563EB 100%)",
+                background: "linear-gradient(135deg, #1e3a8a 0%, #6921A5 100%)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -278,7 +267,7 @@ export function Layout() {
                 <p style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", margin: 0, lineHeight: "1.2" }}>
                   {user?.name ?? ""}
                 </p>
-                <p style={{ fontSize: 11, color: "#64748b", margin: 0, lineHeight: "1.2" }}>{isAdmin ? "Platform admin" : (user as any)?.companyName ?? "Member"}</p>
+                <p style={{ fontSize: 12, color: "#64748b", margin: 0, lineHeight: "1.2" }}>{isAdmin ? "Platform admin" : (user as any)?.companyName ?? "Member"}</p>
               </div>
             </div>
           )}
@@ -296,7 +285,7 @@ export function Layout() {
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: "#f8fafc", overflow: "hidden", fontFamily: "Inter, sans-serif" }}>
+    <div style={{ display: "flex", height: "100vh", background: "#f8fafc", overflow: "hidden", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
 
       {/* Onboarding overlay */}
       <AnimatePresence>
@@ -364,213 +353,20 @@ export function Layout() {
       {/* ── Main Content ──────────────────────────────────── */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
 
-        {/* Top Header */}
-        <header className="sticky top-0 z-30 bg-white/70 backdrop-blur-lg border-b border-slate-200/60 shadow-sm transition-all">
-          <div className="flex items-center gap-6 px-6 h-[72px]">
-            {/* Mobile hamburger */}
-            <button
-              onClick={() => setMobileOpen(true)}
-              className="md:hidden p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-
-            {/* Breadcrumbs + Title */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                {crumbs.map((c, i) => (
-                  <React.Fragment key={`${c.path}-${i}`}>
-                    {i > 0 && <ChevronRight className="w-3 h-3 text-slate-300" />}
-                    <Link
-                      to={c.path}
-                      className={`text-[11px] font-semibold tracking-wide uppercase transition-colors ${
-                        i === crumbs.length - 1 ? "text-[#2563EB]" : "text-slate-400 hover:text-slate-600"
-                      }`}
-                    >
-                      {c.label}
-                    </Link>
-                  </React.Fragment>
-                ))}
-              </div>
-              <h1 className="text-xl font-black text-slate-900 tracking-tight leading-tight">
-                {pageTitle}
-              </h1>
-            </div>
-
-            {/* Search */}
-            <div className="relative hidden md:block w-[320px] group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#2563EB] transition-colors" />
-              <input
-                type="text"
-                placeholder="Search deals, companies, or users..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="w-full pl-9 pr-12 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB] focus:bg-white transition-all shadow-sm"
-              />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-60">
-                <kbd className="px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 bg-white border border-slate-200 rounded">⌘</kbd>
-                <kbd className="px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 bg-white border border-slate-200 rounded">K</kbd>
-              </div>
-            </div>
-
-            {/* Notifications */}
-            <div className="relative" ref={notifRef}>
-              <button
-                onClick={() => setNotifOpen(o => !o)}
-                className="relative p-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
-              >
-                <Bell className="w-5 h-5" />
-                {notifications.filter(n => !n.read).length > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 border-2 border-white rounded-full text-[9px] font-bold text-white flex items-center justify-center">
-                    {notifications.filter(n => !n.read).length}
-                  </span>
-                )}
-              </button>
-
-              <AnimatePresence>
-                {notifOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                    transition={{ duration: 0.15 }}
-                    style={{
-                      position: "absolute",
-                      right: 0,
-                      top: "calc(100% + 8px)",
-                      width: 360,
-                      background: "#fff",
-                      borderRadius: 12,
-                      boxShadow: "0 10px 40px rgba(0,0,0,0.12)",
-                      border: "1px solid #e2e8f0",
-                      overflow: "hidden",
-                      zIndex: 50,
-                    }}
-                  >
-                    <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Notifications</span>
-                        <span style={{ fontSize: 10, fontWeight: 700, background: "#ef4444", color: "#fff", padding: "2px 6px", borderRadius: 10 }}>{notifications.filter(n => !n.read).length} new</span>
-                      </div>
-                      <button onClick={markAllRead} style={{ fontSize: 11, fontWeight: 600, color: "#2563EB", background: "none", border: "none", cursor: "pointer" }}>Mark all read</button>
-                    </div>
-                    <div style={{ maxHeight: 320, overflowY: "auto" }}>
-                      {notifications.map(n => (
-                        <div key={n.id} onClick={() => { markRead(n.id); if (n.link) { setNotifOpen(false); navigate(n.link); } }} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 16px", borderBottom: "1px solid #f8fafc", cursor: "pointer", background: n.read ? "#fff" : "#f8fafc" }}>
-                          <div style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: "50%",
-                            background: n.type === "success" ? "#dcfce7" : n.type === "warning" ? "#fef3c7" : "#dbeafe",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            flexShrink: 0,
-                          }}>
-                            {n.type === "success" && <CheckCircle style={{ width: 14, height: 14, color: "#16a34a" }} />}
-                            {n.type === "warning" && <AlertCircle style={{ width: 14, height: 14, color: "#d97706" }} />}
-                            {n.type === "info" && <Bell style={{ width: 14, height: 14, color: "#2563EB" }} />}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <p style={{ fontSize: 12, fontWeight: 600, color: "#0f172a", margin: 0 }}>{n.title}</p>
-                            <p style={{ fontSize: 11, color: "#64748b", margin: "2px 0 0", lineHeight: "1.4" }}>{n.message}</p>
-                            <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
-                              <Clock style={{ width: 10, height: 10, color: "#94a3b8" }} />
-                              <span style={{ fontSize: 10, color: "#94a3b8" }}>{n.time}</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div style={{ padding: "10px 16px", borderTop: "1px solid #f1f5f9", textAlign: "center" }}>
-                      <Link to="/app/notifications" onClick={() => setNotifOpen(false)} style={{ fontSize: 12, fontWeight: 600, color: "#2563EB", textDecoration: "none" }}>View All Notifications</Link>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            <div className="relative" ref={avatarRef}>
-              <button
-                onClick={() => setAvatarOpen(o => !o)}
-                className="flex items-center gap-2.5 p-1.5 hover:bg-slate-100 rounded-xl transition-colors border border-transparent hover:border-slate-200 group"
-              >
-                <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 border-2 border-slate-100 shadow-sm group-hover:border-[#2563EB]/30 transition-colors">
-                  <span className="w-full h-full bg-gradient-to-br from-[#2563EB] to-blue-400 flex items-center justify-center text-white text-xs font-bold">{(user?.name || user?.email || "?").trim().charAt(0).toUpperCase()}</span>
-                </div>
-                <div className="hidden sm:block text-left pr-1">
-                  <p className="text-xs font-bold text-slate-800 leading-none group-hover:text-[#2563EB] transition-colors">{user?.name || ""}</p>
-                  <p className="text-[10px] font-semibold text-slate-400 mt-1 leading-none">{user?.companyName || ""}</p>
-                </div>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:block group-hover:text-[#2563EB] transition-colors" />
-              </button>
-
-              <AnimatePresence>
-                {avatarOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 4, scale: 0.97 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 4, scale: 0.97 }}
-                    style={{
-                      position: "absolute",
-                      right: 0,
-                      top: "calc(100% + 8px)",
-                      width: 200,
-                      background: "#fff",
-                      borderRadius: 10,
-                      boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
-                      border: "1px solid #e2e8f0",
-                      overflow: "hidden",
-                      zIndex: 50,
-                    }}
-                  >
-                    <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9" }}>
-                      <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", margin: 0 }}>{user?.name ?? ""}</p>
-                      <p style={{ fontSize: 11, color: "#64748b", margin: "2px 0 0" }}>{user?.email ?? ""}</p>
-                    </div>
-                    {[
-                      { icon: User, label: "Profile", path: "/app/settings" },
-                      { icon: Settings, label: "Settings", path: "/app/settings" },
-                      { icon: Sparkles, label: "Platform Tour", action: () => { setShowOnboarding(true); setAvatarOpen(false); } },
-                      ...(isAdmin ? [{ icon: Shield, label: "Admin Console", path: "/admin" }] : []),
-                    ].map(item => (
-                      item.action ? (
-                        <button key={item.label} onClick={item.action}
-                          style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 16px", fontSize: 13, color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}>
-                          <item.icon style={{ width: 14, height: 14 }} /> {item.label}
-                        </button>
-                      ) : (
-                        <Link key={item.label} to={item.path!}
-                          onClick={() => setAvatarOpen(false)}
-                          style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 16px", fontSize: 13, color: "#374151", textDecoration: "none" }}>
-                          <item.icon style={{ width: 14, height: 14 }} /> {item.label}
-                        </Link>
-                      )
-                    ))}
-                    <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 4 }}>
-                      <button
-                        onClick={async () => { await authLogout(); window.location.href = '/auth'; }}
-                        style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 16px", fontSize: 13, color: "#ef4444", background: "none", border: "none", cursor: "pointer" }}
-                      >
-                        <LogOut style={{ width: 14, height: 14 }} /> Sign out
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Collapse toggle desktop */}
-            <button
-              onClick={() => setCollapsed(c => !c)}
-              style={{ padding: 6, color: "#94a3b8", background: "none", border: "none", cursor: "pointer", borderRadius: 6, display: "none" }}
-              className="md:block"
-              title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
-              {collapsed ? <PanelLeftOpen style={{ width: 16, height: 16 }} /> : <PanelLeftClose style={{ width: 16, height: 16 }} />}
-            </button>
-          </div>
-        </header>
+        <Header
+          crumbs={crumbs}
+          pageTitle={pageTitle}
+          user={user}
+          isAdmin={isAdmin}
+          notifications={notifications}
+          markAllRead={markAllRead}
+          markRead={markRead}
+          collapsed={collapsed}
+          onToggleCollapsed={() => setCollapsed(c => !c)}
+          onOpenMenu={() => setMobileOpen(true)}
+          onStartTour={() => setShowOnboarding(true)}
+          onLogout={async () => { await authLogout(); window.location.href = '/auth'; }}
+        />
 
         {/* Page content */}
         <main style={{ flex: 1, overflow: "auto", padding: "24px" }}>

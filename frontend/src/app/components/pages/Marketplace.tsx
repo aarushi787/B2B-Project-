@@ -89,7 +89,7 @@ export function Marketplace() {
   const filtered = services.filter(s => s.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", fontFamily: "Inter, sans-serif" }}>
+    <div style={{ maxWidth: 1200, margin: "0 auto", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       {/* Toolbar */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
         <SearchInput placeholder="Search Services..." value={search} onChange={setSearch} />
@@ -116,7 +116,7 @@ export function Marketplace() {
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <h2 style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", margin: 0 }}>{s.name}</h2>
                 {s.category && (
-                  <span style={{ background: "#f8fafc", border: "1px solid #e2e8f0", color: "#64748b", fontSize: 11, fontWeight: 500, padding: "2px 10px", borderRadius: 20 }}>
+                  <span style={{ background: "#f8fafc", border: "1px solid #e2e8f0", color: "#64748b", fontSize: 12, fontWeight: 500, padding: "2px 10px", borderRadius: 20 }}>
                     {s.category}
                   </span>
                 )}
@@ -160,7 +160,7 @@ export function Marketplace() {
       {filtered.length > 0 && (
         <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 32 }}>
           <button style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid #e2e8f0", background: "#fff", color: "#374151", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>Prev</button>
-          <button style={{ width: 34, height: 34, borderRadius: 6, border: "2px solid #2563EB", background: "#2563EB", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>1</button>
+          <button style={{ width: 34, height: 34, borderRadius: 6, border: "2px solid #6921A5", background: "#6921A5", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>1</button>
           <button style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid #e2e8f0", background: "#fff", color: "#374151", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>Next</button>
         </div>
       )}

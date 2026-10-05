@@ -23,10 +23,23 @@ export const authLimiter = rateLimit({
   },
 });
 
+// Uploads store encrypted files in the database, so they get their own tight limit (30 per hour per IP).
+export const uploadLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: Number(process.env.UPLOAD_RATE_LIMIT_MAX) || 30,
+  message: { error: 'Too many uploads. Please try again later.', retryAfter: 3600 },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.ip || 'unknown',
+});
+
 // Moderate rate limiting for general API endpoints (60 requests per minute)
+// A busy page makes a handful of calls at once and offices share one IP, so the default is generous; it is a flood guard,
+// not a usage cap. Override with API_RATE_LIMIT_MAX.
 export const apiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 60, // 60 requests per window
+  max: Number(process.env.API_RATE_LIMIT_MAX) || 600,
+  skip: (req) => req.path === '/health' || req.path === '/ready',
   message: {
     error: 'API rate limit exceeded. Please try again later.',
     retryAfter: 60,

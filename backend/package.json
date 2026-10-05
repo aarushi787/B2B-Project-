@@ -15,7 +15,9 @@
     "start:worker": "node dist/workers/index.js",
     "test": "npm run build && node dist/tests/run.js",
     "db:init": "node dist/config/init.js",
-    "db:seed": "tsx src/scripts/seed.ts"
+    "db:seed": "tsx src/scripts/seed.ts",
+    "db:check": "tsx src/scripts/checkDb.ts",
+    "db:reset-password": "tsx src/scripts/resetPassword.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1141.0",
@@ -35,12 +37,12 @@
     "bullmq": "^5.71.1",
     "cors": "2.8.5",
     "dotenv": "16.3.1",
-    "express": "4.18.2",
+    "express": "4.22.3",
     "express-rate-limit": "^7.1.5",
     "helmet": "^8.3.0",
     "ioredis": "^5.10.1",
     "jsonwebtoken": "9.0.2",
-    "mysql2": "3.6.5",
+    "mysql2": "^3.24.5",
     "node-fetch": "^3.3.2",
     "nodemailer": "^10.0.11",
     "pino": "^10.3.1",
@@ -54,5 +56,8 @@
   },
   "devDependencies": {
     "tsx": "^4.21.0"
+  },
+  "overrides": {
+    "qs": "^6.16.0"
   }
 }
